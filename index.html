@@ -11,7 +11,7 @@
     <meta property="og:description" content="Kuan-Lin Chen’s homepage. CV/ML/Imaging." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="assets/og.png" />
-    <meta property="og:url" content="https://BrianChen1120.github.io/" />
+    <meta property="og:url" content="https://brianchen1120.github.io/" />
 
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -646,7 +646,6 @@
                 /* 小巧置中、保比例 */
                 .map-wrap{ max-width:560px; margin:0 auto; }
                 .map-frame{
-                  aspect-ratio: 4 / 3;           /* 想更扁改 16/9 */
                   width:100%;
                   border-radius:.75rem;
                   overflow:hidden;
@@ -654,20 +653,26 @@
                   box-shadow:0 2px 10px rgba(0,0,0,.06);
                   background:var(--bs-body-bg);
                 }
-                .map-frame iframe, .map-frame > div{ width:100%; height:100%; border:0; display:block; }
+                .map-frame iframe, .map-frame > div{ width:100%; height:auto; border:0; display:block; }
               </style>
 
               <div class="map-wrap">
                 <div class="map-frame">
-                  <!-- 貼上 ClustrMaps 的 embed：script 或 iframe 二擇一 -->
-                  <!-- 例（script）：
-                  <script type="text/javascript" id="clustrmaps"
-                    src="//clustrmaps.com/map_v2.js?d=YOUR_TOKEN&w=a"></script>
-                  -->
-                  <!-- 例（iframe）：
-                  <iframe src="https://clustrmaps.com/…"></iframe>
-                  -->
-                  YOUR-CLUSTRMAPS-EMBED
+                  <script
+                    type="text/javascript"
+                    id="mapmyvisitors"
+                    src="https://mapmyvisitors.com/map.js?d=pCvYT6ar8wTonV2Fn_wBQfNxJbdMcD8rkpq6QqU1c3A&cl=ffffff&w=a"
+                    async>
+                  </script>
+
+                  <noscript>
+                    <a href="https://mapmyvisitors.com/web/1bzp6" target="_blank" rel="noopener" title="Visit tracker">
+                      <img
+                        src="https://mapmyvisitors.com/map.png?d=pCvYT6ar8wTonV2Fn_wBQfNxJbdMcD8rkpq6QqU1c3A&cl=ffffff"
+                        alt="Visitor map" loading="lazy" decoding="async"
+                        style="width:100%;height:100%;object-fit:contain;display:block;">
+                    </a>
+                  </noscript>
                 </div>
               </div>
             </div>
