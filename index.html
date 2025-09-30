@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="zh-Hant" data-bs-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kuan‑Lin (Brian) Chen — CV/ML/Imaging</title>
+    <meta name="description" content="Kuan-Lin Chen’s homepage. CV/ML/Imaging." />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Kuan‑Lin (Brian) Chen" />
+    <meta property="og:description" content="Kuan-Lin Chen’s homepage. CV/ML/Imaging." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="assets/og.png" />
+    <meta property="og:url" content="https://BrianChen1120.github.io/" />
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+    <link rel="icon" href="assets/favicon.png" sizes="any">
+
+    <style>
+      html { scroll-behavior: smooth; }
+      .nav-link { font-weight: 600; }
+      .hero-name { font-size: clamp(2.2rem, 4vw, 3rem); font-weight: 800; }
+      .hero-tagline { font-size: 1.1rem; opacity: .9; }
+      .quick-links a { text-decoration: none; }
+      .section-title { font-weight: 800; letter-spacing: .2px; }
+      .news-date { width: 7.5rem; flex: 0 0 auto; opacity: .7; }
+      .card-title a { text-decoration: none; }
+      .footer { opacity: .7; }
+    </style>
+  </head>
+  <body>
+    <!-- Mobile top nav (only on small screens) -->
+    <nav class="navbar navbar-expand-md bg-body border-bottom sticky-top d-lg-none">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="#top">Kuan‑Lin Chen</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMain">
+          <ul class="navbar-nav ms-auto align-items-md-center gap-2">
+            <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+            <li class="nav-item"><a class="nav-link" href="#works">Selected Works</a></li>
+            <li class="nav-item"><a class="nav-link" href="#news">News</a></li>
+            <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+            <li class="nav-item">
+              <button id="themeToggle" class="btn btn-sm btn-outline-secondary" type="button" aria-label="Toggle theme">
+                <i class="bi bi-moon-stars"></i>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-xxl">
+      <div class="row gx-4">
+        <!-- Left sidebar (desktop) -->
+        <aside class="d-none d-lg-block col-lg-2 border-end">
+          <div class="sticky-top py-4" style="top: 16px;">
+            <div class="text-center mb-3">
+              <img src="assets/profile.jpg" alt="Portrait of Kuan‑Lin (Brian) Chen" class="rounded-4 img-fluid shadow" style="max-width: 150px;" />
+            </div>
+            <h1 class="h4 fw-bold mb-1">Kuan‑Lin (Brian) Chen (陳冠霖)</h1>
+            <p class="small mb-2">M.S. student @ NTU GICE<br/>Computer Vision · Image Processing · Deep Learning</p>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <a class="btn btn-sm btn-outline-primary" href="mailto:klchen901120@gmail.com" target="_blank" rel="noopener"><i class="bi bi-envelope"></i> Email</a>
+              <a class="btn btn-sm btn-outline-primary" href="files/Kuan-Lin (Brian) Chen Resume.pdf" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text"></i> CV</a>
+              <a class="btn btn-sm btn-outline-primary" href="https://scholar.google.com/citations?user=56m2uDUAAAAJ" target="_blank" rel="noopener"><i class="bi bi-mortarboard"></i> Scholar</a>
+              <a class="btn btn-sm btn-outline-primary" href="https://github.com/BrianChen1120" target="_blank" rel="noopener"><i class="bi bi-github"></i> GitHub</a>
+              <a class="btn btn-sm btn-outline-primary" href="https://www.linkedin.com/in/kuanlinchen1" target="_blank" rel="noopener"><i class="bi bi-linkedin"></i> LinkedIn</a>
+              <button id="themeToggleDesktop" class="btn btn-sm btn-outline-secondary" type="button" aria-label="Toggle theme"><i class="bi bi-moon-stars"></i></button>
+            </div>
+            <nav class="nav flex-column small">
+              <a class="nav-link px-0" href="#about">About</a>
+              <a class="nav-link px-0" href="#news">News</a>
+              <a class="nav-link px-0" href="#works">Research</a>
+              <a class="nav-link px-0" href="#misc">Miscellanea</a>
+              <a class="nav-link px-0" href="#contact">Contact</a>
+            </nav>
+          </div>
+        </aside>
+
+        <!-- Main content column -->
+        <main class="col-12 col-lg-10" id="top">
+          <!-- Hero (only mobile, desktop uses sidebar heading) -->
+          <header class="py-4 d-lg-none">
+            <div class="container px-0">
+              <div class="row g-3 align-items-center">
+                <div class="col-12 col-sm-8">
+                  <h1 class="hero-name mb-2">Kuan‑Lin (Brian) Chen (陳冠霖)</h1>
+                  <p class="hero-tagline mb-3">M.S. student @ NTU GICE · Computer Vision · Image Processing · Deep Learning</p>
+                  <div class="quick-links d-flex flex-wrap gap-3">
+                    <a class="link-primary" href="mailto:klchen901120@gmail.com" target="_blank" rel="noopener"><i class="bi bi-envelope"></i> Email</a>
+                    <a class="link-primary" href="files/Kuan-Lin (Brian) Chen Resume.pdf" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text"></i> CV</a>
+                    <a class="link-primary" href="https://scholar.google.com/citations?user=56m2uDUAAAAJ" target="_blank" rel="noopener"><i class="bi bi-mortarboard"></i> Scholar</a>
+                    <a class="link-primary" href="https://github.com/BrianChen1120" target="_blank" rel="noopener"><i class="bi bi-github"></i> GitHub</a>
+                    <a class="link-primary" href="https://www.linkedin.com/in/kuanlinchen1" target="_blank" rel="noopener"><i class="bi bi-linkedin"></i> LinkedIn</a>
+                  </div>
+                </div>
+                <div class="col-12 col-sm-4 text-center text-sm-end">
+                  <img src="assets/profile.jpg" alt="Portrait of Kuan‑Lin (Brian) Chen" class="rounded-4 img-fluid shadow" style="max-width: 160px;" />
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <!-- About -->
+          <section id="about" class="py-4 py-md-5 bg-body-tertiary border-top border-bottom">
+            <div class="container px-0">
+              <h2 class="section-title h3 mb-3">About</h2>
+              <p>
+                I am currently a master's student at the <a href="https://gice.ntu.edu.tw/en/" target="_blank" rel="noopener" class="text-decoration-none">Graduate Institute of Communication Engineering, National Taiwan University (NTU)</a>,
+                advised by Professor <a href="https://djj.ee.ntu.edu.tw/index.htm" target="_blank" rel="noopener" class="text-decoration-none">Jian-Jiun Ding (丁建均)</a>.<br>
+                My research interests span computer vision, image processing, and deep learning.
+                Previously I explored semantic segmentation for motion-blur detection, camera ISP topics such as automatic white balance (AWB) and image quality assessment (IQA),
+                and generative modeling with latent diffusion, large language model.
+              </p>
+            </div>
+          </section>
+
+          <!-- News -->
+          <section id="news" class="py-4 py-md-5 bg-body-tertiary border-top border-bottom">
+            <div class="container px-0">
+              <h2 class="section-title h3 mb-3 d-flex align-items-center justify-content-between">
+                News
+                <button id="toggleOlder" class="btn btn-sm btn-outline-secondary"
+                        data-bs-toggle="collapse" data-bs-target="#news-older"
+                        aria-expanded="false" aria-controls="news-older">
+                  <i class="bi bi-chevron-down me-1"></i> Show earlier
+                </button>
+              </h2>
+              <div class="d-flex flex-column gap-3">
+                <!-- 這邊是今年度的動態消息 -->
+                <div class="d-flex gap-3">
+                  <div class="news-date">2025-10</div>
+                  <div>
+                    Our paper
+                    <strong><a href="#" target="_blank" rel="noopener" class="text-decoration-none">
+                      Guitar Tone Morphing by Diffusion-based Model
+                    </a></strong>
+                    is accepted by
+                    <strong><a href="https://www.apsipa2025.org/wp/" target="_blank" rel="noopener" class="text-decoration-none">APSIPA ASC 2025</a></strong>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2025-10</div>
+                  <div>
+                    Our paper
+                    <strong><a href="#" target="_blank" rel="noopener" class="text-decoration-none">
+                      FRIEREN: Face Resizing Image Quality Evaluation via Robust Estimation of Image Naturalness
+                    </a></strong>
+                    is accepted by
+                    <strong><a href="https://apccas2025.org/" target="_blank" rel="noopener" class="text-decoration-none">APCCAS 2025</a></strong>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2025-08</div>
+                  <div>
+                    Our paper
+                    <strong><a href="https://doi.org/10.1016/j.engappai.2025.111862" target="_blank" rel="noopener" class="text-decoration-none">
+                      Deep reinforcement learning–based collision avoidance strategy for multiple UAVs
+                    </a></strong>
+                    is published in
+                    <strong><a href="https://www.sciencedirect.com/journal/engineering-applications-of-artificial-intelligence" target="_blank" rel="noopener" class="text-decoration-none">Engineering Applications of Artificial Intelligence</a></strong>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2025-07 → 2025-08</div>
+                  <div>
+                    I work as a research Assistant (intern) at <a href="https://www.iis.sinica.edu.tw/en/index.html" target="_blank" rel="noopener" class="text-decoration-none">Academia Sinica Institute of Information Science</a>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2025-07</div>
+                  <div>
+                    Our paper
+                    <strong><a href="#" target="_blank" rel="noopener" class="text-decoration-none">
+                      Enhancement of Semantic Segmentation with Edge Networks Using Wavelets and Adaptive Canny Thresholding
+                    </a></strong>
+                    is accepted by
+                    <strong><a href="https://www.icispc.org/index.html" target="_blank" rel="noopener" class="text-decoration-none">ICISPC 2025</a></strong>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2025-02</div>
+                  <div>
+                    Our paper
+                    <strong><a href="https://doi.org/10.1109/ICAIIC64266.2025.10920715" target="_blank" rel="noopener" class="text-decoration-none">
+                      Kolmogorov-Arnold Networks with Trainable Activation Functions for Data Regression and Classification
+                    </a></strong>
+                    is accepted by
+                    <strong><a href="http://2025.icaiic.org/" target="_blank" rel="noopener" class="text-decoration-none">ICAIIC 2025</a></strong>.
+                  </div>
+                </div>
+
+              </div>
+              <!-- 要隱藏的東東，可以把去年度的內容都暫時隱藏掉 -->
+              <div id="news-older" class="collapse">
+              <div class="mt-3 d-flex flex-column gap-3">
+                <!-- 這邊是更舊的動態消息 -->
+                <div class="d-flex gap-3">
+                  <div class="news-date">2024-12</div>
+                  <div>
+                    I’m honored to receive <a href="https://ithelp.ithome.com.tw/2024ironman/event" target="_blank" rel="noopener" class="text-decoration-none">2024 iThome 鐵人賽</a>
+                    AI/ ML & Data組 <a href="https://ithelp.ithome.com.tw/2024ironman/reward" target="_blank" rel="noopener" class="text-decoration-none">冠軍 (Champion award)</a> for my work,
+                    <a href="https://ithelp.ithome.com.tw/users/20151029/ironman/7610" target="_blank" rel="noopener" class="text-decoration-none">「調整AI超參數好煩躁？來試試看最佳化演算法吧！」</a>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2024-10</div>
+                  <div>
+                    My book
+                    <strong><a href="https://www.drmaster.com.tw/Bookinfo.asp?BookID=MP22462" target="_blank" rel="noopener" class="text-decoration-none">
+                      《即學即用！精選 30 招辦公室超高效 AI 生產術：使用 ChatGPT × Copilot × Word × Excel × Gamma》(iThome 鐵人賽系列書)
+                    </a></strong>
+                    is published by
+                    <a href="https://www.drmaster.com.tw/index.asp" target="_blank" rel="noopener" class="text-decoration-none">博碩文化 (DrMaster Press)</a>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2024-09 → Present</div>
+                  <div>
+                    I am now a master’s student in the
+                    <strong><a href="https://gice.ntu.edu.tw/en/" target="_blank" rel="noopener" class="text-decoration-none">
+                      Graduate Institute of Communication Engineering
+                    </a></strong>
+                    at <a href="https://www.ntu.edu.tw/english/" target="_blank" rel="noopener" class="text-decoration-none">National Taiwan University</a> (NTU GICE).
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2024-07</div>
+                  <div>
+                    I receive the Presidential Award in 112-1.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2024-03</div>
+                  <div>
+                    Our paper
+                    <strong><a href="https://doi.org/10.1109/JBHI.2024.3372649" target="_blank" rel="noopener" class="text-decoration-none">
+                      Developmental prediction of poststroke patients in activities of daily living by using tree-structured parzen estimator–optimized stacking ensemble approaches
+                    </a></strong>
+                    is published in
+                    <strong><a href="https://ieeexplore.ieee.org/xpl/RecentIssue.jsp?punumber=6221020" target="_blank" rel="noopener" class="text-decoration-none">
+                      IEEE Journal of Biomedical and Health Informatics
+                    </a></strong>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2023-12</div>
+                  <div>
+                    Our paper
+                    <strong><a href="https://doi.org/10.32604/csse.2023.042078" target="_blank" rel="noopener" class="text-decoration-none">
+                      Optical Based Gradient-Weighted Class Activation Mapping and Transfer Learning Integrated Pneumonia Prediction Model
+                    </a></strong>
+                    is published in
+                    <strong><a href="https://www.techscience.com/journal/csse" target="_blank" rel="noopener" class="text-decoration-none">
+                      Computer Systems Science & Engineering
+                    </a></strong>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2023-11</div>
+                  <div>
+                    I’m honored to receive <a href="https://ithelp.ithome.com.tw/2023ironman/event" target="_blank" rel="noopener" class="text-decoration-none">2023 iThome 鐵人賽</a>
+                    AI & Data組 <a href="https://ithelp.ithome.com.tw/2023ironman/reward" target="_blank" rel="noopener" class="text-decoration-none">優選獎 (Merit award)</a> for my work,
+                    <a href="https://ithelp.ithome.com.tw/users/20151029/ironman/6421" target="_blank" rel="noopener" class="text-decoration-none">「生成式AI到底何方神聖？一窺生程式AI的真面目」</a>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2023-10</div>
+                  <div>
+                    Our paper
+                    <strong><a href="https://doi.org/10.1016/j.engappai.2023.106694" target="_blank" rel="noopener" class="text-decoration-none">
+                      Two-stage fuzzy object grasping controller for a humanoid robot with proximal policy optimization
+                    </a></strong>
+                    is published in
+                    <strong><a href="https://www.sciencedirect.com/journal/engineering-applications-of-artificial-intelligence" target="_blank" rel="noopener" class="text-decoration-none">
+                      Engineering Applications of Artificial Intelligence
+                    </a></strong>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2023-08</div>
+                  <div>
+                    Our paper
+                    <strong><a href="https://doi.org/10.1016/j.aei.2023.102067" target="_blank" rel="noopener" class="text-decoration-none">
+                      Sequential sensor fusion-based W-DDPG gait controller of bipedal robots for adaptive slope walking
+                    </a></strong>
+                    is published in
+                    <strong><a href="https://www.sciencedirect.com/journal/advanced-engineering-informatics" target="_blank" rel="noopener" class="text-decoration-none">
+                      Advanced Engineering Informatics
+                    </a></strong>.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2023-07</div>
+                  <div>
+                    I’m honored to receive 2023 中國工程師學會(<a href="https://www.cie.org.tw/app/index.php?Lang=en" target="_blank" rel="noopener" class="text-decoration-none">Chinese Institute of Engineers, CIE</a>)學生分會工程論文競賽 資訊組 佳作獎.
+                  </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                  <div class="news-date">2023-04</div>
+                  <div>
+                    Our paper
+                    <strong><a href="https://doi.org/10.1016/j.aei.2023.102009" target="_blank" rel="noopener" class="text-decoration-none">
+                      Intelligent proximal-policy-optimization-based decision-making system for humanoid robots
+                    </a></strong>
+                    is published in
+                    <strong><a href="https://www.sciencedirect.com/journal/advanced-engineering-informatics" target="_blank" rel="noopener" class="text-decoration-none">
+                      Advanced Engineering Informatics
+                    </a></strong>.
+                  </div>
+              </div>
+              </div>
+
+                <!-- 提供複製用的 -->
+<!--                <div class="d-flex gap-3">-->
+<!--                  <div class="news-date">2024-03</div>-->
+<!--                  <div>-->
+<!--                    Our paper-->
+<!--                    <strong><a href="#" target="_blank" rel="noopener" class="text-decoration-none">-->
+<!--                      Paper Title-->
+<!--                    </a></strong>-->
+<!--                    is published in-->
+<!--                    <strong><a href="#" target="_blank" rel="noopener" class="text-decoration-none">-->
+<!--                      Journal or Conference Name-->
+<!--                    </a></strong>.-->
+<!--                  </div>-->
+<!--                </div>-->
+
+              </div>
+            </div>
+          </section>
+
+          <!-- Research (publication-style cards) -->
+          <section id="works" class="py-4 py-md-5">
+            <div class="container px-0">
+              <!-- 標題列：左邊標題+指標，右邊圖示按鈕 -->
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="me-3">
+                  <h2 class="section-title h3 mb-1">Research</h2>
+                  <div class="text-muted small mb-0">H-index: 4 &nbsp;|&nbsp; i10-index: 1</div>
+                </div>
+              </div>
+
+              <style>
+                .pub-card{
+                  border-radius:.75rem; padding:1rem;
+                  border:1px solid var(--bs-border-color); background:var(--bs-body-bg);
+                  position:relative; z-index:1; overflow:visible;
+                }
+
+                .link-chip{
+                  display:inline-block; padding:.25rem .6rem;
+                  border:1px solid var(--bs-border-color);
+                  border-radius:999px; text-decoration:none; font-size:.85rem;
+                }
+                .link-chip.disabled{ opacity:.5; pointer-events:none; }
+
+                :root{ --thumb-blue:#A6D3FF; --thumb-blue-soft:rgba(166,211,255,.25); }
+                [data-bs-theme="dark"]{ --thumb-blue:#72B9FF; --thumb-blue-soft:rgba(114,185,255,.25); }
+
+                .thumb-wrap{
+                  position:relative; display:block;
+                  border:2px solid var(--thumb-blue); border-radius:.75rem;
+                  box-shadow:0 0 0 4px var(--thumb-blue-soft);
+                  background:transparent; aspect-ratio:16/10;
+                  width:100%; max-width:220px;
+                  flex:0 0 auto; margin-inline:auto;
+                  overflow:visible; z-index:2;
+                }
+                .pub-card > .thumb-wrap + *{ flex:1 1 0; min-width:0; }
+                @media (min-width:768px){
+                  .thumb-wrap{ width:200px; max-width:none; flex:0 0 200px; margin-inline:0; }
+                }
+                @media (min-width:576px) and (max-width:767.98px){
+                  .thumb-wrap{ max-width:200px; }
+                }
+                .thumb-img{
+                  width:100%; height:100%;
+                  object-fit:contain;
+                  border-radius:inherit; display:block;
+                  transition:transform .2s ease, box-shadow .2s ease; will-change:transform;
+                }
+                @media (hover:hover){
+                  .pub-card:hover{ z-index: 9998; }
+                  .thumb-wrap:hover{ z-index: 9999; }
+                  .thumb-wrap:hover .thumb-img{
+                    transform: scale(3);
+                    transform-origin: center;
+                    box-shadow: 0 6px 18px rgba(0,0,0,.15);
+                  }
+                  @media (min-width:768px){
+                    .thumb-wrap:hover .thumb-img{ transform-origin: left center; }
+                  }
+                }
+                @media (min-width:768px){
+                  .pub-card .thumb-wrap{
+                    align-self: center;
+                  }
+                }
+              </style>
+
+              <!-- Item -->
+              <article class="pub-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+                <div class="thumb-wrap mb-2 mb-md-0">
+                  <img class="thumb-img" src="assets/works/Guitar Tone Morphing.png" alt="Guitar Tone Morphing by Diffusion-based Model" >
+                </div>
+                <div>
+                  <h3 class="h5 mb-1">Guitar Tone Morphing by Diffusion-based Model</h3>
+                  <div class="text-muted small mb-1">Kuan-Yu Chen, <strong>Kuan-Lin Chen</strong>, Yu-Chieh Yu, Jian-Jiun Ding</div>
+                  <div class="small mb-2"><em>APSIPA ASC</em>, 2025</div>
+                  <div class="text-muted small mb-1">We compare three latent-diffusion approaches (with single- and dual-sided LoRA) against a non-diffusion baseline that performs spherical interpolation in Music2Latent.
+                    Experiments show that Music2Latent achieves the best perceptual quality (MOS 4.3) and produces smoother, more natural tone transitions.</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a class="link-chip" href="#" target="_blank" rel="noopener">Paper</a>
+                  </div>
+                </div>
+              </article>
+
+              <!-- Item -->
+              <article class="pub-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+                <div class="thumb-wrap mb-2 mb-md-0">
+                  <img class="thumb-img" src="assets/works/Frieren.png" alt="FRIEREN: Face Resizing Image Quality Evaluation via Robust Estimation of Image Naturalness">
+                </div>
+                <div>
+                  <h3 class="h5 mb-1"> FRIEREN: Face Resizing Image Quality Evaluation via Robust Estimation of Image Naturalness</h3>
+                  <div class="text-muted small mb-1">Yuan-Kang Lee, <strong>Kuan-Lin Chen</strong>, Jian-Jiun Ding</div>
+
+                  <div class="small mb-2"><em>APCCAS</em>, 2025</div>
+                  <div class="text-muted small mb-1">In practice, enlarging faces via nearest, bilinear, bicubic, or Lanczos interpolation introduces high-frequency artifacts that many NR-IQA methods misread as sharpness.
+                    FRIEREN estimates motion noise from a single frame, DWT-based spatial noise, and an HVS-aligned sharpness measure, then regresses quality via KANs;
+                    it better matches human preference (Lanczos > Bicubic > Bilinear > Nearest) and outperforms SOTA on MS1MV2 (PLCC 0.8954 / SROCC 0.8723).</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a class="link-chip" href="#" target="_blank" rel="noopener">Paper</a>
+                  </div>
+                </div>
+              </article>
+
+              <!-- Item -->
+              <article class="pub-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+                <div class="thumb-wrap mb-2 mb-md-0">
+                  <img class="thumb-img" src="assets/works/RL-UAV.jpg" alt="Deep reinforcement learning–based collision avoidance strategy for multiple unmanned aerial vehicles">
+                </div>
+                <div>
+                  <h3 class="h5 mb-1">Deep reinforcement learning–based collision avoidance strategy for multiple unmanned aerial vehicles</h3>
+                  <div class="text-muted small mb-1">Ping-Huan Kuo, <strong>Kuan-Lin Chen</strong>, Yu-Sian Lin, Yu-Chih Chiu, Chao-Chung Peng</div>
+                  <div class="small mb-2"><em>Engineering Applications of Artificial Intelligence (EAAI)</em>, 2025</div>
+                  <div class="text-muted small mb-1">We propose a two-stage training pipeline for multi-UAV collision avoidance: a self-designed reward first teaches a single UAV to traverse multiple goals while avoiding dynamic/static obstacles,
+                    then second-stage training enable three UAVs to complete the task while maintaining safe separation; A2C and PPO converge reliably, whereas SAC largely fails.</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a class="link-chip" href="https://doi.org/10.1016/j.engappai.2025.111862" target="_blank" rel="noopener">Paper</a>
+                    <a class="link-chip" href="https://www.youtube.com/watch?v=6TEpirphifM" target="_blank" rel="noopener">Video</a>
+                  </div>
+                </div>
+              </article>
+
+              <!-- Item -->
+              <article class="pub-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+                <div class="thumb-wrap mb-2 mb-md-0">
+                  <img class="thumb-img" src="assets/works/Segmentation.png" alt="Enhancement of Semantic Segmentation with Edge Networks Using Wavelets and Adaptive Canny Thresholding">
+                </div>
+                <div>
+                  <h3 class="h5 mb-1">Enhancement of Semantic Segmentation with Edge Networks Using Wavelets and Adaptive Canny Thresholding</h3>
+                  <div class="text-muted small mb-1"><strong>Kuan-Lin Chen</strong>, Jian-Jiun Ding</div>
+                  <div class="small mb-2"><em>ICISPC</em>, 2025</div>
+                  <div class="text-muted small mb-1">We feed wavelet-based (2D-DWT/2D-SWT) edge features and adaptively learned Canny thresholds as auxiliary inputs to PIDNet-S,
+                    boosting CamVid mIoU from 73.8 to 77.4 with improved boundary handling.</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a class="link-chip" href="#" target="_blank" rel="noopener">Paper</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="pub-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+                <div class="thumb-wrap mb-2 mb-md-0">
+                  <img class="thumb-img" src="assets/works/KAN.png" alt="Kolmogorov-Arnold Networks with Trainable Activation Functions for Data Regression and Classification">
+                </div>
+                <div>
+                  <h3 class="h5 mb-1">Kolmogorov-Arnold Networks with Trainable Activation Functions for Data Regression and Classification</h3>
+                  <div class="text-muted small mb-1"><strong>Kuan-Lin Chen</strong>, Jian-Jiun Ding</div>
+                  <div class="small mb-2"><em>ICAIIC</em>, 2025</div>
+                  <div class="text-muted small mb-1">We study Kolmogorov-Arnold Networks (KANs),
+                    benchmarking them against MLPs and RBFs across multiple classification and regression datasets and analyzing hyperparameter sensitivity—particularly depth and basis size k.</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a class="link-chip" href="https://doi.org/10.1109/ICAIIC64266.2025.10920715" target="_blank" rel="noopener">Paper</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="pub-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+                <div class="thumb-wrap mb-2 mb-md-0">
+                  <img class="thumb-img" src="assets/works/TPE Poststroke.jpg" alt="Developmental Prediction of Poststroke Patients in Activities of Daily Living by Using Tree-Structured Parzen Estimator–Optimized Stacking Ensemble Approaches">
+                </div>
+                <div>
+                  <h3 class="h5 mb-1">Developmental Prediction of Poststroke Patients in Activities of Daily Living by Using Tree-Structured Parzen Estimator–Optimized Stacking Ensemble Approaches</h3>
+                  <div class="text-muted small mb-1">Pei-Hua Lin, Ping-Huan Kuo, <strong>Kuan-Lin Chen</strong></div>
+                  <div class="small mb-2"><em>IEEE Journal of Biomedical and Health Informatics (JBHI)</em>, 2024</div>
+                  <div class="text-muted small mb-1">We predict discharge Barthel Index for stroke inpatients using a TPE-optimized stacking ensemble (RF+AdaBoost+MLP), achieving R²=0.5453, MAE=12.797,
+                    and RMSE=16.182 on 878 cases, with admission BI identified as the most critical feature.</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a class="link-chip" href="https://doi.org/10.1109/JBHI.2024.3372649" target="_blank" rel="noopener">Paper</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="pub-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+                <div class="thumb-wrap mb-2 mb-md-0">
+                  <img class="thumb-img" src="assets/works/Pneumonia Prediction.png" alt="Optical Based Gradient-Weighted Class Activation Mapping and Transfer Learning Integrated Pneumonia Prediction Model">
+                </div>
+                <div>
+                  <h3 class="h5 mb-1">Optical Based Gradient-Weighted Class Activation Mapping and Transfer Learning Integrated Pneumonia Prediction Model</h3>
+                  <div class="text-muted small mb-1">Chia-Wei Jan, Yu-Jhih Chiu, <strong>Kuan-Lin Chen</strong>, Ting-Chun Yao, Ping-Huan Kuo</div>
+                  <div class="small mb-2"><em>Computer Systems Science and Engineering (CSSE)</em>, 2024</div>
+                  <div class="text-muted small mb-1">We introduce GCPNet, a chest X-ray pneumonia aid that fuses transfer learning with Grad-CAM–guided re-training—up-weighting samples whose attention drifts off-center—and,
+                    with augmentation, reaches 97.2% accuracy with interpretable heatmaps.</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a class="link-chip" href="https://doi.org/10.32604/csse.2023.042078" target="_blank" rel="noopener">Paper</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="pub-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+                <div class="thumb-wrap mb-2 mb-md-0">
+                  <img class="thumb-img" src="assets/works/2stage_PPO.jpg" alt="Two-stage fuzzy object grasping controller for a humanoid robot with proximal policy optimization">
+                </div>
+                <div>
+                  <h3 class="h5 mb-1">Two-stage fuzzy object grasping controller for a humanoid robot with proximal policy optimization</h3>
+                  <div class="text-muted small mb-1">Ping-Huan Kuo, <strong>Kuan-Lin Chen</strong></div>
+                  <div class="small mb-2"><em>Engineering Applications of Artificial Intelligence (EAAI)</em>, 2023</div>
+                  <div class="text-muted small mb-1">We present a two-stage PPO + fuzzy-logic pipeline that teaches the NAO humanoid to first grasp and then place objects,
+                    with ABC-based parameter optimization delivering faster convergence and higher success in simulation robot.</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a class="link-chip" href="https://doi.org/10.1016/j.engappai.2023.106694" target="_blank" rel="noopener">Paper</a>
+                    <a class="link-chip" href="https://youtu.be/pGfFf8lJFQ4?si=HZxF9OthPhab4x_6" target="_blank" rel="noopener">Video</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="pub-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+                <div class="thumb-wrap mb-2 mb-md-0">
+                  <img class="thumb-img" src="assets/works/DDPG_walk.jpg" alt="Sequential sensor fusion-based W-DDPG gait controller of bipedal robots for adaptive slope walking">
+                </div>
+                <div>
+                  <h3 class="h5 mb-1">Sequential sensor fusion-based W-DDPG gait controller of bipedal robots for adaptive slope walking</h3>
+                  <div class="text-muted small mb-1">Ping-Huan Kuo, Jun Hu, <strong>Kuan-Lin Chen</strong>, Wei-Hsin Chang, Xin-Yu Chen, Chiou-Jye Huang</div>
+                  <div class="small mb-2"><em>Advanced Engineering Informatics (AEI)</em>, 2023</div>
+                  <div class="text-muted small mb-1">We perform 2-level wavelet decomposition on 6-DoF IMU sequences and feed them to W-DDPG to adapt 15 CPG gait parameters for uphill/downhill walking.
+                    Compared with strong baselines and network variants, the approach is more stable, with the LSTM+wavelet variant achieving the lowest IMU and trajectory MAEs;
+                    real-robot tests on an OP3 at ±2.1° and ±4.7° confirm feasibility.</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a class="link-chip" href="https://doi.org/10.1016/j.aei.2023.102067" target="_blank" rel="noopener">Paper</a>
+                    <a class="link-chip" href="https://youtu.be/Wd2agHEKngA?si=1wSC2EKI7jBrRnQL" target="_blank" rel="noopener">Video</a>
+                  </div>
+                </div>
+              </article>
+
+              <article class="pub-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+                <div class="thumb-wrap mb-2 mb-md-0">
+                  <img class="thumb-img" src="assets/works/PPO_decision-making.jpg" alt="Intelligent proximal-policy-optimization-based decision-making system for humanoid robots">
+                </div>
+                <div>
+                  <h3 class="h5 mb-1">Intelligent proximal-policy-optimization-based decision-making system for humanoid robots</h3>
+                  <div class="text-muted small mb-1">Ping-Huan Kuo, Wei-Cyuan Yang, Po-Wei Hsu, <strong>Kuan-Lin Chen</strong></div>
+                  <div class="small mb-2"><em>Advanced Engineering Informatics (AEI)</em>, 2023</div>
+                  <div class="text-muted small mb-1">We couple an InfoGAN gait generator with a PPO-based decision maker so a humanoid can perceive its scene and autonomously select left/forward/right gaits;
+                    the approach outperforms TRPO, TD3, and A2C and is validated in simulation and on real robots (OP3 with obstacle avoidance; NAO for pick-and-place).</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a class="link-chip" href="https://doi.org/10.1016/j.aei.2023.102009" target="_blank" rel="noopener">Paper</a>
+                    <a class="link-chip" href="https://youtu.be/nVqhy5I8pZ8?si=cRtS04g34RYZOJdK" target="_blank" rel="noopener">Video</a>
+                  </div>
+                </div>
+              </article>
+
+              <!-- 複製用的Item模板 -->
+<!--              <article class="pub-card d-flex gap-3 align-items-start mb-3">-->
+<!--                <img class="pub-thumb shadow-sm" src="assets/works/.jpg" alt="Paper Title" />-->
+<!--                <div>-->
+<!--                  <h3 class="h5 mb-1">Paper Title</h3>-->
+<!--                  <div class="text-muted small mb-1"><strong>Kuan-Lin Chen</strong></div>-->
+<!--                  <div class="small mb-2"><em>Engineering Applications of Artificial Intelligence (EAAI)</em>, 2025</div>-->
+<!--                  <div class="text-muted small mb-1">Paper introduce</div>-->
+<!--                  <div class="d-flex flex-wrap gap-2">-->
+<!--                    <a class="link-chip" href="#" target="_blank" rel="noopener">Paper</a>-->
+<!--                    <a class="link-chip" href="#" target="_blank" rel="noopener">Project Page</a>-->
+<!--                    <a class="link-chip" href="#" target="_blank" rel="noopener">Demo</a>-->
+<!--                  </div>-->
+<!--                </div>-->
+<!--              </article>-->
+
+            </div>
+          </section>
+
+          <!-- Miscellanea (publication-style cards) -->
+          <section id="misc" class="py-4 py-md-5">
+            <div class="container px-0">
+              <h2 class="section-title h3 mb-3">Miscellanea</h2>
+              <style>
+                .misc-item{ align-items:center; }
+                .misc-cover{
+                  display:block;
+                  width:110px;
+                  height:auto;
+                  object-fit:contain;
+                  border:2px solid var(--thumb-blue, #A6D3FF);
+                  border-radius:.5rem;
+                  box-shadow:0 0 0 4px var(--thumb-blue-soft, rgba(166,211,255,.25));
+                  flex:0 0 auto;
+                }
+                @media (min-width:768px){
+                  .misc-cover{ width:86px; }
+                }
+              </style>
+              <ul class="list-unstyled m-0">
+                <li class="misc-item d-flex gap-3 mb-2">
+                  <img class="misc-cover" src="assets/EAAI.jpg" alt="Engineering Applications of Artificial Intelligence (EAAI) cover" loading="lazy" />
+                  <div><strong>Peer Reviewing</strong> — Engineering Applications of Artificial Intelligence (Elsevier), 11 reviews (2023–2025).</div>
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Visitors -->
+          <section id="visitors" class="py-4">
+            <div class="container px-0">
+              <style>
+                /* 小巧置中、保比例 */
+                .map-wrap{ max-width:560px; margin:0 auto; }
+                .map-frame{
+                  aspect-ratio: 4 / 3;           /* 想更扁改 16/9 */
+                  width:100%;
+                  border-radius:.75rem;
+                  overflow:hidden;
+                  border:1px solid var(--bs-border-color);
+                  box-shadow:0 2px 10px rgba(0,0,0,.06);
+                  background:var(--bs-body-bg);
+                }
+                .map-frame iframe, .map-frame > div{ width:100%; height:100%; border:0; display:block; }
+              </style>
+
+              <div class="map-wrap">
+                <div class="map-frame">
+                  <!-- 貼上 ClustrMaps 的 embed：script 或 iframe 二擇一 -->
+                  <!-- 例（script）：
+                  <script type="text/javascript" id="clustrmaps"
+                    src="//clustrmaps.com/map_v2.js?d=YOUR_TOKEN&w=a"></script>
+                  -->
+                  <!-- 例（iframe）：
+                  <iframe src="https://clustrmaps.com/…"></iframe>
+                  -->
+                  YOUR-CLUSTRMAPS-EMBED
+                </div>
+              </div>
+            </div>
+          </section>
+
+
+          <!-- Contact -->
+          <section id="contact" class="py-4 py-md-5">
+            <div class="container px-0">
+              <h2 class="section-title h3 mb-3">Contact</h2>
+              <div class="row g-4">
+                <!-- Left: Contact Me -->
+                <div class="col-12 col-md-6">
+                  <h3 class="h6 text-uppercase text-muted mb-2">Contact Me</h3>
+                  <ul class="list-unstyled mb-0">
+                    <li class="mb-1"><i class="bi bi-geo"></i> Taipei, Taiwan</li>
+                    <li class="mb-1"><i class="bi bi-envelope"></i>
+                      <a href="mailto:klchen901120@gmail.com">klchen901120@gmail.com</a>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Right: Social Contacts -->
+                <div class="col-12 col-md-6">
+                  <h3 class="h6 text-uppercase text-muted mb-2">Social Contacts</h3>
+                  <ul class="list-unstyled mb-0">
+                    <li class="mb-1"><i class="bi bi-mortarboard"></i>
+                      <a href="https://scholar.google.com/citations?user=56m2uDUAAAAJ" target="_blank" rel="noopener">Google Scholar</a>
+                    </li>
+                    <li class="mb-1"><i class="bi bi-linkedin"></i>
+                      <a href="https://www.linkedin.com/in/kuanlinchen1" target="_blank" rel="noopener">LinkedIn</a>
+                    </li>
+                    <li class="mb-1"><i class="bi bi-github"></i>
+                      <a href="https://github.com/BrianChen1120" target="_blank" rel="noopener">GitHub</a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+
+          <footer class="footer py-4 border-top">
+            <div class="container px-0 small d-flex justify-content-between">
+              <div>© <span id="year"></span> Kuan‑Lin (Brian) Chen</div>
+              <div>Last updated: <span id="updated"></span></div>
+            </div>
+          </footer>
+        </main>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // ---------- Footer info ----------
+      const elYear = document.getElementById('year');
+      const elUpdated = document.getElementById('updated');
+      if (elYear)   elYear.textContent   = new Date().getFullYear();
+      if (elUpdated)elUpdated.textContent= new Date().toISOString().slice(0,10);
+
+      // ---------- Theme toggle with icon sync ----------
+      const root = document.documentElement;
+      const STORAGE_KEY = 'pref-theme';
+      const btnMobile  = document.getElementById('themeToggle');
+      const btnDesktop = document.getElementById('themeToggleDesktop');
+
+      function syncIcons(theme){
+        const icon = (theme === 'dark') ? 'bi-moon-stars' : 'bi-sun';
+        [btnMobile, btnDesktop].forEach(btn=>{
+          if (!btn) return;
+          const i = btn.querySelector('i');
+          if (!i) return;
+          i.className = 'bi ' + icon;
+          btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+        });
+      }
+
+      function applyTheme(theme){
+        root.setAttribute('data-bs-theme', theme);
+        localStorage.setItem(STORAGE_KEY, theme);
+        syncIcons(theme);
+      }
+
+      function getSavedOrSystemTheme(){
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved === 'light' || saved === 'dark') return saved;
+        return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      }
+
+      // init
+      let userSet = !!localStorage.getItem(STORAGE_KEY);
+      applyTheme(getSavedOrSystemTheme());
+
+      // follow system when user hasn't chosen
+      if (window.matchMedia){
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        mq.addEventListener?.('change', e=>{
+          if (!userSet) applyTheme(e.matches ? 'dark' : 'light');
+        });
+      }
+
+      function toggleTheme(){
+        userSet = true;
+        const curr = root.getAttribute('data-bs-theme') || 'light';
+        applyTheme(curr === 'dark' ? 'light' : 'dark');
+      }
+      btnMobile?.addEventListener('click', toggleTheme);
+      btnDesktop?.addEventListener('click', toggleTheme);
+
+      // ---------- News: toggle older items button label ----------
+      (function () {
+        const btn = document.getElementById('toggleOlder');
+        const older = document.getElementById('news-older');
+        if (!btn || !older) return;
+        older.addEventListener('shown.bs.collapse', function () {
+          btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i> Hide earlier';
+        });
+        older.addEventListener('hidden.bs.collapse', function () {
+          btn.innerHTML = '<i class="bi bi-chevron-down me-1"></i> Show earlier';
+        });
+      })();
+    </script>
+
+  </body>
+</html>
