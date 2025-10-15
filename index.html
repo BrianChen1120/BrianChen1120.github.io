@@ -66,12 +66,12 @@
               <span class="nav-section text-muted small text-uppercase px-2">Other Links</span>
             </li>
             <li class="nav-item">
-              <a class="nav-link d-flex align-items-center gap-1" href="https://brianchen1120.github.io/" aria-label="Home (site root)">
-                <i class="bi bi-house"></i><span class="d-none d-xl-inline">Home</span>
-              </a>
+              <div class="nav-link d-flex align-items-center gap-1" href="https://brianchen1120.github.io/" aria-label="Home (site root)">
+                <i class="bi bi-house"></i><span><strong>Home</strong></span>
+              </div>
             </li>
             <li class="nav-item">
-              <a class="nav-link d-flex align-items-center gap-1" href="https://www.flickr.com/photos/brianchen1120/" target="_blank" rel="noopener" aria-label="Gallery">
+              <a class="nav-link d-flex align-items-center gap-1" href="gallery.html" rel="noopener" aria-label="Gallery">
                 <i class="bi bi-camera"></i><span>Gallery</span>
               </a>
             </li>
@@ -98,12 +98,12 @@
         <!-- Right links -->
         <ul class="navbar-nav flex-row align-items-center gap-4">
           <li class="nav-item">
-            <a class="nav-link d-flex align-items-center gap-1" href="https://brianchen1120.github.io/" aria-label="Home (site root)">
-              <i class="bi bi-house"></i><span class="d-none d-xl-inline">Home</span>
-            </a>
+            <div class="nav-link d-flex align-items-center gap-1" href="https://brianchen1120.github.io/" aria-label="Home (site root)">
+              <i class="bi bi-house"></i><span class="d-none d-xl-inline"><strong>Home</strong></span>
+            </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link d-flex align-items-center gap-1" href="https://www.flickr.com/photos/brianchen1120/" target="_blank" rel="noopener" aria-label="Gallery">
+            <a class="nav-link d-flex align-items-center gap-1" href="gallery.html" rel="noopener" aria-label="Gallery">
               <i class="bi bi-camera"></i><span class="d-none d-xl-inline">Gallery</span>
             </a>
           </li>
@@ -129,10 +129,18 @@
                 alt="Portrait of Kuan-Lin (Brian) Chen"
                 class="rounded-4 img-fluid shadow"
                 style="max-width: 150px;"
+                loading="lazy"
+                width="150" height="150"
                 data-bs-toggle="tooltip"
                 data-bs-placement="right"
                 data-bs-custom-class="tooltip-photo"
-                title="This photo was taken at ..."
+                data-bs-html="true"
+                data-bs-title="This photo was taken in Mameda-machi, Hita, Oita Prefecture, Japan<br>
+                               2025-10-11<br>
+                               ======================<br>
+                               Camera: Fujifilm X-T30 II<br>
+                               Lens: Tamron 17–70mm f/2.8 Di III-A VC RXD (B070X)<br>
+                               Exposure: 105 mm · f/5 · 1/320 s · ISO 320<br>"
               />
             </div>
             <h1 class="h4 fw-bold mb-1">Kuan‑Lin (Brian) Chen (陳冠霖)</h1>
@@ -228,11 +236,19 @@
                     src="assets/profile.jpg"
                     alt="Portrait of Kuan-Lin (Brian) Chen"
                     class="rounded-4 img-fluid shadow"
-                    style="max-width: 160px;"
+                    style="max-width: 150px;"
+                    loading="lazy"
+                    width="150" height="150"
                     data-bs-toggle="tooltip"
                     data-bs-placement="right"
                     data-bs-custom-class="tooltip-photo"
-                    title="This photo was taken at "
+                    data-bs-html="true"
+                    data-bs-title="This photo was taken in Mameda-machi, Hita, Oita Prefecture, Japan<br>
+                                   2025-10-11<br>
+                                   ======================<br>
+                                   Camera: Fujifilm X-T30 II<br>
+                                   Lens: Tamron 17–70mm f/2.8 Di III-A VC RXD (B070X)<br>
+                                   Exposure: 105 mm · f/5 · 1/320 s · ISO 320<br>"
                   />
                 </div>
               </div>
@@ -879,6 +895,9 @@
       document.addEventListener('DOMContentLoaded', function () {
         [...document.querySelectorAll('[data-bs-toggle="tooltip"]')]
           .forEach(el => new bootstrap.Tooltip(el));
+      });
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        new bootstrap.Tooltip(el);
       });
       // ---------- Footer info ----------
       const elYear = document.getElementById('year');
