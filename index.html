@@ -18,6 +18,9 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
     <link rel="icon" href="assets/favicon.png" sizes="any">
+    <!-- Bootstrap Icons (Flickr) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6/css/all.min.css">
+
 
     <style>
       html { scroll-behavior: smooth; }
@@ -29,30 +32,89 @@
       .news-date { width: 7.5rem; flex: 0 0 auto; opacity: .7; }
       .card-title a { text-decoration: none; }
       .footer { opacity: .7; }
+      .tooltip-photo .tooltip-inner{
+        max-width: 260px;
+        white-space: normal;
+        text-align: left;
+      }
     </style>
   </head>
   <body>
     <!-- Mobile top nav (only on small screens) -->
     <nav class="navbar navbar-expand-md bg-body border-bottom sticky-top d-lg-none">
       <div class="container">
-        <a class="navbar-brand fw-bold" href="#top">Kuan‑Lin Chen</a>
+        <div class="navbar-brand fw-bold">
+          <img src="assets/favicon.png" alt="" width="22" height="22" class="rounded-2">
+          <span>Kuan-Lin (Brian) Chen</span>
+        </div>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navMain">
-          <ul class="navbar-nav ms-auto align-items-md-center gap-2">
+          <ul class="navbar-nav ms-auto align-items-md-center gap-2 w-100">
+            <li class="w-100 my-2 border-top"></li>
+            <li class="nav-item w-100 mt-1">
+              <span class="nav-section text-muted small text-uppercase px-2">Quick Links</span>
+            </li>
             <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
             <li class="nav-item"><a class="nav-link" href="#news">News</a></li>
             <li class="nav-item"><a class="nav-link" href="#works">Research</a></li>
             <li class="nav-item"><a class="nav-link" href="#misc">Miscellanea</a></li>
             <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+            <li class="w-100 my-2 border-top"></li>
+            <li class="nav-item w-100">
+              <span class="nav-section text-muted small text-uppercase px-2">Other Links</span>
+            </li>
             <li class="nav-item">
-              <button id="themeToggle" class="btn btn-sm btn-outline-secondary" type="button" aria-label="Toggle theme">
+              <a class="nav-link d-flex align-items-center gap-1" href="https://brianchen1120.github.io/" aria-label="Home (site root)">
+                <i class="bi bi-house"></i><span class="d-none d-xl-inline">Home</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link d-flex align-items-center gap-1" href="https://www.flickr.com/photos/brianchen1120/" target="_blank" rel="noopener" aria-label="Gallery">
+                <i class="bi bi-camera"></i><span>Gallery</span>
+              </a>
+            </li>
+            <li class="w-100 my-2 border-top"></li>
+            <li class="nav-item ms-md-2">
+              <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle theme" data-bs-toggle="tooltip" data-bs-placement="top">
                 <i class="bi bi-moon-stars"></i>
               </button>
             </li>
           </ul>
         </div>
+      </div>
+    </nav>
+
+    <!-- Desktop top utility bar (shows on lg+ only) -->
+    <nav class="navbar bg-body border-bottom d-none d-lg-block" id="topbar">
+      <div class="container-xxl d-flex align-items-center justify-content-between" style="min-height:52px;">
+        <!-- Brand -->
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-decoration-none" href="#top" aria-label="Go to top">
+          <img src="assets/favicon.png" alt="" width="22" height="22" class="rounded-2">
+          <span>Kuan-Lin (Brian) Chen</span>
+        </a>
+
+        <!-- Right links -->
+        <ul class="navbar-nav flex-row align-items-center gap-4">
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center gap-1" href="https://brianchen1120.github.io/" aria-label="Home (site root)">
+              <i class="bi bi-house"></i><span class="d-none d-xl-inline">Home</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link d-flex align-items-center gap-1" href="https://www.flickr.com/photos/brianchen1120/" target="_blank" rel="noopener" aria-label="Gallery">
+              <i class="bi bi-camera"></i><span class="d-none d-xl-inline">Gallery</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <button id="themeToggleDesktop"
+              class="icon-btn" type="button"
+              aria-label="Toggle theme" data-bs-toggle="tooltip" data-bs-placement="top">
+              <i class="bi bi-moon-stars"></i>
+            </button>
+          </li>
+        </ul>
       </div>
     </nav>
 
@@ -62,19 +124,54 @@
         <aside class="d-none d-lg-block col-lg-2 border-end">
           <div class="sticky-top py-4" style="top: 16px;">
             <div class="text-center mb-3">
-              <img src="assets/profile.jpg" alt="Portrait of Kuan‑Lin (Brian) Chen" class="rounded-4 img-fluid shadow" style="max-width: 150px;" />
+              <img
+                src="assets/profile.jpg"
+                alt="Portrait of Kuan-Lin (Brian) Chen"
+                class="rounded-4 img-fluid shadow"
+                style="max-width: 150px;"
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                data-bs-custom-class="tooltip-photo"
+                title="This photo was taken at ..."
+              />
             </div>
             <h1 class="h4 fw-bold mb-1">Kuan‑Lin (Brian) Chen (陳冠霖)</h1>
-            <p class="small mb-2">M.S. student @ NTU GICE<br/>Computer Vision · Image Processing · Deep Learning</p>
+            <p class="small mb-2">M.S. student @ NTU GICE</p>
             <div class="d-flex flex-wrap gap-2 mb-3">
-              <a class="btn btn-sm btn-outline-primary" href="mailto:klchen901120@gmail.com" target="_blank" rel="noopener"><i class="bi bi-envelope"></i> Email</a>
-              <a class="btn btn-sm btn-outline-primary" href="files/Kuan-Lin (Brian) Chen Resume.pdf" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text"></i> CV</a>
-              <a class="btn btn-sm btn-outline-primary" href="https://scholar.google.com/citations?user=56m2uDUAAAAJ" target="_blank" rel="noopener"><i class="bi bi-mortarboard"></i> Scholar</a>
-              <a class="btn btn-sm btn-outline-primary" href="https://github.com/BrianChen1120" target="_blank" rel="noopener"><i class="bi bi-github"></i> GitHub</a>
-              <a class="btn btn-sm btn-outline-primary" href="https://www.linkedin.com/in/kuanlinchen1" target="_blank" rel="noopener"><i class="bi bi-linkedin"></i> LinkedIn</a>
-              <button id="themeToggleDesktop" class="btn btn-sm btn-outline-secondary" type="button" aria-label="Toggle theme"><i class="bi bi-moon-stars"></i></button>
+              <a class="btn btn-sm btn-outline-primary"
+                 href="mailto:klchen901120@gmail.com"
+                 target="_blank" rel="noopener"
+                 aria-label="Email" data-bs-toggle="tooltip" data-bs-placement="top" title="Email">
+                <i class="bi bi-envelope"></i>
+              </a>
+              <a class="btn btn-sm btn-outline-primary"
+                 href="files/Kuan-Lin (Brian) Chen Resume.pdf"
+                 target="_blank" rel="noopener"
+                 aria-label="CV" data-bs-toggle="tooltip" data-bs-placement="top" title="Resume">
+                <i class="bi bi-file-earmark-text"></i>
+              </a>
+              <a class="btn btn-sm btn-outline-primary"
+                 href="https://scholar.google.com/citations?user=56m2uDUAAAAJ"
+                 target="_blank" rel="noopener"
+                 aria-label="Scholar" data-bs-toggle="tooltip" data-bs-placement="top" title="Google Scholar">
+                <i class="bi bi-mortarboard"></i>
+              </a>
+              <a class="btn btn-sm btn-outline-primary"
+                 href="https://github.com/BrianChen1120"
+                 target="_blank" rel="noopener"
+                 aria-label="GitHub" data-bs-toggle="tooltip" data-bs-placement="top" title="GitHub">
+                <i class="bi bi-github"></i>
+              </a>
+              <a class="btn btn-sm btn-outline-primary"
+                 href="https://www.linkedin.com/in/kuanlinchen1"
+                 target="_blank" rel="noopener"
+                 aria-label="LinkedIn" data-bs-toggle="tooltip" data-bs-placement="top" title="LinkedIn">
+                <i class="bi bi-linkedin"></i>
+              </a>
             </div>
+
             <nav class="nav flex-column small">
+              <h3 class="h6 fw-bold mb-1">Quick Links</h3>
               <a class="nav-link px-0" href="#about">About</a>
               <a class="nav-link px-0" href="#news">News</a>
               <a class="nav-link px-0" href="#works">Research</a>
@@ -92,17 +189,51 @@
               <div class="row g-3 align-items-center">
                 <div class="col-12 col-sm-8">
                   <h1 class="hero-name mb-2">Kuan‑Lin (Brian) Chen (陳冠霖)</h1>
-                  <p class="hero-tagline mb-3">M.S. student @ NTU GICE · Computer Vision · Image Processing · Deep Learning</p>
-                  <div class="quick-links d-flex flex-wrap gap-3">
-                    <a class="link-primary" href="mailto:klchen901120@gmail.com" target="_blank" rel="noopener"><i class="bi bi-envelope"></i> Email</a>
-                    <a class="link-primary" href="files/Kuan-Lin (Brian) Chen Resume.pdf" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text"></i> CV</a>
-                    <a class="link-primary" href="https://scholar.google.com/citations?user=56m2uDUAAAAJ" target="_blank" rel="noopener"><i class="bi bi-mortarboard"></i> Scholar</a>
-                    <a class="link-primary" href="https://github.com/BrianChen1120" target="_blank" rel="noopener"><i class="bi bi-github"></i> GitHub</a>
-                    <a class="link-primary" href="https://www.linkedin.com/in/kuanlinchen1" target="_blank" rel="noopener"><i class="bi bi-linkedin"></i> LinkedIn</a>
+                  <p class="hero-tagline mb-3">M.S. student @ NTU GICE</p>
+                  <div class="d-flex flex-wrap gap-2 mb-3">
+                      <a class="btn btn-sm btn-outline-primary"
+                         href="mailto:klchen901120@gmail.com"
+                         target="_blank" rel="noopener"
+                         aria-label="Email" data-bs-toggle="tooltip" data-bs-placement="top" title="Email">
+                        <i class="bi bi-envelope"></i>
+                      </a>
+                      <a class="btn btn-sm btn-outline-primary"
+                         href="files/Kuan-Lin (Brian) Chen Resume.pdf"
+                         target="_blank" rel="noopener"
+                         aria-label="CV" data-bs-toggle="tooltip" data-bs-placement="top" title="Resume">
+                        <i class="bi bi-file-earmark-text"></i>
+                      </a>
+                      <a class="btn btn-sm btn-outline-primary"
+                         href="https://scholar.google.com/citations?user=56m2uDUAAAAJ"
+                         target="_blank" rel="noopener"
+                         aria-label="Scholar" data-bs-toggle="tooltip" data-bs-placement="top" title="Google Scholar">
+                        <i class="bi bi-mortarboard"></i>
+                      </a>
+                      <a class="btn btn-sm btn-outline-primary"
+                         href="https://github.com/BrianChen1120"
+                         target="_blank" rel="noopener"
+                         aria-label="GitHub" data-bs-toggle="tooltip" data-bs-placement="top" title="GitHub">
+                        <i class="bi bi-github"></i>
+                      </a>
+                      <a class="btn btn-sm btn-outline-primary"
+                         href="https://www.linkedin.com/in/kuanlinchen1"
+                         target="_blank" rel="noopener"
+                         aria-label="LinkedIn" data-bs-toggle="tooltip" data-bs-placement="top" title="LinkedIn">
+                        <i class="bi bi-linkedin"></i>
+                      </a>
                   </div>
                 </div>
                 <div class="col-12 col-sm-4 text-center text-sm-end">
-                  <img src="assets/profile.jpg" alt="Portrait of Kuan‑Lin (Brian) Chen" class="rounded-4 img-fluid shadow" style="max-width: 160px;" />
+                  <img
+                    src="assets/profile.jpg"
+                    alt="Portrait of Kuan-Lin (Brian) Chen"
+                    class="rounded-4 img-fluid shadow"
+                    style="max-width: 160px;"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="right"
+                    data-bs-custom-class="tooltip-photo"
+                    title="This photo was taken at "
+                  />
                 </div>
               </div>
             </div>
@@ -139,7 +270,7 @@
                   <div class="news-date">2025-10</div>
                   <div>
                     Our paper
-                    <strong><a href="#" target="_blank" rel="noopener" class="text-decoration-none">
+                    <strong><a href="files/Guitar%20Tone%20Morphing%20by%20Diffusion-based%20Model.pdf" target="_blank" rel="noopener" class="text-decoration-none">
                       Guitar Tone Morphing by Diffusion-based Model
                     </a></strong>
                     is accepted by
@@ -151,7 +282,7 @@
                   <div class="news-date">2025-10</div>
                   <div>
                     Our paper
-                    <strong><a href="#" target="_blank" rel="noopener" class="text-decoration-none">
+                    <strong><a href="files/FRIEREN%20A%20Lightweight%20System%20for%20Face%20Resizing%20Image%20Detail%20Quality%20Evaluation%20via%20Robust%20Estimation%20of%20Image%20Naturalness.pdf" target="_blank" rel="noopener" class="text-decoration-none">
                       FRIEREN: Face Resizing Image Quality Evaluation via Robust Estimation of Image Naturalness
                     </a></strong>
                     is accepted by
@@ -174,7 +305,7 @@
                 <div class="d-flex gap-3">
                   <div class="news-date">2025-07 → 2025-08</div>
                   <div>
-                    I work as a research Assistant (intern) at <a href="https://www.iis.sinica.edu.tw/en/index.html" target="_blank" rel="noopener" class="text-decoration-none">Academia Sinica Institute of Information Science</a>.
+                    I work as a <i>Research Assistant</i> (Summer Internship) at <strong><a href="https://www.iis.sinica.edu.tw/en/index.html" target="_blank" rel="noopener" class="text-decoration-none">Academia Sinica Institute of Information Science</a></strong>.
                   </div>
                 </div>
 
@@ -182,7 +313,7 @@
                   <div class="news-date">2025-07</div>
                   <div>
                     Our paper
-                    <strong><a href="#" target="_blank" rel="noopener" class="text-decoration-none">
+                    <strong><a href="files/Enhancement%20of%20Semantic%20Segmentation%20with%20Edge%20Networks%20Using%20Wavelets%20and%20Adaptive%20Canny%20Thresholding.pdf" target="_blank" rel="noopener" class="text-decoration-none">
                       Enhancement of Semantic Segmentation with Edge Networks Using Wavelets and Adaptive Canny Thresholding
                     </a></strong>
                     is accepted by
@@ -364,6 +495,22 @@
               </div>
 
               <style>
+                section[id]{ scroll-margin-top: 50px; } /* 視你的手機 navbar 高度微調 */
+                .icon-btn{
+                  background: transparent;
+                  border: 0;
+                  padding: .375rem;
+                  line-height: 1;
+                }
+                .icon-btn:focus,
+                .icon-btn:focus-visible{
+                  outline: none;
+                  box-shadow: none;
+                }
+                .icon-btn:hover{ opacity: .85; }
+                .nav-link .bi, .icon-btn .bi{ vertical-align: -2px; }
+                .navbar .vr{ opacity: .25; }
+
                 .pub-card{
                   border-radius:.75rem; padding:1rem;
                   border:1px solid var(--bs-border-color); background:var(--bs-body-bg);
@@ -419,6 +566,7 @@
                     align-self: center;
                   }
                 }
+
               </style>
 
               <!-- Item -->
@@ -433,7 +581,7 @@
                   <div class="text-muted small mb-1">We compare three latent-diffusion approaches (with single- and dual-sided LoRA) against a non-diffusion baseline that performs spherical interpolation in Music2Latent.
                     Experiments show that Music2Latent achieves the best perceptual quality (MOS 4.3 / 5.0) and produces smoother, more natural tone transitions.</div>
                   <div class="d-flex flex-wrap gap-2">
-                    <a class="link-chip" href="#" target="_blank" rel="noopener">Paper</a>
+                    <a class="link-chip" href="files/Guitar%20Tone%20Morphing%20by%20Diffusion-based%20Model.pdf" target="_blank" rel="noopener">Paper</a>
                   </div>
                 </div>
               </article>
@@ -452,7 +600,7 @@
                     FRIEREN estimates motion noise from a single frame, DWT-based spatial noise, and an HVS-aligned sharpness measure, then regresses quality via KANs;
                     it better matches human preference (Lanczos > Bicubic > Bilinear > Nearest) and outperforms SOTA on MS1MV2 (PLCC 0.8954 / SROCC 0.8723).</div>
                   <div class="d-flex flex-wrap gap-2">
-                    <a class="link-chip" href="#" target="_blank" rel="noopener">Paper</a>
+                    <a class="link-chip" href="files/FRIEREN%20A%20Lightweight%20System%20for%20Face%20Resizing%20Image%20Detail%20Quality%20Evaluation%20via%20Robust%20Estimation%20of%20Image%20Naturalness.pdf" target="_blank" rel="noopener">Paper</a>
                   </div>
                 </div>
               </article>
@@ -487,7 +635,7 @@
                   <div class="text-muted small mb-1">We feed wavelet-based (2D-DWT/2D-SWT) edge features and adaptively learned Canny thresholds as auxiliary inputs to PIDNet-S,
                     boosting CamVid mIoU from 73.8 to 77.4 with improved boundary handling.</div>
                   <div class="d-flex flex-wrap gap-2">
-                    <a class="link-chip" href="#" target="_blank" rel="noopener">Paper</a>
+                    <a class="link-chip" href="files/Enhancement%20of%20Semantic%20Segmentation%20with%20Edge%20Networks%20Using%20Wavelets%20and%20Adaptive%20Canny%20Thresholding.pdf" target="_blank" rel="noopener">Paper</a>
                   </div>
                 </div>
               </article>
@@ -728,6 +876,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        [...document.querySelectorAll('[data-bs-toggle="tooltip"]')]
+          .forEach(el => new bootstrap.Tooltip(el));
+      });
       // ---------- Footer info ----------
       const elYear = document.getElementById('year');
       const elUpdated = document.getElementById('updated');
