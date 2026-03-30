@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Zip 拼圖遊戲</title>
+<link rel="icon" type="image/png" href="src/icon.png">
+<link rel="apple-touch-icon" href="src/icon.png">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f3f2ef;height:100%;display:flex;justify-content:center;align-items:flex-start;padding:12px 6px;overscroll-behavior:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.container{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.1);padding:18px 16px 14px;max-width:480px;width:100%;display:flex;flex-direction:column;align-items:center}
+h1{font-size:1.8rem;color:#0a66c2;letter-spacing:2px;margin-bottom:10px}
+.diff-bar{display:flex;border-radius:10px;overflow:hidden;border:1.5px solid #ddd;margin-bottom:10px;width:100%;max-width:420px}
+.diff-pill{flex:1;padding:9px 2px;font-size:.78rem;background:#fff;border:none;border-right:1px solid #eee;cursor:pointer;font-family:inherit;color:#777;transition:all .15s;font-weight:600;letter-spacing:.5px}
+.diff-pill:last-child{border-right:none}
+.diff-pill.active{background:#0a66c2;color:#fff}
+.diff-pill[data-d="fog"].active{background:#6a5acd;color:#fff}
+.diff-pill[data-d="cube"].active{background:#e67e22;color:#fff}
+.cube-size-bar{display:flex;justify-content:center;gap:6px;margin-bottom:8px}
+.size-pill{padding:5px 18px;font-size:.76rem;background:#fff;border:1.5px solid #e67e22;border-radius:20px;cursor:pointer;font-family:inherit;color:#e67e22;font-weight:600;transition:all .15s}
+.size-pill.active{background:#e67e22;color:#fff}
+.info-bar{display:flex;justify-content:center;align-items:center;gap:10px;width:100%;margin-bottom:8px;font-size:.82rem;color:#888}
+#timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:.95rem;color:#333}
+.info-sep{color:#ccc}
+.unfolded-map{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:3px;margin-bottom:8px;justify-content:center;width:fit-content;margin-left:auto;margin-right:auto}
+.um-face{border-radius:4px;border:2px solid transparent;transition:border-color .2s;position:relative;display:grid;gap:1px;padding:1px;background:#cdc8be}
+.um-face.active{border-color:#e67e22}
+.um-face .um-label{position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:.5rem;color:#999;white-space:nowrap}
+.um-cell{border-radius:2px;background:#e8e4de;aspect-ratio:1}
+.um-cell.path{background:#0a66c2}
+.um-cell.head{background:#0d84e0}
+.um-cell.checkpoint{background:#fff;border:1px solid #0a66c2}
+.um-cell.checkpoint.path{background:#0a66c2;border-color:#0a66c2}
+.um-face:nth-child(1){grid-column:2;grid-row:1}
+.um-face:nth-child(2){grid-column:1;grid-row:2}
+.um-face:nth-child(3){grid-column:2;grid-row:2}
+.um-face:nth-child(4){grid-column:3;grid-row:2}
+.um-face:nth-child(5){grid-column:4;grid-row:2}
+.um-face:nth-child(6){grid-column:2;grid-row:3}
+.cube-game-wrap{perspective:800px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;border:2px solid #ddd;border-radius:12px;background:#fafaf8;position:relative}
+.cube-game{position:relative;transform-style:preserve-3d;transition:transform .4s ease}
+.cube-face{position:absolute;display:grid;gap:3px;padding:3px;border-radius:8px;background:rgba(205,200,190,.9);backface-visibility:visible}
+.cube-face.active-face{background:rgba(205,200,190,1);box-shadow:0 0 0 2px rgba(230,126,34,.4)}
+.cube-face .cell{background:#e8e4de;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:visible;-webkit-tap-highlight-color:transparent}
+.cube-face .cell .num{font-weight:700;font-size:1rem;color:transparent;pointer-events:none;position:relative;z-index:2}
+.cube-face .cell.checkpoint{background:#fff;border:2px solid #0a66c2}
+.cube-face .cell.checkpoint .num{color:#0a66c2;font-size:1.05rem}
+.cube-face .cell.checkpoint.unrevealed{border-color:#b0a090;background:#f5f0e8}
+.cube-face .cell.checkpoint.unrevealed .num{color:#b0a090}
+.cube-face .cell.path{background:#0a66c2;box-shadow:0 0 0 1px #0a66c2}
+.cube-face .cell.path .num{color:rgba(255,255,255,.35);font-size:.65rem}
+.cube-face .cell.path.checkpoint{border-color:#0a66c2}
+.cube-face .cell.path.checkpoint .num{color:#fff;font-size:1.05rem}
+.cube-face .cell.path.checkpoint.unrevealed .num{color:rgba(255,255,255,.7)}
+.cube-face .cell.head{background:#0d84e0;box-shadow:0 0 0 1.5px #0d84e0,0 0 6px rgba(10,102,194,.4);transform:scale(1.05)}
+.cube-face .cell.start-hint{animation:pulse 1.8s ease-in-out infinite}
+.cube-game.won .cube-face .cell.path{animation:pop .4s ease-out;animation-delay:calc(var(--i)*25ms);animation-fill-mode:both}
+.cube-game.won .cube-face .cell.path.checkpoint .num{color:#fff}
+.cube-game.won .cube-face .wall{background:#1a7a16}
+.cube-game.revealed .cube-face .cell.path{background:#7a9bb5;box-shadow:0 0 0 1px #7a9bb5}
+.cube-game.revealed .cube-face .cell.path .num{color:rgba(255,255,255,.5)}
+.cube-game.revealed .cube-face .cell.path.checkpoint .num{color:#fff}
+.cube-game.revealed .cube-face .cell.head{background:#7a9bb5;box-shadow:0 0 0 1px #7a9bb5;transform:none}
+.grid-wrap{position:relative;margin-bottom:8px}
+.grid{display:inline-grid;gap:3px;touch-action:none;user-select:none;-webkit-user-select:none;background:#cdc8be;padding:3px;border-radius:10px;--g:3px}
+.cell{aspect-ratio:1;background:#e8e4de;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .1s,transform .1s,box-shadow .1s;position:relative;overflow:visible;-webkit-tap-highlight-color:transparent}
+.cell .num{font-weight:700;font-size:1.1rem;color:transparent;pointer-events:none;position:relative;z-index:2}
+@media(hover:hover){.cell:hover:not(.path):not(.blackhole){background:#ddd8d0}}
+.cell.checkpoint{background:#fff;border:2px solid #0a66c2}
+.cell.checkpoint .num{color:#0a66c2;font-size:1.15rem}
+.cell.checkpoint.unrevealed{border-color:#b0a090;background:#f5f0e8}
+.cell.checkpoint.unrevealed .num{color:#b0a090}
+.cell.path{background:#0a66c2;box-shadow:0 0 0 1.5px #0a66c2}
+.cell.path .num{color:rgba(255,255,255,.35);font-size:.7rem}
+.cell.path.checkpoint{border-color:#0a66c2}
+.cell.path.checkpoint .num{color:#fff;font-size:1.15rem}
+.cell.path.checkpoint.unrevealed .num{color:rgba(255,255,255,.7)}
+.cell.head{background:#0d84e0;box-shadow:0 0 0 1.5px #0d84e0,0 0 8px rgba(10,102,194,.4);transform:scale(1.04)}
+.num.underline{text-decoration:underline;text-underline-offset:2px}
+.cell.blackhole{background:#444;cursor:default}
+.cell.blackhole .num{color:#666;font-size:1.2rem}
+.cell.start-hint{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(10,102,194,.5)}50%{box-shadow:0 0 0 10px rgba(10,102,194,0)}}
+.wall{position:absolute;background:#444;z-index:6;pointer-events:none;border-radius:2px}
+.wall-right{top:calc(var(--g)*-1);right:calc(var(--g)*-1 - 1px);width:calc(var(--g) + 2px);height:calc(100% + var(--g)*2)}
+.wall-bottom{left:calc(var(--g)*-1);bottom:calc(var(--g)*-1 - 1px);width:calc(100% + var(--g)*2);height:calc(var(--g) + 2px)}
+.toolbar{display:flex;justify-content:center;width:100%;max-width:360px;margin-bottom:6px}
+.tool-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;background:none;border:none;cursor:pointer;font-family:inherit;color:#666;transition:color .15s;border-radius:8px}
+.tool-btn:active{background:#f0f0f0;color:#0a66c2}
+.tool-icon{font-size:1.25rem;line-height:1}
+.tool-label{font-size:.68rem;font-weight:500}
+.tool-btn.danger-tool{color:#b44}
+.tool-btn.danger-tool:active{color:#c00}
+.link-btn{background:none;border:none;color:#999;font-size:.76rem;cursor:pointer;text-decoration:underline;margin-bottom:10px;font-family:inherit}
+.link-btn:hover{color:#0a66c2}
+.grid.won .cell.path{animation:pop .4s ease-out;animation-delay:calc(var(--i)*25ms);animation-fill-mode:both}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(.85);background:#38a832}100%{transform:scale(1);background:#2e9e28}}
+.grid.won .cell.path.checkpoint .num{color:#fff}
+.grid.won .wall{background:#1a7a16}
+.grid.revealed .cell.path{background:#7a9bb5;box-shadow:0 0 0 1.5px #7a9bb5}
+.grid.revealed .cell.path .num{color:rgba(255,255,255,.5)}
+.grid.revealed .cell.path.checkpoint .num{color:#fff}
+.grid.revealed .cell.head{background:#7a9bb5;box-shadow:0 0 0 1.5px #7a9bb5;transform:none}
+.win-overlay{display:none;flex-direction:column;align-items:center;gap:10px;padding:16px;background:rgba(255,255,255,.95);border-radius:12px;border:2px solid #2e9e28;margin-bottom:8px;text-align:center;width:100%}
+.win-overlay.show{display:flex}
+.win-overlay h2{font-size:1.2rem;color:#2e9e28}
+.win-overlay p{color:#555;font-size:.84rem}
+.win-overlay.answer-reveal{border-color:#7a9bb5}
+.win-overlay.answer-reveal h2{color:#5a7b95}
+.win-buttons{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.win-buttons .btn{font-family:inherit;font-size:.8rem;padding:7px 12px;border-radius:8px;border:1.5px solid #ddd;background:#fff;color:#333;cursor:pointer;transition:all .15s}
+.win-buttons .btn:hover{border-color:#0a66c2;background:#f0f7ff}
+.win-buttons .btn.primary{background:#0a66c2;color:#fff;border-color:#0a66c2}
+.sect-row{display:flex;justify-content:center;width:100%;max-width:420px;margin-bottom:4px}
+.sect-toggle{padding:8px 20px;background:#f8f8f6;border:1px solid #e0e0e0;border-radius:8px;cursor:pointer;font-family:inherit;font-size:.84rem;color:#777;text-align:center;transition:background .15s}
+.sect-toggle:hover{background:#f0f0ee}
+.sect-body{width:100%;max-width:420px;padding:10px 4px 0}
+.stats-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:6px}
+.stats-table th{text-align:left;padding:5px 6px;border-bottom:2px solid #e0e0e0;color:#666;font-weight:600}
+.stats-table td{padding:4px 6px;border-bottom:1px solid #f0f0f0}
+.stats-table tr.total td{border-top:2px solid #e0e0e0;font-weight:600}
+.streak-info{font-size:.82rem;color:#666;text-align:center;margin-bottom:4px}
+.clear-stats{display:block;margin:2px auto 0;font-size:.74rem;color:#aaa;background:none;border:none;cursor:pointer;text-decoration:underline}
+.clear-stats:hover{color:#c00}
+.credit{font-size:.72rem;color:#aaa;text-align:center;margin-top:12px;line-height:1.5;padding:0 8px}
+.credit a{color:#999;text-decoration:underline}
+.credit a:hover{color:#0a66c2}
+.generating{position:absolute;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:1rem;color:#666;border-radius:10px;z-index:10}
+#toastBox{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:100;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{background:#333;color:#fff;padding:10px 20px;border-radius:8px;font-size:.86rem;animation:fadeIn .3s,fadeOut .5s 2.5s forwards;white-space:nowrap}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+#rotateOverlay{position:fixed;inset:0;z-index:9999;background:#1a1a2e;color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:20px}
+#rotateOverlay .rotate-icon{font-size:4rem;animation:rotateTilt 1.5s ease-in-out infinite}
+#rotateOverlay p{font-size:1.1rem;opacity:.85}
+@keyframes rotateTilt{0%,100%{transform:rotate(0)}50%{transform:rotate(90deg)}}
+@media(orientation:landscape) and (max-height:500px){#rotateOverlay{display:flex!important}}
+.hidden{display:none!important}
+@media(hover:none) and (pointer:coarse){
+    .tool-btn{padding:12px 4px;min-height:52px}
+    .tool-icon{font-size:1.35rem}
+    .diff-pill{padding:11px 2px;min-height:42px}
+    .win-buttons .btn{min-height:42px;padding:9px 14px}
+}
+@media(max-width:420px){
+    body{padding:6px 4px}
+    .container{padding:14px 10px 10px;border-radius:10px}
+    h1{font-size:1.5rem;margin-bottom:8px}
+    .diff-pill{font-size:.72rem;padding:8px 1px}
+    .info-bar{font-size:.78rem;gap:6px}
+    #timer{font-size:.88rem}
+    .win-overlay{padding:12px}
+    .win-overlay h2{font-size:1.05rem}
+    .win-overlay p{font-size:.78rem}
+    .win-buttons .btn{font-size:.76rem;padding:6px 9px}
+}
+@media(max-width:360px){
+    .container{padding:10px 6px 8px}
+    h1{font-size:1.3rem}
+    .diff-pill{font-size:.68rem}
+    .grid{gap:2px;padding:2px;--g:2px}
+    .tool-label{font-size:.62rem}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1><img src="src/icon.png" alt="icon" style="height:1.6em;vertical-align:middle;margin-right:4px">ZIP</h1>
+<div class="diff-bar" id="diffBar">
+<button class="diff-pill active" data-d="easy">簡單</button>
+<button class="diff-pill" data-d="expert">困難</button>
+<button class="diff-pill" data-d="fog">迷霧</button>
+<button class="diff-pill" data-d="cube">3D方塊</button>
+</div>
+<div class="cube-size-bar hidden" id="cubeSizeBar">
+<button class="size-pill active" data-sz="2">2×2</button>
+<button class="size-pill" data-sz="3">3×3</button>
+</div>
+<div class="info-bar">
+<span id="timer">00:00</span>
+<span class="info-sep">·</span>
+<span id="progress">0/25</span>
+<span class="info-sep">·</span>
+<span id="nextTarget">下一個: 1</span>
+</div>
+<div id="unfoldedMap" class="unfolded-map hidden"></div>
+<div class="cube-game-wrap hidden" id="cubeGameWrap">
+<div class="cube-game" id="cubeGame"></div>
+</div>
+<div class="grid-wrap" id="gridWrap">
+<div class="grid" id="grid"></div>
+<div class="generating hidden" id="generating">正在生成謎題...</div>
+</div>
+<div class="toolbar">
+<button class="tool-btn" id="newGameBtn"><span class="tool-icon">🔄</span><span class="tool-label">新遊戲</span></button>
+<button class="tool-btn" id="hintBtn"><span class="tool-icon">💡</span><span class="tool-label">提示</span></button>
+<button class="tool-btn" id="clearBtn"><span class="tool-icon">🗑️</span><span class="tool-label">清除</span></button>
+<button class="tool-btn danger-tool" id="answerBtn"><span class="tool-icon">👁️</span><span class="tool-label">答案</span></button>
+</div>
+<button class="link-btn" id="loadCodeBtn">載入挑戰碼</button>
+<div class="win-overlay" id="winOverlay">
+<h2 id="winTitle">恭喜完成！</h2>
+<p id="winText"></p>
+<div class="win-buttons">
+<button class="btn" id="shareBtn">📋 分享</button>
+<button class="btn" id="codeBtn">🔗 挑戰碼</button>
+<button class="btn" id="replayBtn">▶ 回放</button>
+<button class="btn primary" id="playAgainBtn">再來一局</button>
+</div>
+</div>
+<div class="sect-row">
+<button class="sect-toggle" id="statsTgl">紀錄 ▾</button>
+</div>
+<div class="sect-body hidden" id="statsBody"></div>
+<p class="credit">靈感100%來自 <a href="https://www.linkedin.com/games/zip/" target="_blank" rel="noopener">LinkedIn Zip</a> 遊戲。因為每天只能玩一題不過癮，所以自己做了一個XD，還加了更難的玩法來試玩ㄏㄏ。</p>
+</div>
+<div id="toastBox"></div>
+<div id="rotateOverlay"><div class="rotate-icon">📱</div><p>請將手機轉為直向<br>即可開始遊戲</p></div>
+<script>
+const CONFIGS = {
+    easy:   {rows:5,cols:5,cpRange:[5,7], wallRange:[0,3], bhRange:[0,1],label:'簡單',pr:false},
+    expert: {rows:8,cols:8,cpRange:[12,22],wallRange:[4,16],bhRange:[0,2],label:'困難',pr:false},
+    fog:    {rows:8,cols:8,cpRange:[12,22],wallRange:[4,16],bhRange:[0,2],label:'迷霧',pr:true},
+    cube:   {rows:2,cols:2,cpRange:[6,8],wallRange:[0,2],bhRange:[0,0],label:'3D方塊',pr:false},
+};
+const SK='zip_stats',PK='zip_prefs';
+let puzzle=null,userPath=[],pathSet=new Set(),pathIndexMap=new Map();
+let isDrawing=false,gameWon=false,answerRevealed=false,isAnimating=false,animTimer=null;
+let startTime=null,timerHandle=null,cellEls=[];
+let hintsUsed=false,winningPath=null;
+let progressiveReveal=false,revealedNums=new Set();
+let selectedDiff='easy';
+let cubeMode=false, currentFace=0;
+let cubeMat=[1,0,0, 0,1,0, 0,0,1];
+let isDragRotating=false, dragStartX=null, dragStartY=null, dragMoved=0;
+let lastCubeTC=null;
+let cubeCellEls={};
+let cubeAnimId=null;
+const $=id=>document.getElementById(id);
+const gridEl=$('grid'),timerEl=$('timer');
+const progressEl=$('progress'),nextEl=$('nextTarget');
+const winOv=$('winOverlay'),winTitle=$('winTitle'),winText=$('winText');
+const genOv=$('generating');
+const unfoldedMap=$('unfoldedMap');
+const gridWrap=$('gridWrap');
+const cubeGameWrap=$('cubeGameWrap');
+const cubeGame=$('cubeGame');
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function isAdj(a,b){return Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])===1}
+function key(r,c){return r+','+c}
+function wallKey(r1,c1,r2,c2){return(r1>r2||(r1===r2&&c1>c2))?`${r2},${c2}-${r1},${c1}`:`${r1},${c1}-${r2},${c2}`}
+function fmtTime(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function showToast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3200)}
+function ck(f,r,c){return f+':'+r+','+c}
+function cwk(f,r1,c1,r2,c2){return f+':'+wallKey(r1,c1,r2,c2)}
+let cubeSz=2, cubeS=1;
+let cubeSizeChoice=2;
+function updateCubeSize(sz){
+    cubeSizeChoice=sz;
+    cubeSz=sz;
+    cubeS=sz-1;
+    if(sz===2){
+        CONFIGS.cube.rows=2;CONFIGS.cube.cols=2;
+        CONFIGS.cube.cpRange=[6,8];CONFIGS.cube.wallRange=[0,2];
+    } else {
+        CONFIGS.cube.rows=3;CONFIGS.cube.cols=3;
+        CONFIGS.cube.cpRange=[8,12];CONFIGS.cube.wallRange=[0,6];
+    }
+}
+function getCubeAdj(){
+    const S=cubeS;
+    return [
+        [[2,(p)=>[S,p]], [5,(p)=>[p,0]], [3,(p)=>[0,p]], [4,(p)=>[p,S]]],
+        [[2,(p)=>[0,S-p]], [4,(p)=>[p,0]], [3,(p)=>[S,S-p]], [5,(p)=>[p,S]]],
+        [[1,(p)=>[0,S-p]], [5,(p)=>[0,S-p]], [0,(p)=>[0,p]], [4,(p)=>[0,p]]],
+        [[0,(p)=>[S,p]], [5,(p)=>[S,p]], [1,(p)=>[S,S-p]], [4,(p)=>[S,S-p]]],
+        [[2,(p)=>[p,0]], [0,(p)=>[p,0]], [3,(p)=>[S-p,0]], [1,(p)=>[p,S]]],
+        [[2,(p)=>[S-p,S]], [1,(p)=>[p,0]], [3,(p)=>[p,S]], [0,(p)=>[p,S]]],
+    ];
+}
+function getCubeNeighbors(f,r,c){
+    const DIRS=[[-1,0],[0,1],[1,0],[0,-1]];
+    const adj=getCubeAdj();
+    const result=[];
+    for(let d=0;d<4;d++){
+        const[dr,dc]=DIRS[d];
+        const nr=r+dr, nc=c+dc;
+        if(nr>=0 && nr<cubeSz && nc>=0 && nc<cubeSz){
+            result.push([f,nr,nc]);
+        } else {
+            const[nf,mapFn]=adj[f][d];
+            const pos = (d===0||d===2) ? c : r;
+            const[mr,mc]=mapFn(pos);
+            result.push([nf,mr,mc]);
+        }
+    }
+    return result;
+}
+function generateCubePath(){
+    const SZ=cubeSz, TOTAL=cubeSz*cubeSz*6;
+    for(let att=0;att<300;att++){
+        const vis=Array.from({length:6},()=>Array.from({length:SZ},()=>Array(SZ).fill(false)));
+        const path=[];
+        let f=Math.floor(Math.random()*6), r=Math.floor(Math.random()*SZ), c=Math.floor(Math.random()*SZ);
+        vis[f][r][c]=true; path.push([f,r,c]);
+        while(path.length<TOTAL){
+            const ns=getCubeNeighbors(f,r,c).filter(([nf,nr,nc])=>!vis[nf][nr][nc]);
+            if(!ns.length) break;
+            ns.sort((a,b)=>{
+                const da=getCubeNeighbors(a[0],a[1],a[2]).filter(([nf,nr,nc])=>!vis[nf][nr][nc]).length;
+                const db=getCubeNeighbors(b[0],b[1],b[2]).filter(([nf,nr,nc])=>!vis[nf][nr][nc]).length;
+                return da!==db ? da-db : Math.random()-.5;
+            });
+            [f,r,c]=ns[0]; vis[f][r][c]=true; path.push([f,r,c]);
+        }
+        if(path.length===TOTAL) return path;
+    }
+    return null;
+}
+function genCubeWalls(solution, num){
+    const edges=new Set();
+    for(let i=0;i<solution.length-1;i++){
+        const[f1,r1,c1]=solution[i], [f2,r2,c2]=solution[i+1];
+        if(f1===f2) edges.add(cwk(f1,r1,c1,r2,c2));
+    }
+    const cands=[];
+    for(let f=0;f<6;f++){
+        for(let r=0;r<cubeSz;r++){
+            for(let c=0;c<cubeSz;c++){
+                if(c+1<cubeSz){
+                    const w=cwk(f,r,c,r,c+1);
+                    if(!edges.has(w)) cands.push(w);
+                }
+                if(r+1<cubeSz){
+                    const w=cwk(f,r,c,r+1,c);
+                    if(!edges.has(w)) cands.push(w);
+                }
+            }
+        }
+    }
+    shuffle(cands);
+    return new Set(cands.slice(0, Math.min(num, cands.length)));
+}
+function createCubePuzzle(){
+    const cf=CONFIGS.cube;
+    const solution=generateCubePath();
+    if(!solution) return null;
+    const total=solution.length;
+    const numCP=randInt(cf.cpRange[0], cf.cpRange[1]);
+    const cpSet=new Set([0, total-1]);
+    const faceCells=Array.from({length:6},()=>[]);
+    solution.forEach(([f,r,c],i)=> faceCells[f].push(i));
+    for(let face=0;face<6;face++){
+        const cells=faceCells[face];
+        if(cells.length===0) continue;
+        if(!cells.some(i=>cpSet.has(i))){
+            cpSet.add(cells[Math.floor(cells.length/2)]);
+        }
+    }
+    const remaining=numCP-cpSet.size;
+    if(remaining>0){
+        for(let i=1;i<=remaining;i++){
+            const target=Math.round(i*(total-1)/(remaining+1));
+            cpSet.add(target);
+        }
+    }
+    const sorted=[...cpSet].sort((a,b)=>a-b);
+    const checkpoints=new Map();
+    sorted.forEach((pi,i)=>{
+        const[f,r,c]=solution[pi];
+        checkpoints.set(ck(f,r,c), i+1);
+    });
+    const numW=randInt(cf.wallRange[0], cf.wallRange[1]);
+    const walls=genCubeWalls(solution, numW);
+    return {
+        mode:'cube', size:cubeSz, rows:cubeSz, cols:cubeSz,
+        solution: solution,
+        checkpoints: checkpoints,
+        walls: walls,
+        blackHoles:[], bhSet:new Set(),
+        difficulty:'cube'
+    };
+}
+function defStats(){return{totalPlayed:0,totalWon:0,streak:0,bestStreak:0,diff:{easy:{p:0,w:0,b:null},expert:{p:0,w:0,b:null},fog:{p:0,w:0,b:null},cube:{p:0,w:0,b:null}}}}
+function loadStats(){try{const r=localStorage.getItem(SK);if(!r)return defStats();const s=JSON.parse(r);const d=defStats();for(const k of Object.keys(d.diff))if(!s.diff[k])s.diff[k]=d.diff[k];if(s.bestStreak==null)s.bestStreak=0;return s}catch{return defStats()}}
+function saveStats(s){try{localStorage.setItem(SK,JSON.stringify(s))}catch{}}
+function recordWin(dk,sec){const s=loadStats();s.totalPlayed++;s.totalWon++;s.streak++;if(s.streak>s.bestStreak)s.bestStreak=s.streak;const d=s.diff[dk];if(d){d.p++;d.w++;if(d.b===null||sec<d.b)d.b=sec}saveStats(s);renderStats()}
+function recordLoss(dk){const s=loadStats();s.totalPlayed++;s.streak=0;if(s.diff[dk])s.diff[dk].p++;saveStats(s);renderStats()}
+function clearStatsData(){if(!confirm('確定要清除所有紀錄嗎？'))return;saveStats(defStats());renderStats()}
+function renderStats(){
+    const s=loadStats();let h='<table class="stats-table"><tr><th>難度</th><th>完成</th><th>勝率</th><th>最佳</th></tr>';
+    for(const[dk,cf]of Object.entries(CONFIGS)){const d=s.diff[dk];const rate=d.p?Math.round(d.w/d.p*100)+'%':'-';const best=d.b!=null?fmtTime(d.b):'-';
+    h+=`<tr><td>${cf.label}</td><td>${d.w}/${d.p}</td><td>${rate}</td><td>${best}</td></tr>`}
+    const tr=s.totalPlayed?Math.round(s.totalWon/s.totalPlayed*100)+'%':'-';
+    h+=`<tr class="total"><td>總計</td><td>${s.totalWon}/${s.totalPlayed}</td><td>${tr}</td><td></td></tr></table>`;
+    h+=`<div class="streak-info">連勝: ${s.streak} | 最佳連勝: ${s.bestStreak}</div>`;
+    h+=`<button class="clear-stats" onclick="clearStatsData()">清除紀錄</button>`;
+    $('statsBody').innerHTML=h;
+}
+function generatePath(rows,cols,bhSet){
+    const total=rows*cols-bhSet.size;const vis=Array.from({length:rows},()=>Array(cols).fill(false));
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(bhSet.has(key(r,c)))vis[r][c]=true;
+    const path=[],DIRS=[[0,1],[1,0],[0,-1],[-1,0]];
+    function deg(r,c){let d=0;for(const[dr,dc]of DIRS){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&!vis[nr][nc])d++}return d}
+    let att=0;
+    function solve(r,c){if(++att>600000)return false;vis[r][c]=true;path.push([r,c]);if(path.length===total)return true;
+    const ns=[];for(const[dr,dc]of DIRS){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&!vis[nr][nc])ns.push([nr,nc])}
+    ns.sort((a,b)=>{const da=deg(a[0],a[1]),db=deg(b[0],b[1]);return da!==db?da-db:Math.random()-.5});
+    for(const[nr,nc]of ns)if(solve(nr,nc))return true;vis[r][c]=false;path.pop();return false}
+    const starts=[];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(!bhSet.has(key(r,c)))starts.push([r,c]);shuffle(starts);
+    for(const[sr,sc]of starts.slice(0,20)){for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)vis[r][c]=bhSet.has(key(r,c));path.length=0;att=0;if(solve(sr,sc))return path.slice()}return null}
+function genWalls(solution,rows,cols,num,bhSet){
+    const edges=new Set();for(let i=0;i<solution.length-1;i++){const[r1,c1]=solution[i],[r2,c2]=solution[i+1];edges.add(wallKey(r1,c1,r2,c2))}
+    const cands=[];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(bhSet.has(key(r,c)))continue;
+    if(c+1<cols&&!bhSet.has(key(r,c+1))){const w=wallKey(r,c,r,c+1);if(!edges.has(w))cands.push(w)}
+    if(r+1<rows&&!bhSet.has(key(r+1,c))){const w=wallKey(r,c,r+1,c);if(!edges.has(w))cands.push(w)}}
+    shuffle(cands);return new Set(cands.slice(0,Math.min(num,cands.length)))}
+function createPuzzle(dk){
+    const cf=CONFIGS[dk],{rows,cols,cpRange,wallRange,bhRange}=cf;
+    const numBH=randInt(bhRange[0],bhRange[1]);const allC=[];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)allC.push([r,c]);
+    shuffle(allC);const bh=allC.slice(0,numBH);const bhSet=new Set(bh.map(([r,c])=>key(r,c)));
+    const solution=generatePath(rows,cols,bhSet);if(!solution)return null;
+    const total=solution.length;const numCP=randInt(cpRange[0],cpRange[1]);const idx=[0];const inner=numCP-2;
+    for(let i=1;i<=inner;i++)idx.push(Math.round(i*(total-1)/(inner+1)));idx.push(total-1);
+    const uniq=[...new Set(idx)].sort((a,b)=>a-b);const checkpoints=new Map();
+    uniq.forEach((pi,i)=>{const[r,c]=solution[pi];checkpoints.set(key(r,c),i+1)});
+    const numW=randInt(wallRange[0],wallRange[1]);const walls=genWalls(solution,rows,cols,numW,bhSet);
+    return{rows,cols,solution,checkpoints,walls,blackHoles:bh,bhSet,difficulty:dk}}
+function encodePuzzle(p){
+    if(cubeMode) return encodeCubePuzzle(p);
+    const c=p.cols;const s0=p.solution[0][0]*c+p.solution[0][1];let dirs='';
+    for(let i=0;i<p.solution.length-1;i++){const dr=p.solution[i+1][0]-p.solution[i][0],dc=p.solution[i+1][1]-p.solution[i][1];dirs+=dr===1?'D':dr===-1?'U':dc===1?'R':'L'}
+    const cpIdx=[];for(let i=0;i<p.solution.length;i++)if(p.checkpoints.has(key(p.solution[i][0],p.solution[i][1])))cpIdx.push(i);
+    const d={v:1,r:p.rows,c:c,s:s0,d:dirs,cp:cpIdx,w:Array.from(p.walls),bh:(p.blackHoles||[]).map(([r,cc])=>r*c+cc),pr:progressiveReveal?1:0};
+    return btoa(JSON.stringify(d)).replace(/=/g,'')}
+function encodeCubePuzzle(p){
+    const sol=p.solution;
+    const steps=[];
+    for(let i=0;i<sol.length-1;i++){
+        const[f1,r1,c1]=sol[i], [f2,r2,c2]=sol[i+1];
+        if(f1===f2){
+            const dr=r2-r1, dc=c2-c1;
+            steps.push(dr===1?'D':dr===-1?'U':dc===1?'R':'L');
+        } else {
+            steps.push('X'+f2+r2+c2);
+        }
+    }
+    const cpIdx=[];
+    for(let i=0;i<sol.length;i++){
+        if(p.checkpoints.has(ck(sol[i][0],sol[i][1],sol[i][2]))) cpIdx.push(i);
+    }
+    const d={v:2,mode:'cube',sz:cubeSz,sf:sol[0][0],sr:sol[0][1],sc:sol[0][2],steps:steps.join(','),cp:cpIdx,w:Array.from(p.walls)};
+    return btoa(JSON.stringify(d)).replace(/=/g,'');
+}
+function decodePuzzle(code){try{
+    while(code.length%4)code+='=';const d=JSON.parse(atob(code));
+    if(d.mode==='cube') return decodeCubePuzzle(d);
+    const rows=d.r,cols=d.c,sr=Math.floor(d.s/cols),sc=d.s%cols;
+    const solution=[[sr,sc]];for(const ch of d.d){const[lr,lc]=solution[solution.length-1];
+    if(ch==='R')solution.push([lr,lc+1]);else if(ch==='L')solution.push([lr,lc-1]);else if(ch==='D')solution.push([lr+1,lc]);else solution.push([lr-1,lc])}
+    const checkpoints=new Map();d.cp.forEach((idx,i)=>{const[r,c]=solution[idx];checkpoints.set(key(r,c),i+1)});
+    const walls=new Set(d.w||[]);const bh=(d.bh||[]).map(ci=>[Math.floor(ci/cols),ci%cols]);const bhSet=new Set(bh.map(([r,c])=>key(r,c)));
+    if(d.pr)progressiveReveal=true;
+    return{rows,cols,solution,checkpoints,walls,blackHoles:bh,bhSet,difficulty:'custom'}}catch{return null}}
+function decodeCubePuzzle(d){
+    const sz=d.sz||3;
+    updateCubeSize(sz);
+    const solution=[[d.sf,d.sr,d.sc]];
+    const steps=d.steps.split(',');
+    for(const step of steps){
+        const[lf,lr,lc]=solution[solution.length-1];
+        if(step==='U') solution.push([lf,lr-1,lc]);
+        else if(step==='D') solution.push([lf,lr+1,lc]);
+        else if(step==='L') solution.push([lf,lr,lc-1]);
+        else if(step==='R') solution.push([lf,lr,lc+1]);
+        else if(step.startsWith('X')){
+            const nf=+step[1], nr=+step[2], nc=+step[3];
+            solution.push([nf,nr,nc]);
+        }
+    }
+    const checkpoints=new Map();
+    d.cp.forEach((idx,i)=>{
+        const[f,r,c]=solution[idx];
+        checkpoints.set(ck(f,r,c), i+1);
+    });
+    const walls=new Set(d.w||[]);
+    return{
+        mode:'cube', size:cubeSz, rows:cubeSz, cols:cubeSz,
+        solution, checkpoints, walls,
+        blackHoles:[], bhSet:new Set(),
+        difficulty:'cube'
+    };
+}
+function getDiff(){
+    return selectedDiff;
+}
+function selectDiff(d){
+    selectedDiff=d;
+    document.querySelectorAll('.diff-pill').forEach(p=>p.classList.toggle('active',p.dataset.d===d));
+    $('cubeSizeBar').classList.toggle('hidden', d!=='cube');
+    newGame();
+}
+function selectCubeSize(sz){
+    updateCubeSize(sz);
+    document.querySelectorAll('.size-pill').forEach(p=>p.classList.toggle('active',+p.dataset.sz===sz));
+    if(cubeMode) newGame();
+}
+function initRevealed(){
+    revealedNums.clear();if(!puzzle)return;const max=puzzle.checkpoints.size;
+    if(!progressiveReveal){for(let i=1;i<=max;i++)revealedNums.add(i);return}
+    revealedNums.add(1)}
+function updateRevealed(){
+    if(!progressiveReveal)return;
+    if(cubeMode){
+        for(const cell of userPath){
+            const k=ck(cell[0],cell[1],cell[2]);
+            if(puzzle.checkpoints.has(k)){const n=puzzle.checkpoints.get(k);revealedNums.add(n+1)}
+        }
+    } else {
+        for(const[r,c]of userPath){const k=key(r,c);if(puzzle.checkpoints.has(k)){const n=puzzle.checkpoints.get(k);revealedNums.add(n+1)}}
+    }
+}
+function nextCP(){
+    let n=0;
+    if(cubeMode){
+        for(const cell of userPath){
+            if(puzzle.checkpoints.has(ck(cell[0],cell[1],cell[2]))) n++;
+        }
+    } else {
+        for(const[r,c]of userPath) if(puzzle.checkpoints.has(key(r,c))) n++;
+    }
+    return n+1;
+}
+function canAdd(r,c){
+    if(gameWon||answerRevealed||isAnimating)return false;const k=key(r,c);if(pathSet.has(k))return false;
+    if(puzzle.bhSet&&puzzle.bhSet.has(k))return false;
+    if(userPath.length===0)return puzzle.checkpoints.get(k)===1;
+    const[lr,lc]=userPath[userPath.length-1];if(!isAdj([lr,lc],[r,c]))return false;
+    if(puzzle.walls.has(wallKey(lr,lc,r,c)))return false;
+    if(puzzle.checkpoints.has(k))return puzzle.checkpoints.get(k)===nextCP();return true}
+function addCell(r,c){const k=key(r,c);userPath.push([r,c]);pathSet.add(k);pathIndexMap.set(k,userPath.length-1);if(userPath.length===1&&!startTime)startTimer();if(puzzle.checkpoints.has(k))updateRevealed()}
+function truncateTo(i){
+    if(cubeMode){truncateToCube(i);return}
+    while(userPath.length>i+1){const[r,c]=userPath.pop();const k=key(r,c);pathSet.delete(k);pathIndexMap.delete(k)}if(progressiveReveal){initRevealed();updateRevealed()}}
+function clearPath(){
+    userPath=[];pathSet.clear();pathIndexMap.clear();
+    if(progressiveReveal)initRevealed();
+}
+function checkWin(){
+    if(cubeMode) return checkWinCube();
+    if(userPath.length!==puzzle.rows*puzzle.cols-puzzle.bhSet.size)return false;
+    let n=1;const mx=puzzle.checkpoints.size;
+    for(const[r,c]of userPath){const k=key(r,c);if(puzzle.checkpoints.has(k)){if(puzzle.checkpoints.get(k)!==n)return false;n++}}
+    if(n!==mx+1)return false;
+    const[lr,lc]=userPath[userPath.length-1];
+    return puzzle.checkpoints.get(key(lr,lc))===mx}
+function areCubeAdj(f1,r1,c1,f2,r2,c2){
+    if(f1===f2) return Math.abs(r1-r2)+Math.abs(c1-c2)===1;
+    const neighbors=getCubeNeighbors(f1,r1,c1);
+    return neighbors.some(([nf,nr,nc])=>nf===f2&&nr===r2&&nc===c2);
+}
+function canAddCube(f,r,c){
+    if(gameWon||answerRevealed||isAnimating) return false;
+    const k=ck(f,r,c);
+    if(pathSet.has(k)) return false;
+    if(userPath.length===0) return puzzle.checkpoints.get(k)===1;
+    const last=userPath[userPath.length-1];
+    const[lf,lr,lc]=last;
+    if(!areCubeAdj(lf,lr,lc,f,r,c)) return false;
+    if(lf===f && puzzle.walls.has(cwk(f,lr,lc,r,c))) return false;
+    if(puzzle.checkpoints.has(k)) return puzzle.checkpoints.get(k)===nextCP();
+    return true;
+}
+function addCellCube(f,r,c){
+    const k=ck(f,r,c);
+    userPath.push([f,r,c]);
+    pathSet.add(k);
+    pathIndexMap.set(k, userPath.length-1);
+    if(userPath.length===1 && !startTime) startTimer();
+    if(puzzle.checkpoints.has(k)) updateRevealed();
+}
+function truncateToCube(i){
+    while(userPath.length>i+1){
+        const cell=userPath.pop();
+        const k=ck(cell[0],cell[1],cell[2]);
+        pathSet.delete(k);
+        pathIndexMap.delete(k);
+    }
+    if(progressiveReveal){initRevealed();updateRevealed()}
+}
+function checkWinCube(){
+    if(userPath.length!==cubeSz*cubeSz*6) return false;
+    let n=1;const mx=puzzle.checkpoints.size;
+    for(const cell of userPath){
+        const k=ck(cell[0],cell[1],cell[2]);
+        if(puzzle.checkpoints.has(k)){
+            if(puzzle.checkpoints.get(k)!==n) return false;
+            n++;
+        }
+    }
+    if(n!==mx+1) return false;
+    const last=userPath[userPath.length-1];
+    return puzzle.checkpoints.get(ck(last[0],last[1],last[2]))===mx;
+}
+function startTimer(){startTime=Date.now();timerHandle=setInterval(()=>{timerEl.textContent=fmtTime(Math.floor((Date.now()-startTime)/1000))},250)}
+function stopTimer(){clearInterval(timerHandle);timerHandle=null}
+function resetTimer(){stopTimer();startTime=null;timerEl.textContent='00:00'}
+function elapsedSec(){return startTime?Math.floor((Date.now()-startTime)/1000):0}
+const FACE_NAMES=['前','後','頂','底','左','右'];
+const CUBE_ROT_PRESETS = [
+    [-20, 25],
+    [-20, -155],
+    [-110, 25],
+    [70, 25],
+    [-20, 115],
+    [-20, -65],
+];
+const FACE_NORMALS = [
+    [0, 0, 1],
+    [0, 0, -1],
+    [0, -1, 0],
+    [0, 1, 0],
+    [-1, 0, 0],
+    [1, 0, 0],
+];
+function m3Mul(a,b){
+    return[
+        a[0]*b[0]+a[1]*b[3]+a[2]*b[6], a[0]*b[1]+a[1]*b[4]+a[2]*b[7], a[0]*b[2]+a[1]*b[5]+a[2]*b[8],
+        a[3]*b[0]+a[4]*b[3]+a[5]*b[6], a[3]*b[1]+a[4]*b[4]+a[5]*b[7], a[3]*b[2]+a[4]*b[5]+a[5]*b[8],
+        a[6]*b[0]+a[7]*b[3]+a[8]*b[6], a[6]*b[1]+a[7]*b[4]+a[8]*b[7], a[6]*b[2]+a[7]*b[5]+a[8]*b[8],
+    ];
+}
+function m3RotX(a){const c=Math.cos(a),s=Math.sin(a);return[1,0,0, 0,c,-s, 0,s,c]}
+function m3RotY(a){const c=Math.cos(a),s=Math.sin(a);return[c,0,s, 0,1,0, -s,0,c]}
+function eulerToMat(rxDeg,ryDeg){
+    return m3Mul(m3RotX(rxDeg*Math.PI/180), m3RotY(ryDeg*Math.PI/180));
+}
+function matToCSS(m){
+    return`matrix3d(${m[0]},${m[3]},${m[6]},0,${m[1]},${m[4]},${m[7]},0,${m[2]},${m[5]},${m[8]},0,0,0,0,1)`;
+}
+function applyCubeTransform(){
+    cubeGame.style.transition='none';
+    cubeGame.style.transform=matToCSS(cubeMat);
+}
+function animateCubeTo(target,duration){
+    duration=duration||400;
+    if(cubeAnimId){cancelAnimationFrame(cubeAnimId);cubeAnimId=null}
+    const src=cubeMat.slice();
+    const start=performance.now();
+    function frame(t){
+        const p=Math.min(1,(t-start)/duration);
+        const e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+        cubeMat=src.map((v,i)=>v+(target[i]-v)*e);
+        applyCubeTransform();
+        if(p<1) cubeAnimId=requestAnimationFrame(frame);
+        else cubeAnimId=null;
+    }
+    cubeAnimId=requestAnimationFrame(frame);
+}
+function getFrontFace(){
+    let best=0,bestZ=-Infinity;
+    for(let i=0;i<6;i++){
+        const[nx,ny,nz]=FACE_NORMALS[i];
+        const tz=cubeMat[6]*nx+cubeMat[7]*ny+cubeMat[8]*nz;
+        if(tz>bestZ){bestZ=tz;best=i}
+    }
+    return best;
+}
+const UNFOLD_ORDER = [2, 4, 0, 5, 1, 3];
+const UNFOLD_NAMES = ['頂', '左', '前', '右', '後', '底'];
+let umCellEls = {};
+function buildUnfoldedMap(){
+    unfoldedMap.innerHTML = '';
+    umCellEls = {};
+    const cellSz = cubeSz === 2 ? 20 : 16;
+    for(let i = 0; i < 6; i++){
+        const faceIdx = UNFOLD_ORDER[i];
+        const face = document.createElement('div');
+        face.className = 'um-face';
+        if(faceIdx === currentFace) face.classList.add('active');
+        face.style.gridTemplateColumns = `repeat(${cubeSz}, ${cellSz}px)`;
+        face.style.gridTemplateRows = `repeat(${cubeSz}, ${cellSz}px)`;
+        face.dataset.face = faceIdx;
+        face.style.cursor = 'pointer';
+        face.addEventListener('click', () => switchFace(faceIdx));
+        umCellEls[faceIdx] = {};
+        for(let r = 0; r < cubeSz; r++){
+            umCellEls[faceIdx][r] = {};
+            for(let c = 0; c < cubeSz; c++){
+                const cell = document.createElement('div');
+                cell.className = 'um-cell';
+                if(c + 1 < cubeSz && puzzle.walls.has(cwk(faceIdx, r, c, r, c + 1))){
+                    cell.style.borderRight = '2px solid #444';
+                }
+                if(r + 1 < cubeSz && puzzle.walls.has(cwk(faceIdx, r, c, r + 1, c))){
+                    cell.style.borderBottom = '2px solid #444';
+                }
+                face.appendChild(cell);
+                umCellEls[faceIdx][r][c] = cell;
+            }
+        }
+        unfoldedMap.appendChild(face);
+    }
+}
+function renderUnfoldedMap(){
+    if(!cubeMode) return;
+    for(let fi = 0; fi < 6; fi++){
+        const faceEl = unfoldedMap.querySelector(`.um-face[data-face="${fi}"]`);
+        if(faceEl) faceEl.classList.toggle('active', fi === currentFace);
+        for(let r = 0; r < cubeSz; r++){
+            for(let c = 0; c < cubeSz; c++){
+                if(!umCellEls[fi] || !umCellEls[fi][r] || !umCellEls[fi][r][c]) continue;
+                const cell = umCellEls[fi][r][c];
+                const k = ck(fi, r, c);
+                const inp = pathSet.has(k);
+                const isCP = puzzle.checkpoints.has(k);
+                const isH = userPath.length > 0 &&
+                    userPath[userPath.length-1][0] === fi &&
+                    userPath[userPath.length-1][1] === r &&
+                    userPath[userPath.length-1][2] === c;
+                cell.className = 'um-cell';
+                if(isCP) cell.classList.add('checkpoint');
+                if(inp) cell.classList.add('path');
+                if(isH && !gameWon && !answerRevealed) cell.classList.add('head');
+            }
+        }
+    }
+}
+function updateMinimap(){
+    renderUnfoldedMap();
+}
+function switchFace(newFace, skipAnim){
+    if(newFace === currentFace && !skipAnim) return;
+    currentFace = newFace;
+    const [px, py] = CUBE_ROT_PRESETS[newFace];
+    const target = eulerToMat(px, py);
+    if(skipAnim){
+        cubeMat = target;
+        applyCubeTransform();
+    } else {
+        animateCubeTo(target, 400);
+    }
+    renderAllCubeFaces();
+    updateMinimap();
+}
+function detectFrontFace(){
+    currentFace = getFrontFace();
+    renderAllCubeFaces();
+    updateMinimap();
+}
+function buildCubeGame(){
+    cubeGame.innerHTML = '';
+    const pad = window.innerWidth <= 420 ? 30 : 60;
+    let cubeFaceSize = Math.min(160, Math.floor((window.innerWidth - pad) * 0.35));
+    if(window.innerWidth <= 360) cubeFaceSize = Math.min(100, cubeFaceSize);
+    else if(window.innerWidth <= 420) cubeFaceSize = Math.min(120, cubeFaceSize);
+    const half = cubeFaceSize / 2;
+    const wrapSize = Math.floor(cubeFaceSize * 2.1);
+    cubeGameWrap.style.width = wrapSize + 'px';
+    cubeGameWrap.style.height = wrapSize + 'px';
+    cubeGame.style.width = cubeFaceSize + 'px';
+    cubeGame.style.height = cubeFaceSize + 'px';
+    const FACE_TRANSFORMS = [
+        `translateZ(${half}px)`,
+        `rotateY(180deg) translateZ(${half}px)`,
+        `rotateX(90deg) translateZ(${half}px)`,
+        `rotateX(-90deg) translateZ(${half}px)`,
+        `rotateY(-90deg) translateZ(${half}px)`,
+        `rotateY(90deg) translateZ(${half}px)`,
+    ];
+    cubeCellEls = {};
+    for(let fi = 0; fi < 6; fi++){
+        const face = document.createElement('div');
+        face.className = 'cube-face';
+        if(fi === currentFace) face.classList.add('active-face');
+        face.style.width = cubeFaceSize + 'px';
+        face.style.height = cubeFaceSize + 'px';
+        face.style.gridTemplateColumns = `repeat(${cubeSz}, 1fr)`;
+        face.style.gridTemplateRows = `repeat(${cubeSz}, 1fr)`;
+        face.style.transform = FACE_TRANSFORMS[fi];
+        face.style.setProperty('--g', '3px');
+        face.dataset.face = fi;
+        cubeCellEls[fi] = {};
+        for(let r = 0; r < cubeSz; r++){
+            cubeCellEls[fi][r] = {};
+            for(let c = 0; c < cubeSz; c++){
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                const span = document.createElement('span');
+                span.className = 'num';
+                cell.appendChild(span);
+                cell._num = span;
+                cell.dataset.f = fi;
+                cell.dataset.r = r;
+                cell.dataset.c = c;
+                const k = ck(fi, r, c);
+                if(puzzle.checkpoints.has(k)){
+                    cell.classList.add('checkpoint');
+                    span.textContent = puzzle.checkpoints.get(k);
+                }
+                if(c + 1 < cubeSz && puzzle.walls.has(cwk(fi, r, c, r, c + 1))){
+                    const w = document.createElement('div');
+                    w.className = 'wall wall-right';
+                    cell.appendChild(w);
+                }
+                if(r + 1 < cubeSz && puzzle.walls.has(cwk(fi, r, c, r + 1, c))){
+                    const w = document.createElement('div');
+                    w.className = 'wall wall-bottom';
+                    cell.appendChild(w);
+                }
+                cell.addEventListener('pointerdown', (e2) => {
+                    e2.stopPropagation();
+                    e2.preventDefault();
+                    const cf=+cell.dataset.f, cr=+cell.dataset.r, cc=+cell.dataset.c;
+                    onDownCube(cf, cr, cc);
+                    lastCubeTC = ck(cf,cr,cc);
+                });
+                face.appendChild(cell);
+                cubeCellEls[fi][r][c] = cell;
+            }
+        }
+        cubeGame.appendChild(face);
+    }
+    applyCubeTransform();
+}
+function renderAllCubeFaces(){
+    const total = cubeSz * cubeSz * 6;
+    const ncp = nextCP(), maxCP = puzzle.checkpoints.size;
+    for(let fi = 0; fi < 6; fi++){
+        const faceEl = cubeGame.querySelector(`.cube-face[data-face="${fi}"]`);
+        if(faceEl) faceEl.classList.toggle('active-face', fi === currentFace);
+        for(let r = 0; r < cubeSz; r++){
+            for(let c = 0; c < cubeSz; c++){
+                if(!cubeCellEls[fi] || !cubeCellEls[fi][r] || !cubeCellEls[fi][r][c]) continue;
+                const cell = cubeCellEls[fi][r][c];
+                const span = cell._num;
+                const k = ck(fi, r, c);
+                const inp = pathSet.has(k);
+                const isCP = puzzle.checkpoints.has(k);
+                const isH = userPath.length > 0 &&
+                    userPath[userPath.length-1][0] === fi &&
+                    userPath[userPath.length-1][1] === r &&
+                    userPath[userPath.length-1][2] === c;
+                cell.classList.toggle('path', inp);
+                cell.classList.toggle('head', isH && !gameWon && !answerRevealed);
+                cell.classList.remove('start-hint', 'unrevealed');
+                if(isCP){
+                    const num = puzzle.checkpoints.get(k);
+                    const rev = revealedNums.has(num);
+                    span.textContent = rev ? num : '?';
+                    if(!rev) cell.classList.add('unrevealed');
+                    span.classList.toggle('underline', rev && (num===6||num===9));
+                } else if(inp){
+                    const pn = pathIndexMap.get(k) + 1;
+                    span.textContent = pn;
+                    span.classList.toggle('underline', pn===6||pn===9);
+                } else {
+                    span.textContent = '';
+                    span.classList.remove('underline');
+                }
+                if((gameWon || answerRevealed) && inp){
+                    cell.style.setProperty('--i', pathIndexMap.get(k));
+                }
+            }
+        }
+    }
+    if(userPath.length === 0 && !gameWon && !answerRevealed){
+        for(const [k, n] of puzzle.checkpoints){
+            if(n === 1){
+                const parts = k.split(':');
+                const fk = +parts[0];
+                const [rr, cc] = parts[1].split(',').map(Number);
+                if(cubeCellEls[fk] && cubeCellEls[fk][rr] && cubeCellEls[fk][rr][cc]){
+                    cubeCellEls[fk][rr][cc].classList.add('start-hint');
+                }
+            }
+        }
+    }
+    progressEl.textContent = `${userPath.length}/${total}`;
+    if(gameWon) nextEl.textContent = '完成！';
+    else if(answerRevealed) nextEl.textContent = '答案已公布';
+    else if(ncp <= maxCP) nextEl.textContent = `下一個: ${ncp}`;
+    else nextEl.textContent = '填滿所有格子！';
+}
+cubeGameWrap.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    dragMoved = 0;
+    isDragRotating = true;
+});
+document.addEventListener('pointermove', e => {
+    if(!cubeMode) return;
+    if(isDragRotating && dragStartX !== null){
+        const ddx = e.clientX - dragStartX;
+        const ddy = e.clientY - dragStartY;
+        const ax = -ddy * 0.005;
+        const ay = ddx * 0.005;
+        cubeMat = m3Mul(m3Mul(m3RotX(ax), m3RotY(ay)), cubeMat);
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        dragMoved += Math.abs(ddx) + Math.abs(ddy);
+        applyCubeTransform();
+        return;
+    }
+    if(isDrawing){
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        if(!el) return;
+        const cell = el.closest('.cell');
+        if(cell && cell.dataset.f !== undefined){
+            const f=+cell.dataset.f, r=+cell.dataset.r, c=+cell.dataset.c;
+            const cellKey = ck(f,r,c);
+            if(cellKey === lastCubeTC) return;
+            lastCubeTC = cellKey;
+            onEnterCube(f, r, c);
+        }
+    }
+});
+document.addEventListener('pointerup', e => {
+    if(!cubeMode){ isDrawing=false; return; }
+    if(isDragRotating){
+        isDragRotating = false;
+        detectFrontFace();
+        dragStartX = null;
+        return;
+    }
+    if(isDrawing){
+        isDrawing = false;
+        lastCubeTC = null;
+        return;
+    }
+});
+cubeGameWrap.addEventListener('touchmove', e => {
+    e.preventDefault();
+}, {passive: false});
+function setCubeFaceSilent(f){
+    if(f !== currentFace){ currentFace = f; }
+}
+function onDownCube(f, r, c){
+    if(gameWon || answerRevealed || isAnimating) return;
+    const k = ck(f, r, c);
+    if(pathSet.has(k)){
+        truncateToCube(pathIndexMap.get(k));
+        isDrawing = true;
+        lastCubeTC = k;
+        setCubeFaceSilent(f);
+        renderAllCubeFaces();
+        updateMinimap();
+        return;
+    }
+    if(canAddCube(f, r, c)){
+        addCellCube(f, r, c);
+        isDrawing = true;
+        lastCubeTC = k;
+        setCubeFaceSilent(f);
+        renderAllCubeFaces();
+        updateMinimap();
+        if(checkWinCube()) onWin();
+    }
+}
+function onEnterCube(f, r, c){
+    if(!isDrawing || gameWon || answerRevealed || isAnimating) return;
+    const k = ck(f, r, c);
+    if(pathSet.has(k)){
+        truncateToCube(pathIndexMap.get(k));
+        setCubeFaceSilent(f);
+        renderAllCubeFaces();
+        updateMinimap();
+        return;
+    }
+    if(canAddCube(f, r, c)){
+        addCellCube(f, r, c);
+        setCubeFaceSilent(f);
+        renderAllCubeFaces();
+        updateMinimap();
+        if(checkWinCube()) onWin();
+    }
+}
+function buildGrid(){
+    gridEl.innerHTML='';
+    const pad=window.innerWidth<=420?20:50;
+    const maxW=Math.min(window.innerWidth-pad,440);
+    const gap=window.innerWidth<=360?2:3;
+    const sz=Math.max(36,Math.min(62,Math.floor((maxW-(puzzle.cols+1)*gap)/puzzle.cols)));
+    gridEl.style.gridTemplateColumns=`repeat(${puzzle.cols},${sz}px)`;
+    gridEl.style.gridTemplateRows=`repeat(${puzzle.rows},${sz}px)`;
+    gridEl.style.gap=gap+'px';gridEl.style.padding=gap+'px';gridEl.style.setProperty('--g',gap+'px');
+    cellEls=[];
+    for(let r=0;r<puzzle.rows;r++){cellEls[r]=[];for(let c=0;c<puzzle.cols;c++){
+        const cell=document.createElement('div');cell.className='cell';
+        const span=document.createElement('span');span.className='num';cell.appendChild(span);cell._num=span;
+        const k=key(r,c);
+        if(puzzle.bhSet&&puzzle.bhSet.has(k)){cell.classList.add('blackhole');span.textContent='✕'}
+        else if(puzzle.checkpoints.has(k)){cell.classList.add('checkpoint');span.textContent=puzzle.checkpoints.get(k)}
+        if(c+1<puzzle.cols&&puzzle.walls.has(wallKey(r,c,r,c+1))){const w=document.createElement('div');w.className='wall wall-right';cell.appendChild(w)}
+        if(r+1<puzzle.rows&&puzzle.walls.has(wallKey(r,c,r+1,c))){const w=document.createElement('div');w.className='wall wall-bottom';cell.appendChild(w)}
+        cell.addEventListener('pointerdown',e=>{e.preventDefault();onDown(r,c)});
+        cell.addEventListener('pointerenter',()=>onEnter(r,c));
+        cell.dataset.r=r;cell.dataset.c=c;
+        gridEl.appendChild(cell);cellEls[r][c]=cell}}}
+function render(){
+    if(cubeMode){renderAllCubeFaces();updateMinimap();return}
+    const total=puzzle.rows*puzzle.cols-puzzle.bhSet.size;const ncp=nextCP(),maxCP=puzzle.checkpoints.size;
+    for(let r=0;r<puzzle.rows;r++)for(let c=0;c<puzzle.cols;c++){
+        const cell=cellEls[r][c],span=cell._num,k=key(r,c);if(puzzle.bhSet&&puzzle.bhSet.has(k))continue;
+        const inp=pathSet.has(k),isCP=puzzle.checkpoints.has(k);
+        const isH=userPath.length>0&&userPath[userPath.length-1][0]===r&&userPath[userPath.length-1][1]===c;
+        cell.classList.toggle('path',inp);cell.classList.toggle('head',isH&&!gameWon&&!answerRevealed);cell.classList.remove('start-hint','unrevealed');
+        if(isCP){const num=puzzle.checkpoints.get(k);const rev=revealedNums.has(num);span.textContent=rev?num:'?';if(!rev)cell.classList.add('unrevealed');span.classList.toggle('underline',rev&&(num===6||num===9))}
+        else if(inp){const pn=pathIndexMap.get(k)+1;span.textContent=pn;span.classList.toggle('underline',pn===6||pn===9)}else{span.textContent='';span.classList.remove('underline')}
+        if((gameWon||answerRevealed)&&inp)cell.style.setProperty('--i',pathIndexMap.get(k))}
+    if(userPath.length===0&&!gameWon&&!answerRevealed)for(const[k,n]of puzzle.checkpoints)if(n===1){const[rr,cc]=k.split(',').map(Number);cellEls[rr][cc].classList.add('start-hint')}
+    progressEl.textContent=`${userPath.length}/${total}`;
+    if(gameWon)nextEl.textContent='完成！';else if(answerRevealed)nextEl.textContent='答案已公布';
+    else if(ncp<=maxCP)nextEl.textContent=`下一個: ${ncp}`;else nextEl.textContent='填滿所有格子！'}
+function onDown(r,c){
+    if(gameWon||answerRevealed||isAnimating)return;const k=key(r,c);
+    if(pathSet.has(k)){truncateTo(pathIndexMap.get(k));isDrawing=true;render();return}
+    if(canAdd(r,c)){addCell(r,c);isDrawing=true;render();if(checkWin())onWin()}}
+function onEnter(r,c){
+    if(!isDrawing||gameWon||answerRevealed||isAnimating)return;const k=key(r,c);
+    if(pathSet.has(k)){truncateTo(pathIndexMap.get(k));render();return}
+    if(canAdd(r,c)){addCell(r,c);render();if(checkWin())onWin()}}
+document.addEventListener('pointerup',()=>{
+    if(!cubeMode) isDrawing=false;
+});
+let lastTC=null;
+gridEl.addEventListener('touchmove',e=>{
+    if(!isDrawing)return;e.preventDefault();
+    const t=e.touches[0],el=document.elementFromPoint(t.clientX,t.clientY);
+    if(!el)return;
+    const cell=el.closest('.cell');if(!cell||!cell.dataset.r)return;
+    const touchKey=cell.dataset.r+','+cell.dataset.c;if(touchKey===lastTC)return;lastTC=touchKey;
+    onEnter(+cell.dataset.r,+cell.dataset.c);
+},{passive:false});
+gridEl.addEventListener('touchstart',()=>{lastTC=null},{passive:true});
+gridEl.addEventListener('touchend',()=>{isDrawing=false;lastTC=null},{passive:true});
+function onWin(){
+    gameWon=true;stopTimer();winningPath=userPath.slice();
+    if(cubeMode){
+        cubeGame.classList.add('won');
+        renderAllCubeFaces();
+        updateMinimap();
+    } else {
+        gridEl.classList.add('won');
+        render();
+    }
+    const sec=elapsedSec(),cf=CONFIGS[puzzle.difficulty]||{label:'挑戰',rows:puzzle.rows,cols:puzzle.cols};
+    winTitle.textContent='恭喜完成！';
+    if(cubeMode){
+        winText.textContent=`3D方塊 6×${cubeSz}×${cubeSz} · ${puzzle.checkpoints.size} 數字 · ${puzzle.walls.size} 牆 · ${fmtTime(sec)}`;
+    } else {
+        winText.textContent=`${cf.label} ${puzzle.rows}×${puzzle.cols} · ${puzzle.checkpoints.size} 數字 · ${puzzle.walls.size} 牆 · ${fmtTime(sec)}`;
+    }
+    winOv.classList.remove('answer-reveal');winOv.classList.add('show');
+    $('shareBtn').classList.remove('hidden');$('replayBtn').classList.remove('hidden');
+    if(puzzle.difficulty!=='custom')recordWin(puzzle.difficulty,sec)}
+function showAnswer(){
+    if(gameWon||answerRevealed||isAnimating||!puzzle)return;
+    answerRevealed=true;isAnimating=true;clearPath();resetTimer();
+    if(cubeMode){renderAllCubeFaces();updateMinimap();}else{render();}
+    if(puzzle.difficulty!=='custom')recordLoss(puzzle.difficulty);
+    if(cubeMode){
+        let i=0;const spd=Math.max(15,Math.floor(3000/puzzle.solution.length));
+        animTimer=setInterval(()=>{
+            if(i>=puzzle.solution.length){
+                clearInterval(animTimer);animTimer=null;isAnimating=false;
+                cubeGame.classList.add('revealed');winningPath=userPath.slice();
+                renderAllCubeFaces();updateMinimap();
+                winTitle.textContent='答案';
+                winText.textContent=`3D方塊 6×${cubeSz}×${cubeSz}`;
+                winOv.classList.add('show','answer-reveal');
+                $('shareBtn').classList.add('hidden');$('replayBtn').classList.remove('hidden');
+                return;
+            }
+            const[f,r,c]=puzzle.solution[i];
+            addCellCube(f,r,c);
+            if(f!==currentFace) switchFace(f, true);
+            else renderAllCubeFaces();
+            updateMinimap();
+            i++;
+        },spd);
+    } else {
+        let i=0;const spd=Math.max(15,Math.floor(1500/puzzle.solution.length));
+        animTimer=setInterval(()=>{if(i>=puzzle.solution.length){clearInterval(animTimer);animTimer=null;isAnimating=false;
+        gridEl.classList.add('revealed');winningPath=userPath.slice();render();
+        const cf=CONFIGS[puzzle.difficulty]||{label:'挑戰',rows:puzzle.rows,cols:puzzle.cols};
+        winTitle.textContent='答案';winText.textContent=`${cf.label} ${puzzle.rows}×${puzzle.cols}`;
+        winOv.classList.add('show','answer-reveal');$('shareBtn').classList.add('hidden');$('replayBtn').classList.remove('hidden');return}
+        const[r,c]=puzzle.solution[i];addCell(r,c);render();i++},spd);
+    }
+}
+function replayPath(){
+    if(isAnimating||!winningPath)return;isAnimating=true;
+    const saved=winningPath.slice();
+    if(cubeMode){
+        cubeGame.classList.remove('won','revealed');
+    } else {
+        gridEl.classList.remove('won','revealed');
+    }
+    clearPath();
+    if(cubeMode){renderAllCubeFaces();updateMinimap();}else{render();}
+    if(cubeMode){
+        let i=0;const spd=Math.max(18,Math.floor(3000/saved.length));
+        animTimer=setInterval(()=>{
+            if(i>=saved.length){
+                clearInterval(animTimer);animTimer=null;isAnimating=false;
+                if(gameWon) cubeGame.classList.add('won');
+                if(answerRevealed) cubeGame.classList.add('revealed');
+                renderAllCubeFaces();updateMinimap();return;
+            }
+            const[f,r,c]=saved[i];
+            addCellCube(f,r,c);
+            if(f!==currentFace) switchFace(f, true);
+            else renderAllCubeFaces();
+            updateMinimap();i++;
+        },spd);
+    } else {
+        let i=0;const spd=Math.max(18,Math.floor(2000/saved.length));
+        animTimer=setInterval(()=>{if(i>=saved.length){clearInterval(animTimer);animTimer=null;isAnimating=false;
+        if(gameWon)gridEl.classList.add('won');if(answerRevealed)gridEl.classList.add('revealed');render();return}
+        const[r,c]=saved[i];addCell(r,c);render();i++},spd);
+    }
+}
+function shareResult(){
+    const sec=elapsedSec(),cf=CONFIGS[puzzle.difficulty]||{label:'挑戰',rows:puzzle.rows,cols:puzzle.cols};const s=loadStats();
+    let t;
+    if(cubeMode){
+        t=`ZIP ✅ 3D方塊 6×${cubeSz}×${cubeSz}\n⏱ ${fmtTime(sec)} · 🔢${puzzle.checkpoints.size} · 🧱${puzzle.walls.size}\n`;
+    } else {
+        t=`ZIP ✅ ${cf.label} ${puzzle.rows}×${puzzle.cols}\n⏱ ${fmtTime(sec)} · 🔢${puzzle.checkpoints.size} · 🧱${puzzle.walls.size}`;
+        if(puzzle.blackHoles.length)t+=` · ⬛${puzzle.blackHoles.length}`;t+='\n';
+    }
+    if(s.streak>1)t+=`🔥 連勝 ${s.streak}\n`;
+    navigator.clipboard.writeText(t).then(()=>showToast('已複製到剪貼簿！')).catch(()=>showToast('複製失敗'))}
+function copyCode(){const code=encodePuzzle(puzzle);navigator.clipboard.writeText(code).then(()=>showToast('挑戰碼已複製！')).catch(()=>{prompt('複製此挑戰碼：',code)})}
+function loadCode(){
+    const code=prompt('請貼上挑戰碼：');if(!code)return;
+    const p=decodePuzzle(code.trim());if(!p){showToast('挑戰碼無效');return}
+    if(isAnimating){clearInterval(animTimer);isAnimating=false}
+    gameWon=false;answerRevealed=false;hintsUsed=false;clearPath();resetTimer();
+    gridEl.classList.remove('won','revealed');
+    cubeGame.classList.remove('won','revealed');
+    winOv.classList.remove('show','answer-reveal');
+    puzzle=p;
+    if(p.mode==='cube'){
+        cubeMode=true;currentFace=0;progressiveReveal=false;
+        gridWrap.classList.add('hidden');
+        unfoldedMap.classList.remove('hidden');
+        cubeGameWrap.classList.remove('hidden');
+        cubeMat = eulerToMat(CUBE_ROT_PRESETS[0][0], CUBE_ROT_PRESETS[0][1]);
+        initRevealed();buildUnfoldedMap();buildCubeGame();renderAllCubeFaces();updateMinimap();
+    } else {
+        cubeMode=false;
+        gridWrap.classList.remove('hidden');
+        unfoldedMap.classList.add('hidden');
+        cubeGameWrap.classList.add('hidden');
+        initRevealed();buildGrid();render();
+    }
+    showToast('已載入挑戰！');
+}
+function giveHint(){
+    if(gameWon||answerRevealed||isAnimating||!puzzle)return;hintsUsed=true;
+    if(cubeMode){
+        let match=true;
+        for(let i=0;i<userPath.length;i++){
+            if(userPath[i][0]!==puzzle.solution[i][0]||userPath[i][1]!==puzzle.solution[i][1]||userPath[i][2]!==puzzle.solution[i][2]){match=false;break}
+        }
+        if(match && userPath.length<puzzle.solution.length){
+            const[nf,nr,nc]=puzzle.solution[userPath.length];
+            addCellCube(nf,nr,nc);
+            if(nf!==currentFace) switchFace(nf);
+            else renderAllCubeFaces();
+            updateMinimap();
+            if(checkWinCube()) onWin();
+        } else if(!match){
+            clearPath();
+            const[f0,r0,c0]=puzzle.solution[0];
+            const[f1,r1,c1]=puzzle.solution[1];
+            addCellCube(f0,r0,c0);
+            addCellCube(f1,r1,c1);
+            if(f1!==currentFace) switchFace(f1);
+            else renderAllCubeFaces();
+            updateMinimap();
+        }
+    } else {
+        let match=true;
+        for(let i=0;i<userPath.length;i++)if(userPath[i][0]!==puzzle.solution[i][0]||userPath[i][1]!==puzzle.solution[i][1]){match=false;break}
+        if(match&&userPath.length<puzzle.solution.length){addCell(puzzle.solution[userPath.length][0],puzzle.solution[userPath.length][1]);render();if(checkWin())onWin()}
+        else if(!match){clearPath();addCell(puzzle.solution[0][0],puzzle.solution[0][1]);addCell(puzzle.solution[1][0],puzzle.solution[1][1]);render()}
+    }
+}
+function newGame(){
+    if(isAnimating){clearInterval(animTimer);isAnimating=false}
+    gameWon=false;answerRevealed=false;hintsUsed=false;winningPath=null;clearPath();resetTimer();
+    gridEl.classList.remove('won','revealed');
+    cubeGame.classList.remove('won','revealed');
+    winOv.classList.remove('show','answer-reveal');genOv.classList.remove('hidden');
+    setTimeout(()=>{
+        const dk=getDiff();
+        if(dk==='cube'){
+            cubeMode=true;
+            currentFace=0;
+            progressiveReveal=false;
+            gridWrap.classList.add('hidden');
+            unfoldedMap.classList.remove('hidden');
+            cubeGameWrap.classList.remove('hidden');
+            let p=null, tries=0;
+            while(!p && tries<5){p=createCubePuzzle();tries++}
+            if(!p){
+                for(let i=0;i<10&&!p;i++) p=createCubePuzzle();
+            }
+            if(!p){
+                showToast('生成3D方塊失敗，請重試');
+                genOv.classList.add('hidden');
+                return;
+            }
+            puzzle=p;
+            cubeMat = eulerToMat(CUBE_ROT_PRESETS[0][0], CUBE_ROT_PRESETS[0][1]);
+            initRevealed();
+            buildUnfoldedMap();
+            buildCubeGame();
+            renderAllCubeFaces();
+            updateMinimap();
+            genOv.classList.add('hidden');
+        } else {
+            cubeMode=false;
+            gridWrap.classList.remove('hidden');
+            unfoldedMap.classList.add('hidden');
+            cubeGameWrap.classList.add('hidden');
+            progressiveReveal=CONFIGS[dk]?CONFIGS[dk].pr:false;
+            let p=null,tries=0;while(!p&&tries<5){p=createPuzzle(dk);tries++}if(!p)p=createPuzzle('easy');
+            puzzle=p;initRevealed();buildGrid();render();genOv.classList.add('hidden');
+        }
+    },30);
+}
+$('newGameBtn').onclick=newGame;$('playAgainBtn').onclick=newGame;
+$('clearBtn').onclick=()=>{
+    if(gameWon||answerRevealed||isAnimating)return;
+    clearPath();resetTimer();
+    if(cubeMode){renderAllCubeFaces();updateMinimap();}else{render();}
+};
+$('hintBtn').onclick=giveHint;$('answerBtn').onclick=showAnswer;
+$('shareBtn').onclick=shareResult;$('codeBtn').onclick=copyCode;$('replayBtn').onclick=replayPath;$('loadCodeBtn').onclick=loadCode;
+$('statsTgl').onclick=()=>{const b=$('statsBody');b.classList.toggle('hidden');$('statsTgl').textContent=b.classList.contains('hidden')?'紀錄 ▾':'紀錄 ▴'};
+document.querySelectorAll('.diff-pill').forEach(p=>p.onclick=()=>selectDiff(p.dataset.d));
+document.querySelectorAll('.size-pill').forEach(p=>p.onclick=()=>selectCubeSize(+p.dataset.sz));
+document.addEventListener('keydown',e=>{
+    if(e.key==='n'&&(e.ctrlKey||e.metaKey)){e.preventDefault();newGame()}
+    if(e.key==='z'&&(e.ctrlKey||e.metaKey)&&!gameWon&&!answerRevealed){
+        e.preventDefault();
+        if(userPath.length>0){
+            if(cubeMode){
+                truncateToCube(userPath.length-2);
+                if(userPath.length>0){
+                    const headFace=userPath[userPath.length-1][0];
+                    if(headFace!==currentFace) switchFace(headFace, true);
+                    else renderAllCubeFaces();
+                }
+                updateMinimap();
+            } else {
+                truncateTo(userPath.length-2);render();
+            }
+        }
+    }
+});
+window.addEventListener('resize',()=>{
+    if(!puzzle)return;
+    if(cubeMode){
+        buildUnfoldedMap();buildCubeGame();renderAllCubeFaces();updateMinimap();
+    } else {
+        const sp=userPath.slice(),sw=gameWon,sa=answerRevealed;
+        buildGrid();clearPath();for(const[r,c]of sp)addCell(r,c);gameWon=sw;answerRevealed=sa;
+        if(gameWon)gridEl.classList.add('won');if(answerRevealed)gridEl.classList.add('revealed');render();
+    }
+});
+renderStats();newGame();
+</script>
+</body>
+</html>

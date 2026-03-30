@@ -1,0 +1,16 @@
+# test files
+測試的一些東西/
+
+# comment stripping utility
+clear_code.py
+
+# generated output
+upload/
+dist/
+
+# IDE
+.idea/
+
+# claude code local settings
+.claude/
+project/.claude/

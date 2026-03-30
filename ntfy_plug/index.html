@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f172a">
+<title>ntfy Blocks</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0f172a; --surface: #1e293b; --surface2: #334155; --surface3: #475569;
+  --text: #f1f5f9; --text2: #94a3b8; --text3: #64748b;
+  --accent: #3b82f6; --accent2: #60a5fa;
+  --green: #22c55e; --red: #ef4444; --yellow: #eab308; --radius: 12px;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; padding-bottom: calc(60px + env(safe-area-inset-bottom, 20px));
+  overflow-x: hidden;
+}
+.header {
+  background: var(--surface); padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  border-bottom: 1px solid var(--surface2); position: sticky; top: 0; z-index: 100;
+}
+.header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.header h1 { font-size: 20px; font-weight: 700; }
+.header h1 span { color: var(--accent2); }
+.header-actions { display: flex; gap: 6px; }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 8px; border: none;
+  background: var(--surface2); color: var(--text2); font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.icon-btn:active { background: var(--surface3); }
+.lang-btn { font-size: 12px; font-weight: 700; width: 36px; }
+.search-bar { display: none; margin-bottom: 10px; }
+.search-bar.show { display: block; }
+.search-bar input {
+  width: 100%; background: var(--surface2); border: 1px solid transparent;
+  border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 15px; outline: none;
+}
+.search-bar input:focus { border-color: var(--accent); }
+.search-bar input::placeholder { color: var(--text3); }
+.topic-tabs {
+  display: flex; gap: 0; overflow-x: auto;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.topic-tabs::-webkit-scrollbar { display: none; }
+.topic-tab {
+  padding: 8px 16px; font-size: 13px; font-weight: 600; color: var(--text2);
+  background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.topic-tab:active { color: var(--text); }
+.topic-tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+.topic-tab-add { padding: 8px 12px; font-size: 16px; color: var(--text3); background: none; border: none; cursor: pointer; flex-shrink: 0; }
+.status-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 16px; font-size: 12px; color: var(--text3);
+}
+.status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+.status-dot.on { background: var(--green); }
+.status-dot.off { background: var(--red); }
+.content { padding: 8px 12px; }
+.block-card { background: var(--surface); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; }
+.block-card.pinned { border: 1px solid var(--yellow); }
+.block-header { padding: 12px 14px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+.block-header:active { background: var(--surface2); }
+.block-header-top { display: flex; justify-content: space-between; align-items: center; }
+.block-title-row { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.block-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.block-status { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0; }
+.block-status.running { background: var(--green); color: #000; }
+.block-status.finished { background: var(--surface2); color: var(--text2); }
+.block-status.has-error { background: var(--red); color: #fff; }
+.block-meta-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+.block-preview { font-size: 13px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin-right: 10px; }
+.block-info { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.block-count { background: var(--accent); color: white; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.block-time { font-size: 11px; color: var(--text3); }
+.block-arrow { transition: transform 0.2s; font-size: 11px; color: var(--text3); }
+.block-card.open .block-arrow { transform: rotate(90deg); }
+.block-actions { display: none; padding: 0 14px 10px; gap: 8px; }
+.block-card.open .block-actions { display: flex; }
+.block-action-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--surface2); background: none; color: var(--text2); font-size: 12px; cursor: pointer; }
+.block-action-btn:active { background: var(--surface2); }
+.block-action-btn.danger { border-color: var(--red); color: var(--red); }
+.block-messages { display: none; border-top: 1px solid var(--surface2); max-height: 400px; overflow-y: auto; }
+.block-card.open .block-messages { display: block; }
+.msg { padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; line-height: 1.5; }
+.msg:last-child { border-bottom: none; }
+.msg-time { font-size: 11px; color: var(--text3); margin-right: 6px; }
+.msg-priority-high { border-left: 3px solid var(--yellow); }
+.msg-priority-max { border-left: 3px solid var(--red); }
+.general-msg { background: var(--surface); border-radius: var(--radius); margin-bottom: 6px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+.section-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; padding: 14px 4px 6px; }
+.empty { text-align: center; padding: 60px 20px; color: var(--text2); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-text { font-size: 14px; line-height: 1.6; }
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface);
+  border-top: 1px solid var(--surface2); padding: 8px 16px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom)); display: flex; justify-content: space-around; z-index: 100;
+}
+.bottom-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: none; color: var(--text3); font-size: 10px; cursor: pointer; padding: 4px 12px; }
+.bottom-btn:active { color: var(--text); }
+.bottom-btn .bottom-icon { font-size: 20px; }
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 200; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal { background: var(--surface); border-radius: 16px; padding: 24px; width: 100%; max-width: 360px; max-height: 85vh; overflow-y: auto; }
+.modal h3 { font-size: 17px; margin-bottom: 16px; }
+.modal input {
+  width: 100%; background: var(--surface2); border: 1px solid transparent;
+  border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 15px; outline: none; margin-bottom: 16px;
+}
+.modal input:focus { border-color: var(--accent); }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-btns button { padding: 8px 18px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; }
+.modal-btn-cancel { background: var(--surface2); color: var(--text2); }
+.modal-btn-ok { background: var(--accent); color: white; }
+.guide-item { display: flex; gap: 14px; margin-bottom: 20px; align-items: flex-start; }
+.guide-icon { font-size: 28px; flex-shrink: 0; width: 40px; text-align: center; }
+.guide-text h4 { font-size: 14px; margin-bottom: 3px; color: var(--text); }
+.guide-text p { font-size: 13px; color: var(--text2); line-height: 1.5; }
+.msg-image { max-width: 100%; border-radius: 8px; margin-top: 6px; cursor: pointer; }
+.img-fullscreen {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+  z-index: 300; align-items: center; justify-content: center; padding: 20px; cursor: pointer;
+}
+.img-fullscreen.show { display: flex; }
+.img-fullscreen img { max-width: 100%; max-height: 90vh; border-radius: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1><span>ntfy</span> Blocks <small style="font-size:11px;color:var(--text3);font-weight:400">based on ntfy.sh</small></h1>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="refreshAll()" title="Refresh" style="font-size:18px">&#8635;</button>
+      <button class="icon-btn" onclick="toggleSearch()" title="Search">&#128269;</button>
+      <button class="icon-btn lang-btn" id="lang-btn" onclick="toggleLang()">EN</button>
+      <button class="icon-btn" onclick="showGuide()" title="Guide">?</button>
+      <button class="icon-btn" onclick="showAbout()" title="About">&#9432;</button>
+      <button class="icon-btn" onclick="collapseAll()" title="Collapse">&#9776;</button>
+    </div>
+  </div>
+  <div class="search-bar" id="search-bar">
+    <input type="text" id="search-input" oninput="onSearch()">
+  </div>
+  <div class="topic-tabs" id="topic-tabs">
+    <button class="topic-tab-add" onclick="showAddTopic()" title="Add Topic">+</button>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div>
+    <span class="status-dot off" id="status-dot"></span>
+    <span id="status-text"></span>
+  </div>
+  <div id="msg-count"></div>
+</div>
+
+<div class="img-fullscreen" id="img-fullscreen" onclick="this.classList.remove('show')">
+  <img id="img-fullscreen-src" src="">
+</div>
+
+<div class="content" id="content"></div>
+
+<div class="bottom-bar">
+  <button class="bottom-btn" onclick="exportTxt()">
+    <span class="bottom-icon">&#128196;</span><span data-i18n="export"></span>
+  </button>
+  <button class="bottom-btn" onclick="showAddTopic()">
+    <span class="bottom-icon">&#10133;</span><span data-i18n="topic"></span>
+  </button>
+  <button class="bottom-btn" onclick="clearHistory()">
+    <span class="bottom-icon">&#128465;</span><span data-i18n="clear"></span>
+  </button>
+</div>
+
+<div class="modal-overlay" id="modal-add-topic">
+  <div class="modal">
+    <h3 data-i18n="addTopic"></h3>
+    <input type="text" id="new-topic-input">
+    <p style="font-size:12px;color:var(--text3);margin:-8px 0 16px;line-height:1.4" data-i18n="topicHint"></p>
+    <div class="modal-btns">
+      <button class="modal-btn-cancel" onclick="closeModal()" data-i18n="cancel"></button>
+      <button class="modal-btn-ok" onclick="addTopic()" data-i18n="add"></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-about">
+  <div class="modal">
+    <h3 data-i18n="about"></h3>
+    <div style="font-size:14px;color:var(--text2);line-height:1.7">
+      <p><strong>ntfy Blocks</strong></p>
+      <p data-i18n="aboutDesc"></p>
+      <p style="margin-top:8px" data-i18n="aboutBuilt"></p>
+      <hr style="border:none;border-top:1px solid var(--surface2);margin:12px 0">
+      <p style="font-size:12px;color:var(--text3)" data-i18n="aboutPrivacy"></p>
+    </div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="modal-btn-ok" onclick="closeModal()">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-guide">
+  <div class="modal" style="max-width:380px">
+    <h3 data-i18n="guideTitle"></h3>
+    <div id="guide-content"></div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="modal-btn-ok" onclick="closeModal()" data-i18n="gotIt"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LANG_KEY = "ntfy_lang";
+let lang = localStorage.getItem(LANG_KEY) || "zh";
+
+const i18n = {
+  zh: {
+    export: "匯出", topic: "頻道", clear: "清除",
+    addTopic: "新增 Topic", cancel: "取消", add: "加入",
+    topicHint: "&#128274; Topic 名稱就像密碼，請使用不容易被猜到的名稱來保護你的訊息。",
+    topicPlaceholder: "輸入 topic 名稱...",
+    searchPlaceholder: "搜尋訊息...",
+    notConnected: "未連線",
+    connected: (n) => `已連線 (${n} 個頻道)`,
+    msgCount: (n) => `${n} 則訊息`,
+    emptyAdd: "點擊 + 新增 Topic",
+    emptyNoMsg: "尚無訊息",
+    noResults: (q) => `找不到「${q}」的結果`,
+    blocks: (n) => `區塊 (${n})`,
+    general: "一般訊息",
+    running: "執行中", done: "完成", error: "錯誤",
+    pin: "釘選", unpin: "取消釘選", deleteBlock: "刪除",
+    confirmRemoveTopic: (n) => `確定移除頻道「${n}」？`,
+    confirmDeleteBlock: "確定刪除此區塊？",
+    confirmClear: (n) => `確定清除「${n}」的所有訊息？`,
+    noExport: "沒有可匯出的訊息。",
+    about: "關於",
+    aboutDesc: "具有區塊分組功能的推播通知檢視器。",
+    aboutBuilt: '基於 <a href="https://ntfy.sh" style="color:var(--accent2)">ntfy.sh</a> (開源) 建構。',
+    aboutPrivacy: "&#128274; <strong>隱私保護</strong><br>&#8226; 所有資料儲存在您的裝置本地<br>&#8226; 無分析追蹤、無外部伺服器<br>&#8226; 僅連接 ntfy.sh 接收訊息<br>&#8226; 原始碼完全開放可審查",
+    guideTitle: "功能簡介",
+    gotIt: "了解",
+    guideItems: [
+      { icon: "&#128233;", title: "即時通知", desc: "透過 Python 程式發送訊息，手機即時收到推播通知。" },
+      { icon: "&#128230;", title: "區塊 (Block) 分組", desc: "同一次程式執行的通知會自動歸為一個區塊，收合顯示。點擊可展開查看所有訊息。" },
+      { icon: "&#128204;", title: "釘選區塊", desc: "重要的區塊可以釘選到最上方，方便快速查看。展開區塊後點擊「釘選」。" },
+      { icon: "&#128269;", title: "搜尋訊息", desc: "點擊放大鏡圖示，可搜尋訊息內容或區塊名稱。" },
+      { icon: "&#128196;", title: "匯出 TXT", desc: "底部工具列點擊「匯出」，將歷史紀錄下載為格式化的 TXT 檔案。" },
+      { icon: "&#128226;", title: "多頻道管理", desc: "點擊 + 可新增多個 Topic 頻道，頂部 Tab 切換。長按 Tab 可移除頻道。" },
+      { icon: "&#127912;", title: "狀態標籤", desc: "區塊會自動標示狀態：執行中 (綠色)、完成 (灰色)、錯誤 (紅色)。" },
+      { icon: "&#128274;", title: "隱私安全", desc: "所有資料存在手機本地。Topic 名稱就是密碼，不外洩就不會被看到。" },
+      { icon: "&#128247;", title: "圖片附件", desc: "Python 端可發送圖片（如 loss curve），在訊息中直接查看，點擊放大。" },
+    ],
+  },
+  en: {
+    export: "Export", topic: "Topic", clear: "Clear",
+    addTopic: "Add Topic", cancel: "Cancel", add: "Add",
+    topicHint: "&#128274; Topic name is like a password. Use a hard-to-guess name to protect your messages.",
+    topicPlaceholder: "Enter topic name...",
+    searchPlaceholder: "Search messages...",
+    notConnected: "Not connected",
+    connected: (n) => `Connected (${n} topics)`,
+    msgCount: (n) => `${n} messages`,
+    emptyAdd: "Tap + to add a topic",
+    emptyNoMsg: "No messages yet",
+    noResults: (q) => `No results for "${q}"`,
+    blocks: (n) => `Blocks (${n})`,
+    general: "General",
+    running: "Running", done: "Done", error: "Error",
+    pin: "Pin", unpin: "Unpin", deleteBlock: "Delete",
+    confirmRemoveTopic: (n) => `Remove topic "${n}"?`,
+    confirmDeleteBlock: "Delete this block?",
+    confirmClear: (n) => `Clear all messages in "${n}"?`,
+    noExport: "No messages to export.",
+    about: "About",
+    aboutDesc: "Push notification viewer with block grouping.",
+    aboutBuilt: 'Built on <a href="https://ntfy.sh" style="color:var(--accent2)">ntfy.sh</a> (open source).',
+    aboutPrivacy: "&#128274; <strong>Privacy</strong><br>&#8226; All data is stored locally on your device<br>&#8226; No analytics, no tracking, no external servers<br>&#8226; Only connects to ntfy.sh to receive messages<br>&#8226; Source code is fully open and auditable",
+    guideTitle: "Feature Guide",
+    gotIt: "Got it",
+    guideItems: [
+      { icon: "&#128233;", title: "Real-time Notifications", desc: "Send messages from Python scripts, receive push notifications on your phone instantly." },
+      { icon: "&#128230;", title: "Block Grouping", desc: "Notifications from the same execution are grouped into collapsible blocks. Tap to expand and see all messages." },
+      { icon: "&#128204;", title: "Pin Blocks", desc: "Pin important blocks to the top for quick access. Expand a block and tap 'Pin'." },
+      { icon: "&#128269;", title: "Search", desc: "Tap the search icon to search message content or block names." },
+      { icon: "&#128196;", title: "Export TXT", desc: "Tap 'Export' in the bottom toolbar to download history as a formatted TXT file." },
+      { icon: "&#128226;", title: "Multi-Topic", desc: "Tap + to add multiple topics. Switch between them with tabs. Long-press a tab to remove it." },
+      { icon: "&#127912;", title: "Status Tags", desc: "Blocks auto-detect status: Running (green), Done (gray), Error (red)." },
+      { icon: "&#128274;", title: "Privacy", desc: "All data is stored locally on your phone. Your topic name is your password — keep it secret." },
+      { icon: "&#128247;", title: "Image Attachments", desc: "Python can send images (e.g. loss curves). View them inline, tap to fullscreen." },
+    ],
+  },
+};
+
+function t(key) { return i18n[lang][key]; }
+
+function toggleLang() {
+  lang = lang === "zh" ? "en" : "zh";
+  localStorage.setItem(LANG_KEY, lang);
+  applyLang();
+}
+
+function applyLang() {
+  document.getElementById("lang-btn").textContent = lang === "zh" ? "EN" : "中";
+  document.getElementById("search-input").placeholder = t("searchPlaceholder");
+  document.getElementById("new-topic-input").placeholder = t("topicPlaceholder");
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (i18n[lang][key] !== undefined) {
+      const val = i18n[lang][key];
+      el.innerHTML = typeof val === "function" ? "" : val;
+    }
+  });
+  updateStatus();
+  renderMessages();
+}
+
+const STORAGE_TOPICS = "ntfy_topics";
+const STORAGE_MESSAGES = "ntfy_messages";
+const STORAGE_PINS = "ntfy_pins";
+const STORAGE_DELETED = "ntfy_deleted";
+
+let topics = [];
+let activeTopic = null;
+let allMessages = {};
+let pinnedBlocks = {};
+let eventSources = {};
+let deletedIds = {};
+let searchQuery = "";
+
+window.addEventListener("load", () => {
+  topics = JSON.parse(localStorage.getItem(STORAGE_TOPICS) || "[]");
+  allMessages = JSON.parse(localStorage.getItem(STORAGE_MESSAGES) || "{}");
+  const savedPins = JSON.parse(localStorage.getItem(STORAGE_PINS) || "{}");
+  for (const [tp, arr] of Object.entries(savedPins)) pinnedBlocks[tp] = new Set(arr);
+  const savedDeleted = JSON.parse(localStorage.getItem(STORAGE_DELETED) || "{}");
+  for (const [tp, arr] of Object.entries(savedDeleted)) deletedIds[tp] = new Set(arr);
+  if (topics.length > 0) {
+    activeTopic = topics[0];
+    for (const tp of topics) connectTopic(tp);
+  }
+  applyLang();
+  renderTabs();
+  renderMessages();
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+});
+
+function showAddTopic() {
+  document.getElementById("modal-add-topic").classList.add("show");
+  setTimeout(() => document.getElementById("new-topic-input").focus(), 100);
+}
+function closeModal() { document.querySelectorAll(".modal-overlay").forEach(m => m.classList.remove("show")); }
+
+function addTopic() {
+  const input = document.getElementById("new-topic-input");
+  const name = input.value.trim();
+  if (!name) return;
+  if (!topics.includes(name)) {
+    topics.push(name);
+    allMessages[name] = allMessages[name] || [];
+    pinnedBlocks[name] = pinnedBlocks[name] || new Set();
+    connectTopic(name);
+  }
+  activeTopic = name;
+  saveTopics(); renderTabs(); renderMessages(); closeModal();
+  input.value = "";
+}
+
+function removeTopic(name) {
+  if (!confirm(t("confirmRemoveTopic")(name))) return;
+  if (eventSources[name]) { eventSources[name].close(); delete eventSources[name]; }
+  topics = topics.filter(x => x !== name);
+  delete allMessages[name]; delete pinnedBlocks[name]; delete deletedIds[name];
+  if (activeTopic === name) activeTopic = topics[0] || null;
+  saveTopics(); saveMessages(); savePins(); saveDeleted(); renderTabs(); renderMessages(); updateStatus();
+}
+
+function switchTopic(name) { activeTopic = name; renderTabs(); renderMessages(); }
+function saveTopics() { localStorage.setItem(STORAGE_TOPICS, JSON.stringify(topics)); }
+
+function renderTabs() {
+  const c = document.getElementById("topic-tabs");
+  let h = "";
+  for (const tp of topics) {
+    const cls = tp === activeTopic ? "topic-tab active" : "topic-tab";
+    h += `<button class="${cls}" onclick="switchTopic('${esc(tp)}')" oncontextmenu="event.preventDefault();removeTopic('${esc(tp)}')">${esc(tp)}</button>`;
+  }
+  h += `<button class="topic-tab-add" onclick="showAddTopic()">+</button>`;
+  c.innerHTML = h;
+}
+
+function connectTopic(topic) {
+  if (eventSources[topic]) return;
+  fetchExisting(topic);
+  const es = new EventSource(`https://ntfy.sh/${topic}/sse`);
+  es.onopen = () => updateStatus();
+  es.onmessage = (e) => { try { const d = JSON.parse(e.data); if (d.event === "message") addMessage(topic, d); } catch(e){} };
+  es.onerror = () => updateStatus();
+  eventSources[topic] = es;
+  updateStatus();
+}
+
+async function fetchExisting(topic) {
+  try {
+    const res = await fetch(`https://ntfy.sh/${topic}/json?poll=1&since=24h`);
+    const text = await res.text();
+    const existingIds = new Set((allMessages[topic]||[]).map(m => m.id));
+    for (const line of text.trim().split("\n").filter(Boolean)) {
+      try { const d = JSON.parse(line); if (d.event === "message" && !existingIds.has(d.id)) addMessage(topic, d, true); } catch(e){}
+    }
+    renderMessages();
+  } catch(e){}
+}
+
+function updateStatus() {
+  const n = Object.keys(eventSources).length;
+  document.getElementById("status-dot").className = n > 0 ? "status-dot on" : "status-dot off";
+  document.getElementById("status-text").textContent = n > 0 ? t("connected")(n) : t("notConnected");
+}
+
+function parseBlockInfo(data) {
+  let blockId = null, blockName = null;
+  const match = (data.title || "").match(/^\[(.+)\]$/);
+  if (match) blockName = match[1];
+  for (const tag of (data.tags || [])) { if (tag.startsWith("block_")) { blockId = tag; break; } }
+  if (blockName && !blockId) blockId = "block_" + blockName.replace(/\s+/g, "_");
+  return { blockId, blockName };
+}
+
+function addMessage(topic, data, silent = false) {
+  if (!allMessages[topic]) allMessages[topic] = [];
+  if (allMessages[topic].find(m => m.id === data.id)) return;
+  if (deletedIds[topic] && deletedIds[topic].has(data.id)) return;
+  const { blockId, blockName } = parseBlockInfo(data);
+  const attachment = data.attachment || null;
+  let imageUrl = null;
+  if (attachment && attachment.url && /\.(png|jpg|jpeg|gif|webp)$/i.test(attachment.name || attachment.url)) {
+    imageUrl = attachment.url;
+  }
+  allMessages[topic].push({
+    id: data.id, time: data.time * 1000, message: data.message,
+    title: data.title || "", priority: data.priority || 3,
+    tags: data.tags || [], blockId, blockName, imageUrl,
+  });
+  allMessages[topic].sort((a, b) => a.time - b.time);
+  saveMessages();
+  if (!silent) renderMessages();
+}
+
+function saveMessages() { localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(allMessages)); }
+function saveDeleted() {
+  const o = {};
+  for (const [tp, s] of Object.entries(deletedIds)) o[tp] = [...s];
+  localStorage.setItem(STORAGE_DELETED, JSON.stringify(o));
+}
+function savePins() {
+  const o = {};
+  for (const [tp, s] of Object.entries(pinnedBlocks)) o[tp] = [...s];
+  localStorage.setItem(STORAGE_PINS, JSON.stringify(o));
+}
+
+function renderMessages() {
+  const content = document.getElementById("content");
+  if (!activeTopic || !allMessages[activeTopic]) {
+    content.innerHTML = `<div class="empty"><div class="empty-icon">&#128225;</div><div class="empty-text">${topics.length === 0 ? t("emptyAdd") : t("emptyNoMsg")}</div></div>`;
+    document.getElementById("msg-count").textContent = t("msgCount")(0);
+    return;
+  }
+  let msgs = allMessages[activeTopic];
+  document.getElementById("msg-count").textContent = t("msgCount")(msgs.length);
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    msgs = msgs.filter(m => m.message.toLowerCase().includes(q) || (m.blockName||"").toLowerCase().includes(q));
+  }
+  const blocks = {}, general = [];
+  for (const msg of msgs) {
+    if (msg.blockId) {
+      if (!blocks[msg.blockId]) blocks[msg.blockId] = { blockName: msg.blockName || msg.blockId, messages: [] };
+      blocks[msg.blockId].messages.push(msg);
+    } else general.push(msg);
+  }
+  const pins = pinnedBlocks[activeTopic] || new Set();
+  const blockEntries = Object.entries(blocks);
+  blockEntries.sort((a, b) => {
+    const ap = pins.has(a[0]) ? 1 : 0, bp = pins.has(b[0]) ? 1 : 0;
+    if (ap !== bp) return bp - ap;
+    return b[1].messages[0].time - a[1].messages[0].time;
+  });
+  let html = "";
+  if (blockEntries.length > 0) {
+    html += `<div class="section-label">${t("blocks")(blockEntries.length)}</div>`;
+    for (const [blockId, block] of blockEntries) {
+      const m = block.messages, lastMsg = m[m.length - 1], isPinned = pins.has(blockId);
+      const hasEnd = m.some(x => x.tags.includes("checkered_flag"));
+      const hasError = m.some(x => x.priority >= 4 && (x.message.toLowerCase().includes("error") || x.tags.includes("warning") || x.tags.includes("x")));
+      let sCls = "running", sTxt = t("running");
+      if (hasError) { sCls = "has-error"; sTxt = t("error"); }
+      else if (hasEnd) { sCls = "finished"; sTxt = t("done"); }
+      html += `<div class="block-card ${isPinned?'pinned':''}" id="bc-${blockId}">
+        <div class="block-header" onclick="toggleBlock('bc-${blockId}')">
+          <div class="block-header-top">
+            <div class="block-title-row">
+              ${isPinned?'<span style="color:var(--yellow);margin-right:4px">&#128204;</span>':''}
+              <span class="block-title">${escHtml(block.blockName)}</span>
+              <span class="block-status ${sCls}">${sTxt}</span>
+            </div>
+            <span class="block-arrow">&#9654;</span>
+          </div>
+          <div class="block-meta-row">
+            <span class="block-preview">${escHtml(lastMsg.message)}</span>
+            <div class="block-info"><span class="block-count">${m.length}</span><span class="block-time">${fmtDateTime(m[0].time)}</span></div>
+          </div>
+        </div>
+        <div class="block-actions">
+          <button class="block-action-btn" onclick="event.stopPropagation();togglePin('${blockId}')">${isPinned?t("unpin"):t("pin")}</button>
+          <button class="block-action-btn danger" onclick="event.stopPropagation();deleteBlock('${blockId}')">${t("deleteBlock")}</button>
+        </div>
+        <div class="block-messages">`;
+      for (const msg of m) {
+        const pc = msg.priority >= 5 ? "msg-priority-max" : msg.priority >= 4 ? "msg-priority-high" : "";
+        const imgHtml = msg.imageUrl ? `<br><img class="msg-image" src="${escHtml(msg.imageUrl)}" onclick="event.stopPropagation();showImage('${escHtml(msg.imageUrl)}')" loading="lazy">` : "";
+        html += `<div class="msg ${pc}"><span class="msg-time">${fmtTime(msg.time)}</span>${escHtml(msg.message)}${imgHtml}</div>`;
+      }
+      html += `</div></div>`;
+    }
+  }
+  if (general.length > 0) {
+    html += `<div class="section-label">${t("general")}</div>`;
+    for (const m of [...general].reverse()) {
+      const pc = m.priority >= 5 ? "msg-priority-max" : m.priority >= 4 ? "msg-priority-high" : "";
+      const ts = m.title ? `<strong>${escHtml(m.title)}</strong> &#8212; ` : "";
+      html += `<div class="general-msg ${pc}"><span class="msg-time">${fmtDateTime(m.time)}</span><br>${ts}${escHtml(m.message)}</div>`;
+    }
+  }
+  if (!html) html = `<div class="empty"><div class="empty-icon">&#128269;</div><div class="empty-text">${t("noResults")(escHtml(searchQuery))}</div></div>`;
+  content.innerHTML = html;
+}
+
+function toggleBlock(id) { document.getElementById(id).classList.toggle("open"); }
+function collapseAll() { document.querySelectorAll(".block-card").forEach(el => el.classList.remove("open")); }
+
+function refreshAll() {
+  for (const tp of Object.keys(eventSources)) {
+    eventSources[tp].close();
+    delete eventSources[tp];
+  }
+  for (const tp of topics) {
+    connectTopic(tp);
+  }
+}
+
+function showImage(url) {
+  document.getElementById("img-fullscreen-src").src = url;
+  document.getElementById("img-fullscreen").classList.add("show");
+}
+
+function togglePin(blockId) {
+  if (!pinnedBlocks[activeTopic]) pinnedBlocks[activeTopic] = new Set();
+  const p = pinnedBlocks[activeTopic];
+  p.has(blockId) ? p.delete(blockId) : p.add(blockId);
+  savePins(); renderMessages();
+}
+
+function deleteBlock(blockId) {
+  if (!confirm(t("confirmDeleteBlock"))) return;
+  if (!deletedIds[activeTopic]) deletedIds[activeTopic] = new Set();
+  for (const m of allMessages[activeTopic]) {
+    if (m.blockId === blockId) deletedIds[activeTopic].add(m.id);
+  }
+  allMessages[activeTopic] = allMessages[activeTopic].filter(m => m.blockId !== blockId);
+  if (pinnedBlocks[activeTopic]) pinnedBlocks[activeTopic].delete(blockId);
+  saveMessages(); savePins(); saveDeleted(); renderMessages();
+}
+
+function toggleSearch() {
+  const bar = document.getElementById("search-bar");
+  bar.classList.toggle("show");
+  if (bar.classList.contains("show")) document.getElementById("search-input").focus();
+  else { document.getElementById("search-input").value = ""; searchQuery = ""; renderMessages(); }
+}
+function onSearch() { searchQuery = document.getElementById("search-input").value.trim(); renderMessages(); }
+
+function exportTxt() {
+  if (!activeTopic || !allMessages[activeTopic] || allMessages[activeTopic].length === 0) { alert(t("noExport")); return; }
+  const msgs = allMessages[activeTopic], blocks = {}, general = [];
+  for (const msg of msgs) {
+    if (msg.blockId) { if (!blocks[msg.blockId]) blocks[msg.blockId] = { blockName: msg.blockName || msg.blockId, messages: [] }; blocks[msg.blockId].messages.push(msg); }
+    else general.push(msg);
+  }
+  let txt = `ntfy History - Topic: ${activeTopic}\nExported: ${new Date().toLocaleString()}\n${"=".repeat(50)}\n\n`;
+  if (general.length > 0) {
+    txt += `${"-".repeat(50)}\nGeneral Messages\n${"-".repeat(50)}\n`;
+    for (const m of general) { const pri = m.priority >= 4 ? ` [${m.priority >= 5?"MAX":"HIGH"}]` : ""; txt += `  [${new Date(m.time).toLocaleString()}]${pri} ${m.message}\n`; }
+    txt += "\n";
+  }
+  for (const [, block] of Object.entries(blocks)) {
+    const m = block.messages;
+    txt += `${"=".repeat(50)}\nBlock: ${block.blockName}\nTime:  ${new Date(m[0].time).toLocaleString()} ~ ${new Date(m[m.length-1].time).toLocaleString()}\nMessages: ${m.length}\n${"=".repeat(50)}\n`;
+    for (const msg of m) { const pri = msg.priority >= 4 ? ` [${msg.priority >= 5?"MAX":"HIGH"}]` : ""; txt += `  [${new Date(msg.time).toLocaleTimeString()}]${pri} ${msg.message}\n`; }
+    txt += "\n";
+  }
+  const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url;
+  a.download = `ntfy_${activeTopic}_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function clearHistory() {
+  if (!activeTopic) return;
+  if (!confirm(t("confirmClear")(activeTopic))) return;
+  if (!deletedIds[activeTopic]) deletedIds[activeTopic] = new Set();
+  for (const m of (allMessages[activeTopic] || [])) deletedIds[activeTopic].add(m.id);
+  allMessages[activeTopic] = [];
+  saveMessages(); saveDeleted(); renderMessages();
+}
+
+function showGuide() {
+  const items = t("guideItems");
+  let h = "";
+  for (const item of items) {
+    h += `<div class="guide-item"><div class="guide-icon">${item.icon}</div><div class="guide-text"><h4>${item.title}</h4><p>${item.desc}</p></div></div>`;
+  }
+  document.getElementById("guide-content").innerHTML = h;
+  document.getElementById("modal-guide").classList.add("show");
+}
+
+function showAbout() { document.getElementById("modal-about").classList.add("show"); }
+
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+function fmtDateTime(ts) { const d = new Date(ts); return `${d.toLocaleDateString("en-GB",{month:"2-digit",day:"2-digit"})} ${d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}`; }
+function escHtml(s) { const el = document.createElement("span"); el.textContent = s; return el.innerHTML; }
+function esc(s) { return s.replace(/'/g, "\\'").replace(/"/g, "&quot;"); }
+
+document.querySelectorAll(".modal-overlay").forEach(el => { el.addEventListener("click", function(e) { if (e.target === this) closeModal(); }); });
+document.getElementById("new-topic-input").addEventListener("keydown", (e) => { if (e.key === "Enter") addTopic(); });
+</script>
+</body>
+</html>

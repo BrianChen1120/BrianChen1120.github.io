@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+  <title>Guitar Tone Morphing by Diffusion-based Model</title>
+  <meta name="description" content="Project page for ...">
+  <meta name="keywords" content="Computer Vision, Image Processing, Deep Learning">
+  <meta property="og:title" content="Guitar Tone Morphing by Diffusion-based Model" />
+  <meta property="og:description" content="Project page for ..." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="../../assets/projects/cover.png" />
+  <meta property="og:url" content="https://brianchen1120.github.io/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Guitar Tone Morphing by Diffusion-based Model" />
+  <meta name="twitter:description" content="Project page for ..." />
+  <meta name="twitter:image" content="../../assets/projects/cover.png" />
+  <link rel="icon" href="../../assets/favicon.png" sizes="any">
+
+  <!-- 可選：需要數學式再保留，否則刪掉這兩段 -->
+  <script>
+    window.MathJax = { tex:{inlineMath:[["$","$"]]}, chtml:{scale:1.05, mtextInheritFont:true}, svg:{fontCache:'global'} };
+  </script>
+  <script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+
+  
+</head>
+<body>
+
+  <!-- ===== Hero：置中 ===== -->
+  <header class="container">
+    <h1>Guitar Tone Morphing by Diffusion-based Model</h1>
+    <div class="venue">APSIPA ASC 2025</div>
+
+    <div class="authors">
+      <span class="author">
+        <a href="https://scholar.google.com.tw/citations?user=jlBWeQEAAAAJ&hl=zh-TW" target="_blank" rel="noopener">Kuan-Yu Chen</a><sup>1,*</sup>
+      </span>,
+      <span class="author">
+        <a href="https://brianchen1120.github.io/" target="_blank" rel="noopener">Kuan-Lin (Brian) Chen</a><sup>1,*</sup>
+      </span>,
+      <span class="author">
+        Yu-Chieh Yu<sup>1,*</sup>
+      </span>,
+      <span class="author">
+        <a href="https://djj.ee.ntu.edu.tw/index.htm" target="_blank" rel="noopener">Jian-Jiun Ding</a><sup>1</sup>
+      </span>
+    </div>
+    <div class="affil">
+      <sup>1</sup>Graduate Institute of Communication Engineering, National Taiwan University, Taiwan
+    </div>
+    <p class="equal-note muted">
+      <sup>*</sup>These three authors contributed equally.
+    </p>
+
+    <div class="resource-links" aria-label="project-links">
+      <a href="https://arxiv.org/abs/2510.07908" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6a2 2 0 0 0-2 2zm2 0h7v5h5v11H6V4zm9 .5L18.5 8H15V4.5z" fill-rule="evenodd"/></svg>
+        arXiv
+      </a>
+      <a href="https://ieeexplore.ieee.org/document/11249227" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6a2 2 0 0 0-2 2zm2 0h7v5h5v11H6V4zm9 .5L18.5 8H15V4.5z" fill-rule="evenodd"/></svg>
+        Paper
+      </a>
+    </div>
+
+    <figure class="hero-figure hero-figure--bleed">
+      <img src="../../assets/works/Guitar%20Tone%20Morphing.png" alt="Project cover / teaser">
+    </figure>
+    <p class="tagline">
+      We compare three latent-diffusion approaches (with single- and dual-sided LoRA) against a non-diffusion baseline that performs spherical interpolation in Music2Latent.
+    </p>
+  </header>
+
+  <main>
+    <section id="abstract">
+      <div class="container">
+        <h2>Abstract</h2>
+        <div class="content">
+          <p>
+            In Music Information Retrieval (MIR), modeling and transforming the tone of musical instruments, particularly electric guitars, has gained increasing attention due to the richness of the instrument tone and the flexibility of expression.
+            Tone morphing enables smooth transitions between different guitar sounds, giving musicians greater freedom to explore new textures and personalize their performances.
+            This study explores learning-based approaches for guitar tone morphing, beginning with LoRA fine-tuning to improve the model performance on limited data.
+            Moreover, we introduce a simpler method, named spherical interpolation using Music2Latent. It yields significantly better results than the more complex fine-tuning approach.
+            Experiments show that the proposed architecture generates smoother and more natural tone transitions, making it a practical and efficient tool for music production and real-time audio effects.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="audio-demos">
+      <div class="container">
+        <h2>Some Interpolation Audio Samples</h2>
+        <div class="content">
+
+          <!-- ========== Demo Group 1: Tone 1 & Tone 2 ========== -->
+          <div class="demo-group">
+            <div class="audio-grid two-col" aria-label="tone-pair">
+              <div class="audio-card">
+                <p class="audio-title">Tone 1 <span class="audio-chip">.wav</span></p>
+                <audio controls preload="none" src="./src/3199.wav" type="audio/wav"></audio>
+              </div>
+              <div class="audio-card">
+                <p class="audio-title">Tone 2 <span class="audio-chip">.wav</span></p>
+                <audio controls preload="none" src="./src/31062.wav" type="audio/wav"></audio>
+              </div>
+            </div>
+
+            <!-- Music2Latent (Ours — Best) -->
+            <div class="audio-card morph-row is-highlight" id="morph-m2l">
+              <div class="morph-head">
+                <div>
+                  <strong>Music2Latent</strong> <span class="ours-badge">Best</span>
+                </div>
+                <button class="audio-chip play-seq" data-target="#morph-m2l">&#9654; Play all</button>
+              </div>
+              <div class="morph-steps">
+                <div class="step-card"><div class="step-title">Tone 1 (100%) + Tone 2 (0%)</div>
+                  <audio controls preload="none" src="./src/M2Ldemo1/Reconstructed1.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (75%) + Tone 2 (25%)</div>
+                  <audio controls preload="none" src="./src/M2Ldemo1/Reconstructed2.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (50%) + Tone 2 (50%)</div>
+                  <audio controls preload="none" src="./src/M2Ldemo1/Reconstructed3.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (25%) + Tone 2 (75%)</div>
+                  <audio controls preload="none" src="./src/M2Ldemo1/Reconstructed4.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (0%) + Tone 2 (100%)</div>
+                  <audio controls preload="none" src="./src/M2Ldemo1/Reconstructed5.wav" type="audio/wav"></audio></div>
+              </div>
+            </div>
+
+            <!-- MusicLDM (w/o LoRA) -->
+            <div class="audio-card morph-row" id="morph-ldm-wo">
+              <div class="morph-head">
+                <div><strong>MusicLDM (w/o LoRA)</strong></div>
+                <button class="audio-chip play-seq" data-target="#morph-ldm-wo">&#9654; Play all</button>
+              </div>
+              <div class="morph-steps">
+                <div class="step-card"><div class="step-title">Tone 1 (100%) + Tone 2 (0%)</div>
+                  <audio controls preload="none" src="./src/wo%20LoRA/audio_sequence_1.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (75%) + Tone 2 (25%)</div>
+                  <audio controls preload="none" src="./src/wo%20LoRA/audio_sequence_2.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (50%) + Tone 2 (50%)</div>
+                  <audio controls preload="none" src="./src/wo%20LoRA/audio_sequence_3.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (25%) + Tone 2 (75%)</div>
+                  <audio controls preload="none" src="./src/wo%20LoRA/audio_sequence_4.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (0%) + Tone 2 (100%)</div>
+                  <audio controls preload="none" src="./src/wo%20LoRA/audio_sequence_5.wav" type="audio/wav"></audio></div>
+              </div>
+            </div>
+
+            <!-- MusicLDM (Single LoRA) -->
+            <div class="audio-card morph-row" id="morph-ldm-1lora">
+              <div class="morph-head">
+                <div><strong>MusicLDM (Single LoRA)</strong></div>
+                <button class="audio-chip play-seq" data-target="#morph-ldm-1lora">&#9654; Play all</button>
+              </div>
+              <div class="morph-steps">
+                <div class="step-card"><div class="step-title">Tone 1 (100%) + Tone 2 (0%)</div>
+                  <audio controls preload="none" src="./src/1%20LoRA/morphed_audio_1.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (75%) + Tone 2 (25%)</div>
+                  <audio controls preload="none" src="./src/1%20LoRA/morphed_audio_2.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (50%) + Tone 2 (50%)</div>
+                  <audio controls preload="none" src="./src/1%20LoRA/morphed_audio_3.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (25%) + Tone 2 (75%)</div>
+                  <audio controls preload="none" src="./src/1%20LoRA/morphed_audio_4.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (0%) + Tone 2 (100%)</div>
+                  <audio controls preload="none" src="./src/1%20LoRA/morphed_audio_5.wav" type="audio/wav"></audio></div>
+              </div>
+            </div>
+
+            <!-- MusicLDM (Dual LoRA) -->
+            <div class="audio-card morph-row" id="morph-ldm-2lora">
+              <div class="morph-head">
+                <div><strong>MusicLDM (Dual LoRA)</strong></div>
+                <button class="audio-chip play-seq" data-target="#morph-ldm-2lora">&#9654; Play all</button>
+              </div>
+              <div class="morph-steps">
+                <div class="step-card"><div class="step-title">Tone 1 (100%) + Tone 2 (0%)</div>
+                  <audio controls preload="none" src="./src/2%20LoRA/audio_sequence_1.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (75%) + Tone 2 (25%)</div>
+                  <audio controls preload="none" src="./src/2%20LoRA/audio_sequence_2.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (50%) + Tone 2 (50%)</div>
+                  <audio controls preload="none" src="./src/2%20LoRA/audio_sequence_3.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (25%) + Tone 2 (75%)</div>
+                  <audio controls preload="none" src="./src/2%20LoRA/audio_sequence_4.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 1 (0%) + Tone 2 (100%)</div>
+                  <audio controls preload="none" src="./src/2%20LoRA/audio_sequence_5.wav" type="audio/wav"></audio></div>
+              </div>
+            </div>
+          </div><!-- /.demo-group -->
+
+          <!-- ========== Demo Group 2: Tone 3 & Tone 4 ========== -->
+          <div class="demo-group">
+            <div class="audio-grid two-col" aria-label="tone-pair">
+              <div class="audio-card">
+                <p class="audio-title">Tone 3 Source <span class="audio-chip">.wav</span></p>
+                <audio controls preload="none" src="./src/59217.wav" type="audio/wav"></audio>
+              </div>
+              <div class="audio-card">
+                <p class="audio-title">Tone 4 Target <span class="audio-chip">.wav</span></p>
+                <audio controls preload="none" src="./src/92881.wav" type="audio/wav"></audio>
+              </div>
+            </div>
+
+            <!-- Music2Latent (Ours — Best) -->
+            <div class="audio-card morph-row is-highlight" id="morph-m2l-extra">
+              <div class="morph-head">
+                <div>
+                  <strong>Music2Latent</strong> <span class="ours-badge">Best</span>
+                </div>
+                <button class="audio-chip play-seq" data-target="#morph-m2l-extra">&#9654; Play all</button>
+              </div>
+              <div class="morph-steps">
+                <div class="step-card"><div class="step-title">Tone 3 (100%) + Tone 4 (0%)</div>
+                  <audio controls preload="none" src="./src/M2Ldemo2/Reconstructed1.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 3 (75%) + Tone 4 (25%)</div>
+                  <audio controls preload="none" src="./src/M2Ldemo2/Reconstructed2.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 3 (50%) + Tone 4 (50%)</div>
+                  <audio controls preload="none" src="./src/M2Ldemo2/Reconstructed3.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 3 (25%) + Tone 4 (75%)</div>
+                  <audio controls preload="none" src="./src/M2Ldemo2/Reconstructed4.wav" type="audio/wav"></audio></div>
+                <div class="step-card"><div class="step-title">Tone 3 (0%) + Tone 4 (100%)</div>
+                  <audio controls preload="none" src="./src/M2Ldemo2/Reconstructed5.wav" type="audio/wav"></audio></div>
+              </div>
+            </div>
+          </div><!-- /.demo-group -->
+
+        </div>
+      </div>
+    </section>
+
+    <section id="method">
+      <div class="container">
+        <h2>Method Overview</h2>
+        <div class="content">
+          <p>
+            We investigate three model variants for guitar tone morphing: two diffusion-based with different LoRA placements and one lightweight latent interpolation, together with standard interpolation operators.
+            Given two input tones, we encode them into latent vectors and interpolate either in latent space to trace a smooth morphing trajectory, then decode to audio.
+            When content preservation is critical, Adaptive Instance Normalization (AdaIN) is optionally applied to align statistics.
+          </p>
+
+          <hr class="section-sep">
+
+          <h3 style="text-align:center; margin-top:1rem;">A. Single-Sided LoRA Fine-Tuning</h3>
+          <figure class="method-figure method-figure--bleed" data-scale="1.4">
+            <img src="./src/1LoRA.png" alt="Single-sided LoRA (decoder)">
+          </figure>
+          <p>
+            Built on an AudioLDM-style pipeline, this variant uses textual inversion to enrich prompts and then applies LoRA fine-tuning to the conditional U-Net (decoder side) to better align text embeddings with latent features.
+            The unconditional U-Net is independently fine-tuned with a small LoRA rank (e.g., 2) without textual input. At inference time, we perform SLERP on the latent vectors of the two input tones and LERP on their text embeddings.
+            The interpolated representation is then decoded through the unconditional U-Net, the VAE, and the vocoder. Only the decoder is adapted; the encoder remains frozen, enabling expressive tone blending while limiting content drift.
+          </p>
+
+          <hr class="section-sep">
+
+          <h3 style="text-align:center;">B. Dual-Sided LoRA Fine-Tuning</h3>
+          <figure class="method-figure method-figure--bleed" data-scale="1.4">
+            <img src="./src/2LoRA.png" alt="Dual-sided LoRA (encoder + decoder)">
+          </figure>
+          <p>
+            This variant fine-tunes two U-Nets (conditional and unconditional) for each tone domain, with LoRA rank 2 after textual inversion.
+            At inference, we use SLERP for latent vectors, LERP for prompt embeddings, and additionally perform parameter-space LERP to merge the two U-Nets into a model specialized for the interpolated tone.
+            AdaIN is integrated in the decoding path to match the mean and variance of the output to the interpolated style, offering more precise control over stylistic attributes.
+          </p>
+          <div class="math-scroll">
+          <p style="text-align:center">
+            $$\mathrm{AdaIN}(\mathbf{x},\mathbf{y})=\sigma(\mathbf{y})\left(\frac{\mathbf{x}-\mu(\mathbf{x})}{\sigma(\mathbf{x})}\right)+\mu(\mathbf{y})$$
+          </p>
+          </div>
+
+          <hr class="section-sep">
+
+          <h3 style="text-align:center;">C. Music2Latent Interpolation</h3>
+          <figure class="method-figure method-figure--bleed" data-scale="1.4">
+            <img src="./src/M2L.png" alt="Music2Latent spherical interpolation">
+          </figure>
+          <p>
+            This method relies on a lightweight encoder–decoder that reconstructs audio in a learned latent space without diffusion or text conditioning.
+            We encode both inputs, perform spherical interpolation (SLERP) between their latent vectors, and decode back to audio.
+            Although it does not involve fine-tuning, it provides a clean benchmark of latent-space interpolation quality. AdaIN can also be applied during morphing to better align style characteristics and enhance naturalness.
+          </p>
+
+          <!-- Interpolation formulas -->
+          <h3 style="text-align:center; margin-top: .5rem;">Interpolation</h3>
+          <div class="math-scroll">
+          <p style="text-align:center">$$\hat{\mathbf{v}}=\frac{\mathbf{v}}{\lVert \mathbf{v}\rVert}, \quad
+          \theta_0=\arccos\!\big(\hat{\mathbf{v}}_0 \cdot \hat{\mathbf{v}}_1\big)$$</p>
+          <p style="text-align:center">$$\mathrm{LERP}(\alpha,\hat{\mathbf{v}}_0,\hat{\mathbf{v}}_1)=(1-\alpha)\hat{\mathbf{v}}_0+\alpha\hat{\mathbf{v}}_1$$</p>
+          <p style="text-align:center">$$\mathrm{SLERP}(\alpha,\hat{\mathbf{v}}_0,\hat{\mathbf{v}}_1)
+          =\frac{\sin\big((1-\alpha)\theta_0\big)}{\sin(\theta_0)}\,\hat{\mathbf{v}}_0
+          +\frac{\sin\big(\alpha\theta_0\big)}{\sin(\theta_0)}\,\hat{\mathbf{v}}_1$$</p>
+          </div>
+
+          <p class="muted" style="margin-top:.35rem;">
+            <strong>Notation.</strong>
+            $\mathbf{v}_0,\mathbf{v}_1$ are the latent vectors of the two tones;
+            $\hat{\mathbf{v}}$ denotes $\ell_2$-normalized vectors;
+            $\theta_0$ is the angle between $\hat{\mathbf{v}}_0$ and $\hat{\mathbf{v}}_1$;
+            $\alpha \in [0,1]$ controls the morph progress.
+            LERP is straight-line interpolation in latent space;
+            SLERP moves along the great-circle on the unit hypersphere, preserving constant angular speed and norm.
+          </p>
+
+        </div>
+      </div>
+    </section>
+
+    <section id="results">
+      <div class="container">
+        <h2>Results</h2>
+        <div class="content">
+          <h3 style="text-align:center; font-size:clamp(1.15rem, 1.8vw, 1.35rem); font-weight:800; color:var(--fg); margin:.2rem 0 .4rem;">
+            Perceptual Results<br><span style="font-size:.8em; font-weight:600; color:var(--muted);">CDPAM ↓ &amp; MOS ↑</span>
+          </h3>
+          <p>
+            We evaluate perceptual quality with CDPAM (↓ better) and a MOS listening test (↑ better). Multi-resolution Spectral Convergence (SC) is additionally computed to diagnose reconstruction fidelity across STFT settings.
+          </p>
+
+          <!-- ===== Table I ===== -->
+          <p class="muted" style="text-align:center; margin:.25rem 0 .35rem; font-weight:600;">
+            TABLE I — Tone Morphing Quality. Lower CDPAM and higher MOS indicate better perceptual quality.
+          </p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Model / Setting</th>
+                  <th>CDPAM&nbsp;mean&nbsp;±&nbsp;std&nbsp;↓</th>
+                  <th>MOS&nbsp;↑</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>AudioLDM</strong> — w/o LoRA</td><td>0.32 ± 0.100</td><td>3.17</td></tr>
+                <tr><td>AudioLDM — w/ 1 LoRA</td><td>0.45 ± 0.140</td><td>1.07</td></tr>
+                <tr><td>AudioLDM — w/ 2 LoRA</td><td>0.22 ± 0.132</td><td>3.03</td></tr>
+
+                <tr><td><strong>AudioLDM2</strong> — w/o LoRA</td><td><strong>0.25 ± 0.120</strong></td><td><strong>3.30</strong></td></tr>
+                <tr><td>AudioLDM2 — w/ 1 LoRA</td><td>0.34 ± 0.110</td><td>2.70</td></tr>
+                <tr><td>AudioLDM2 — w/ 2 LoRA</td><td>0.33 ± 0.122</td><td>3.23</td></tr>
+
+                <tr><td><strong>MusicLDM</strong> — w/o LoRA</td><td>0.85 ± 0.116</td><td>1.97</td></tr>
+                <tr><td>MusicLDM — w/ 1 LoRA</td><td>0.19 ± 0.120</td><td><strong>3.70</strong></td></tr>
+                <tr><td>MusicLDM — w/ 2 LoRA</td><td><strong>0.08 ± 0.114</strong></td><td>1.20</td></tr>
+
+                <tr><td><strong>Spherical Music2Latent interpolation</strong></td><td><strong>0.13 ± 0.060</strong></td><td><strong>4.30</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <hr class="section-sep">
+
+          <!-- spacing + narrative between tables + SC formula -->
+          <h3 style="text-align:center; font-size:clamp(1.15rem, 1.8vw, 1.35rem); font-weight:800; color:var(--fg); margin:1rem 0 .4rem;">
+            Spectral Convergence (SC) Results<br><span style="font-size:.8em; font-weight:600; color:var(--muted);">Decoder/Vocoder &amp; Reconstruction</span>
+          </h3>
+
+          <p style="margin:1.0rem 0 .5rem;">
+            To further analyze decoder/vocoder behavior, we report multi-resolution Spectral Convergence (SC).
+            The Without VAE block isolates vocoders; the With VAE (reconstruction) block includes VAE decoding to reflect end-to-end artifacts introduced by latent reconstruction.
+          </p>
+          <div class="math-scroll">
+          <p style="text-align:center; margin:.25rem 0;">
+            $$\mathrm{SC}(M_r, M_t) \;=\;
+            \frac{\sqrt{\sum_{m,k}\,\big(M_t(m,k)-M_r(m,k)\big)^2}}
+                 {\sqrt{\sum_{m,k}\, M_t(m,k)^2}}\;.$$
+          </p>
+          </div>
+          <p class="muted" style="margin-top:.15rem;">
+            <strong>Notation.</strong>
+            $M_t(m,k)$ is the target magnitude spectrogram at frame $m$ and frequency bin $k$;
+            $M_r(m,k)$ is the reference magnitude spectrogram.
+            The sums run over all time–frequency indices $(m,k)$.
+            We compute SC for multiple STFT settings and average the results; lower is better.
+          </p>
+
+          <!-- ===== Table II ===== -->
+          <p class="muted" style="text-align:center; margin:.6rem 0 .35rem; font-weight:600;">
+            TABLE II — The Reconstruction Spectral Convergence (SC) Loss Result. Lower SC is better.
+          </p>
+          <div class="table-wrapper" style="margin-top:.25rem;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Mean</th>
+                  <th>Median</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="3" style="text-align:center; font-weight:600;">Without LDM VAE</td></tr>
+                <tr><td>BigVGAN</td><td><strong>0.03978</strong></td><td><strong>0.04005</strong></td></tr>
+                <tr><td>HifiGAN (AudioLDM)</td><td>0.72955</td><td>0.15795</td></tr>
+                <tr><td>HifiGAN (AudioLDM2)</td><td>0.72955</td><td>0.15795</td></tr>
+                <tr><td>HifiGAN (MusicLDM)</td><td>0.30206</td><td>0.15017</td></tr>
+
+                <tr><td colspan="3" style="text-align:center; font-weight:600;">With LDM VAE</td></tr>
+                <tr><td>HifiGAN (AudioLDM)</td><td>1.80133</td><td>0.79835</td></tr>
+                <tr><td>HifiGAN (AudioLDM2)</td><td>0.49473</td><td>0.13271</td></tr>
+                <tr><td>HifiGAN (MusicLDM)</td><td><strong>0.46880</strong></td><td><strong>0.11239</strong></td></tr>
+                <tr><td>BigVGAN (AudioLDM)</td><td>1.10628</td><td>0.35980</td></tr>
+                <tr><td>BigVGAN (AudioLDM2)</td><td>0.50800</td><td>0.12355</td></tr>
+                <tr><td>BigVGAN (MusicLDM)</td><td>0.65704</td><td>0.22113</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ul>
+            <li><strong>Best perceptual quality:</strong> Direct spherical interpolation in Music2Latent achieves the top MOS (4.3) and one of the lowest CDPAM scores, yielding the smoothest and most natural morphs.</li>
+            <li><strong>LoRA is not always beneficial:</strong> Depending on the backbone (AudioLDM / AudioLDM2 / MusicLDM) and LoRA placement, perceptual quality can decrease due to content shift or artifacts under limited data.</li>
+            <li><strong>SC (diagnostic):</strong> Multi-resolution SC highlights decoder/vocoder losses; adding VAE reconstruction exposes end-to-end artifacts typical for LDM pipelines.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="container">
+        <h3 style="text-align:center; margin-top:1.25rem;">Some Reconstruction Audio Samples</h3>
+        <div class="content">
+          <!-- Sample 1 -->
+          <div class="recon-group">
+            <p class="recon-group-title">Sample 1</p>
+            <div class="recon-pair">
+              <div class="audio-card">
+                <p class="audio-title">Ground Truth <span class="audio-chip">.wav</span></p>
+                <audio controls preload="none" src="./src/3199.wav" type="audio/wav"></audio>
+              </div>
+              <div class="audio-card">
+                <p class="audio-title">Reconstructed (HifiGAN + MusicLDM VAE) <span class="audio-chip">.wav</span></p>
+                <audio controls preload="none" src="./src/recon/audio1_reconstructed_audio.wav" type="audio/wav"></audio>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sample 2 -->
+          <div class="recon-group">
+            <p class="recon-group-title">Sample 2</p>
+            <div class="recon-pair">
+              <div class="audio-card">
+                <p class="audio-title">Ground Truth <span class="audio-chip">.wav</span></p>
+                <audio controls preload="none" src="./src/31062.wav" type="audio/wav"></audio>
+              </div>
+              <div class="audio-card">
+                <p class="audio-title">Reconstructed (HifiGAN + MusicLDM VAE) <span class="audio-chip">.wav</span></p>
+                <audio controls preload="none" src="./src/recon/audio2_reconstructed_audio.wav" type="audio/wav"></audio>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="bibtex">
+      <div class="container">
+        <h2>BibTeX</h2>
+        <div class="content">
+<pre><code>@INPROCEEDINGS{11249227,
+  author={Chen, Kuan-Yu and Chen, Kuan-Lin and Yu, Yu-Chieh and Ding, Jian-Jiun},
+  booktitle={2025 Asia Pacific Signal and Information Processing Association Annual Summit and Conference (APSIPA ASC)},
+  title={Guitar Tone Morphing by Diffusion-Based Model},
+  year={2025},
+  volume={},
+  number={},
+  pages={329-333},
+  keywords={Interpolation;Source separation;Instruments;Production;Information processing;Stability analysis;Robustness;Real-time systems;Multiple signal classification;Music information retrieval},
+  doi={10.1109/APSIPAASC65261.2025.11249227}}</code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span>
+        This page was built using the
+        <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank" rel="noopener">
+          Academic Project Page Template
+        </a> and ChatGPT.
+      </span>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+
+  
+</body>
+</html>
