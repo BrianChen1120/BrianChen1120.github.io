@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 — 找不到頁面 | 臺大電信所通信組</title>
+  <link rel="icon" type="image/svg+xml" href="images/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .nf-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      background:
+        radial-gradient(ellipse at 80% 20%, rgba(201,169,97,.12), transparent 55%),
+        radial-gradient(ellipse at 10% 80%, rgba(20,60,130,.45), transparent 60%),
+        linear-gradient(135deg, var(--c-primary) 0%, var(--c-primary-2) 60%, #1a4ea0 100%);
+      color: #fff;
+      text-align: center;
+    }
+    .nf-code {
+      font-family: var(--font-en);
+      font-size: clamp(96px, 22vw, 200px);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -.04em;
+      background: linear-gradient(135deg, #E5C683, var(--c-accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0 0 16px;
+    }
+    .nf-title {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+    .nf-sub {
+      color: rgba(255,255,255,.75);
+      font-size: 16px;
+      margin: 0 0 36px;
+      max-width: 460px;
+    }
+    .nf-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="nf-wrap">
+    <div>
+      <p class="nf-code">404</p>
+      <h1 class="nf-title">這個頁面似乎收不到訊號</h1>
+      <p class="nf-sub">您要找的頁面不存在，可能被移除或是路徑有誤。<br/>請從下方回到首頁。</p>
+      <div class="nf-actions">
+        <a class="btn btn-primary" href="./">回到首頁</a>
+        <a class="btn btn-ghost" href="https://gice.ntu.edu.tw/" target="_blank" rel="noopener">前往電信所網站</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

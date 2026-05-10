@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#0A2A5E"/>
+  <!-- 訊號發射點 -->
+  <circle cx="20" cy="44" r="4" fill="#C9A961"/>
+  <!-- 三道訊號弧 -->
+  <path d="M28 44 A 8 8 0 0 1 20 36"   fill="none" stroke="#C9A961" stroke-width="3" stroke-linecap="round"/>
+  <path d="M34 44 A 14 14 0 0 1 20 30" fill="none" stroke="#C9A961" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+  <path d="M40 44 A 20 20 0 0 1 20 24" fill="none" stroke="#C9A961" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+</svg>
