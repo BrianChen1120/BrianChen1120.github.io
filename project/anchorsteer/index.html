@@ -1,0 +1,1564 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+  <title>AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing</title>
+  <meta name="description" content="Project page for AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing">
+  <meta name="keywords" content="Music editing, Diffusion models, Concept discovery, Structure preservation, Latent space steering, Self-supervised learning">
+  <meta property="og:title" content="AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing" />
+  <meta property="og:description" content="Project page for AnchorSteer" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="src/1.png" />
+  <meta property="og:url" content="" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing" />
+  <meta name="twitter:description" content="Project page for AnchorSteer" />
+  <meta name="twitter:image" content="src/1.png" />
+  <link rel="icon" href="assets/favicon.png" sizes="any">
+
+  <script>
+    window.MathJax = { tex:{inlineMath:[["$","$"]]}, chtml:{scale:1.05, mtextInheritFont:true}, svg:{fontCache:'global'} };
+  </script>
+  <script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+
+  <style>
+    :root{
+      --fg:#161616; --muted:#6b7280; --border:#e5e7eb; --bg:#ffffff;
+      --link:#0d6efd; --chip:#f8fafc; --chip-border:#e5e7eb; --container:1080px;
+      --accent:#2563eb; --accent-light:rgba(37,99,235,.04); --accent-glow:rgba(37,99,235,.10);
+    }
+    html,body{ background:#fff; color:var(--fg); margin:0; padding:0; overflow-x:hidden; }
+    body{
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+      line-height:1.75;
+    }
+    a{ color:var(--link); text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+    img{ max-width:100%; height:auto; display:block; }
+    .muted{ color:var(--muted); }
+    .container{ max-width:var(--container); margin:0 auto; padding:0 20px; }
+
+    /* Hero section */
+    header{ padding:100px 0 12px; text-align:center; }
+    header h1{
+      font-size:clamp(1.8rem,2.6vw,2.4rem);
+      line-height:1.3; margin:.25rem 0 .35rem; font-weight:800;
+    }
+    .venue{ font-size:1.55rem; color:var(--muted); margin-bottom:.25rem; }
+
+    /* Authors / affiliation */
+    header .authors{
+      margin: 4px 0;
+      line-height: 1.4;
+      font-size: 1.05rem;
+    }
+    header .authors a{ text-decoration:none; }
+    header .authors .author{ white-space:nowrap; }
+    header .authors sup{ font-size:.7em; line-height:0; vertical-align:super; }
+    header .affil{
+      margin: 2px 0 4px;
+      color: var(--muted);
+      font-size: 1.0rem;
+    }
+    header .equal-note{
+      margin: 2px 0 0;
+      font-size: .95rem;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    /* Resource link buttons */
+    .resource-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      margin: 18px 0 20px;
+    }
+    .resource-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border: 2px solid var(--link);
+      border-radius: 30px;
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: var(--link);
+      background: transparent;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .resource-links a:hover {
+      background: var(--link);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(13,110,253,.25);
+      text-decoration: none;
+    }
+    .resource-links a svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
+    .resource-links a.disabled {
+      border-color: var(--muted);
+      color: var(--muted);
+      cursor: default;
+    }
+    .resource-links a.disabled:hover {
+      background: transparent;
+      color: var(--muted);
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Hero figure */
+    .hero-figure{ margin:10px auto 14px; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+    .hero-figure--bleed {
+      box-sizing: border-box;
+      width: min(1000px, calc(100vw - 32px));
+      margin: 12px auto 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .tagline{ color:#444; max-width:900px; margin:12px auto 0; text-align:center; }
+
+    /* Sections */
+    section{ padding:28px 0; }
+    section h2{ text-align:center; font-size:clamp(1.35rem,2.1vw,1.6rem); font-weight:800; margin:0 0 12px; }
+    .content{ max-width:920px; margin:0 auto; font-size:1.02rem; line-height:1.85; text-align:justify; }
+
+    /* Method / results figures */
+    .method-image-container,.results-image-container{
+      display:inline-block; border:1px solid #e0e0e0; border-radius:12px; padding:1rem; background:#fff;
+      box-shadow:0 2px 8px rgba(0,0,0,.08); margin:.75rem 0;
+    }
+    .method-image-container img,.results-image-container img{ border-radius:8px; }
+    .img-caption{ margin-top:.8rem; font-size:.95rem; color:#666; line-height:1.6; text-align:center; max-width:800px; margin-left:auto; margin-right:auto; }
+
+    /* Table wrapper */
+    .table-wrapper{ width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; margin:1rem 0; }
+    .content table{ border-collapse:collapse; width:100%; border-top:2px solid #666; border-bottom:2px solid #666; }
+    .content th,.content td{ padding:.45rem .6rem; white-space:nowrap; border-bottom:1px solid #eee; text-align:center; }
+    .content th:first-child,.content td:first-child{ text-align:left; }
+
+    /* BibTeX */
+    pre{
+      background:#0b1021; color:#f8f8f2; padding:14px; border-radius:8px; overflow:auto;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    }
+
+    /* Footer */
+    footer{ border-top:1px solid var(--border); color:var(--muted); font-size:.95rem; }
+    .footer-inner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    /* MathJax adjustment */
+    mjx-container{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+    .content mjx-container[jax="CHTML"][display="true"]{ overflow-x:auto; max-width:100%; display:block!important; }
+    .content mjx-container{ line-height:0!important; }
+
+    /* Gray Abstract section */
+    #abstract{
+      background: #f6f7fb;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 0;
+      margin-top: 32px;
+    }
+    @media (min-width: 992px){
+      #abstract { margin-top: 48px; }
+    }
+
+    /* Gray Results section */
+    #results{
+      background: #f6f7fb;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 0;
+      margin-top: 32px;
+    }
+    @media (min-width: 992px){
+      #results { margin-top: 48px; }
+    }
+
+    /* Method figure alignment */
+    #method .content p + .method-image-container,
+    #method .content .method-image-container + p{ margin-top: .75rem; }
+    #method .content mjx-container[jax="CHTML"][display="true"]{
+      overflow: visible !important;
+      display: block !important;
+      margin: .35rem auto;
+      text-align: center;
+    }
+    #method .content p + mjx-container,
+    #method .content mjx-container + p { margin-top: .4rem; }
+
+    hr.section-sep{
+      border:0;
+      height:3px;
+      background: linear-gradient(to right, transparent, #d1d5db, transparent);
+      margin: 1.25rem 0 1rem;
+    }
+
+    /* Method figure with hover zoom */
+    .method-figure {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+      margin: .5rem auto 1rem;
+      max-width: 800px;
+    }
+    .method-figure--bleed {
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .method-figure > img { display:block; width:100%; height:auto; }
+
+    /* ===== NEW: Tab-based Audio Demo (Melodia style) ===== */
+
+    /* Tab navigation */
+    .demo-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 1.5rem 0 1rem;
+      flex-wrap: wrap;
+    }
+    .demo-tab {
+      padding: .6rem 1.2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+    .demo-tab:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .demo-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* Tab content */
+    .demo-content {
+      display: none;
+    }
+    .demo-content.active {
+      display: block;
+    }
+
+    /* Task block */
+    .demo-task {
+      margin: 1.5rem 0;
+      padding: 1.25rem;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .demo-task-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-align: center;
+      margin: 0 0 1rem;
+      color: var(--fg);
+    }
+
+    /* Source audio card */
+    .source-card {
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .source-card .card-label {
+      font-weight: 600;
+      font-size: .95rem;
+      color: var(--muted);
+      margin-bottom: .5rem;
+    }
+
+    /* Methods comparison grid - Baselines (4 columns) */
+    .methods-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    /* Ours methods grid (2 columns, fill width) */
+    .methods-grid-ours {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    /* Method card */
+    .method-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .85rem;
+      text-align: center;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .method-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    }
+    .method-card .card-label {
+      font-weight: 600;
+      font-size: .9rem;
+      margin-bottom: .5rem;
+      color: var(--fg);
+    }
+
+    /* Highlight "Ours" cards - Light blue theme */
+    .method-card.ours {
+      border: 2px solid rgba(37,99,235,.25);
+      background: linear-gradient(145deg, rgba(37,99,235,.06), rgba(37,99,235,.02));
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+    .method-card.ours .card-label {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* Audio player styling */
+    .method-card audio,
+    .source-card audio {
+      width: 100%;
+      height: 36px;
+      border-radius: 6px;
+    }
+
+    /* Audio placeholder */
+    .audio-placeholder {
+      background: #f0f0f0;
+      border: 2px dashed #ccc;
+      border-radius: 6px;
+      padding: 12px 8px;
+      font-size: .85rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* ===== Mobile responsive ===== */
+    @media (max-width:768px){
+      .container{ padding:0 16px; }
+      .content{ font-size:1rem; line-height:1.8; text-align:left; }
+      .footer-inner{ height:auto; padding:12px 0; flex-direction:column; gap:.5rem; }
+
+      header{ padding:40px 0 12px; }
+      header h1{ font-size:1.5rem; }
+      .venue{ font-size:1.1rem; }
+      .tagline{ font-size:.95rem; }
+
+      .hero-figure--bleed {
+        width: calc(100vw - 32px);
+        border-radius: 8px;
+      }
+
+      .method-figure {
+        border-radius: 8px;
+        margin: .5rem 0 1rem;
+      }
+
+      .content th, .content td {
+        padding: .35rem .4rem;
+        font-size: .85rem;
+      }
+
+      .content mjx-container[jax="CHTML"][display="true"]{
+        overflow-x: auto !important;
+        max-width: 100% !important;
+      }
+      #method .content mjx-container[jax="CHTML"][display="true"]{
+        overflow-x: auto !important;
+        font-size: .9rem;
+      }
+
+      .content ul{ padding-left: 1.2rem; }
+      .content li{ margin-bottom: .5rem; }
+      .content h3{ font-size: 1.1rem; }
+      .content h4{ font-size: 1rem; }
+      .img-caption{ font-size: .85rem; text-align: left; padding: 0 .5rem; }
+
+      /* Tab adjustments for mobile */
+      .demo-tab {
+        padding: .5rem .8rem;
+        font-size: .9rem;
+      }
+      .methods-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .methods-grid-ours {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      header{ padding:60px 0 12px; }
+    }
+
+    @media (max-width:480px){
+      header h1{ font-size:1.3rem; line-height:1.4; }
+      .venue{ font-size:1rem; }
+      .resource-links{ gap:10px; }
+      .resource-links a{ padding:8px 16px; font-size:.85rem; }
+
+      .content th, .content td {
+        padding: .3rem .3rem;
+        font-size: .75rem;
+      }
+
+      .methods-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .methods-grid-ours {
+        grid-template-columns: 1fr;
+      }
+      .demo-task {
+        padding: 1rem;
+      }
+      header{ padding:48px 0 12px; }
+    }
+
+    @media (max-width:360px){
+      .methods-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 3-column method grid (diverse / ablation) */
+    .methods-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width:768px){
+      .methods-grid-3 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width:360px){
+      .methods-grid-3 { grid-template-columns: 1fr; }
+    }
+
+    /* Audio loading indicator */
+    .method-card,
+    .source-card {
+      position: relative;
+    }
+    .audio-loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.88);
+      border-radius: inherit;
+      z-index: 5;
+    }
+    .audio-loading::after {
+      content: 'Loading audio…';
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: .02em;
+    }
+    .audio-loading::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 0 0 inherit inherit;
+      z-index: 6;
+      animation: loading-bar 1.8s ease-in-out infinite;
+    }
+    @keyframes loading-bar {
+      0%   { width: 0%; left: 0; }
+      50%  { width: 60%; left: 20%; }
+      100% { width: 0%; left: 100%; }
+    }
+
+    /* Locked audio card (another track is playing) */
+    .audio-locked {
+      opacity: 0.3;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+
+    /* Currently playing card — pulse glow */
+    .audio-playing {
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 2px var(--accent), 0 0 16px rgba(37,99,235,.18);
+      animation: pulse-glow 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 2px var(--accent), 0 0 12px rgba(37,99,235,.15); }
+      50%      { box-shadow: 0 0 0 2px var(--accent), 0 0 24px rgba(37,99,235,.35); }
+    }
+
+    /* ===== Sticky navigation bar ===== */
+    .sticky-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      transform: translateY(-100%);
+      transition: transform .3s ease;
+    }
+    .sticky-nav.visible {
+      transform: translateY(0);
+    }
+    .sticky-nav-inner {
+      max-width: var(--container);
+      margin: 0 auto;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sticky-nav-title {
+      font-weight: 700;
+      font-size: .95rem;
+      color: var(--fg);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-right: 1rem;
+    }
+    .sticky-nav-links {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .sticky-nav-links a {
+      padding: 5px 14px;
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--muted);
+      border-radius: 6px;
+      transition: all .15s ease;
+      text-decoration: none;
+    }
+    .sticky-nav-links a:hover,
+    .sticky-nav-links a.active {
+      color: var(--accent);
+      background: rgba(37,99,235,.06);
+      text-decoration: none;
+    }
+    @media (max-width:480px) {
+      .sticky-nav-title { display: none; }
+      .sticky-nav-links a { padding: 5px 10px; font-size: .8rem; }
+    }
+
+    /* ===== Back to top button ===== */
+    .back-to-top {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease, transform .2s ease;
+      z-index: 999;
+      box-shadow: 0 2px 10px rgba(37,99,235,.3);
+    }
+    .back-to-top.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .back-to-top:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 16px rgba(37,99,235,.4);
+    }
+
+    /* Sub-section label within demo task */
+    .demo-sublabel {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--fg);
+      margin: 1rem 0 .5rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sticky-nav" id="stickyNav">
+    <div class="sticky-nav-inner">
+      <span class="sticky-nav-title">AnchorSteer</span>
+      <div class="sticky-nav-links">
+        <a href="#abstract">Abstract</a>
+        <a href="#contributions">Contributions</a>
+        <a href="#results">Results</a>
+        <a href="#method">Method</a>
+        <!-- <a href="#bibtex">BibTeX</a> -->
+      </div>
+    </div>
+  </nav>
+
+  <button class="back-to-top" id="backToTop" aria-label="Back to top">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
+
+  <header class="container">
+    <h1>AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing</h1>
+
+    <!-- 2A: de-anonymized author block. Old version commented out below. -->
+    <!--
+    <div class="authors">
+      <span class="author">Anonymous Authors</span>
+    </div>
+    <p class="equal-note muted">
+      Double-blind review submission
+    </p>
+    -->
+    <div class="authors">
+      <span class="author">Chih-Heng Chang<sup>1</sup></span>,
+      <span class="author">Keng-Seng Ho<sup>1</sup></span>,
+      <span class="author">Chih-Yu Tsai<sup>1</sup></span>,
+      <span class="author">Kuan-Lin Chen<sup>1</sup></span>,
+      <span class="author">Yi-Hsuan Yang<sup>2</sup></span>,
+      <span class="author">Jian-Jiun Ding<sup>1,*</sup></span>
+    </div>
+    <p class="equal-note muted">
+      <sup>1</sup>Graduate Institute of Communication Engineering, National Taiwan University &nbsp;&middot;&nbsp;
+      <sup>2</sup>Artificial Intelligence Center of Research Excellence, National Taiwan University<br>
+      <sup>*</sup>Corresponding author
+    </p>
+
+    <div class="resource-links" aria-label="project-links">
+      <a href="#" class="disabled">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/><path d="M8 12h8v2H8zm0 4h8v2H8z"/></svg>
+        Paper (Coming Soon)
+      </a>
+      <a href="#" class="disabled">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.605-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        Code (Coming Soon)
+      </a>
+    </div>
+
+    <figure class="hero-figure hero-figure--bleed">
+      <img src="src/1.png" alt="Conceptual comparison of music editing paradigms: Semantic steering (red) provides high editability but risks structural drift; Structure anchoring (blue) preserves the musical scaffold but lacks semantic responsiveness; AnchorSteer (green) achieves both high editability and structural fidelity.">
+    </figure>
+    <p class="tagline">
+      AnchorSteer couples <strong>structure anchoring</strong> with <strong>self-discovered semantic steering</strong> to resolve the fundamental tension between semantic editability and structural fidelity in diffusion-based music editing.
+    </p>
+  </header>
+
+  <main>
+    <section id="abstract">
+      <div class="container">
+        <h2>Abstract</h2>
+        <div class="content">
+          <!-- 2C+2D: abstract now verbatim from camera-ready paper. Old 2-paragraph version commented out below. -->
+          <!--
+          <p>
+            Controllable music editing requires modifying high-level attributes while strictly preserving rhythmic and melodic structures. In diffusion models, this is challenged by a semantic-structural entanglement: steering methods often degrade structure to achieve edits, while structural adaptors suppress semantic responsiveness. We propose <strong>AnchorSteer</strong>, a framework that disentangles this tension by coupling structural anchoring with self-discovered semantic steering.
+          </p>
+          <p>
+            Our approach probes internal representations to extract interpretable, label-free concept vectors via a self-supervised reconstruction objective, isolating attributes without curated data. During editing, these portable, plug-and-play concept vectors are injected into diffusion hidden manifolds while a structural adaptor enforces consistency. Variants for unconditioned and conditioned injection are provided to balance robustness and semantic strength. Experiments on ZoME-Bench and subjective tests show AnchorSteer outperforms both steering-only and anchoring-only baselines, enabling significant semantic transformations with high-fidelity structural preservation.
+          </p>
+          -->
+          <!-- Trimmed paper's self-referential final sentence ("The source code and the model checkpoint will be provided in the final version and the project demo page is https://briche402.github.io/.") since this page IS the demo page. -->
+          <p>
+            Controllable music editing is to modify high-level attributes while strictly preserving rhythmic and melodic structures. However, this task is challenged by a semantic-structural entanglement: steering methods often degrade structure to achieve editing performance, while structural adaptors suppress semantic responsiveness. We propose <strong>AnchorSteer</strong>, a framework that disentangles this tension by coupling structural anchoring with self-discovered semantic steering. The proposed approach probes internal representations to extract interpretable, label-free concept vectors via a self-supervised reconstruction objective, isolating attributes without curated data. During editing, these portable, plug-and-play concept vectors are injected into diffusion hidden manifolds while a structural adaptor enforces consistency. Variants for unconditioned and conditioned injections are provided to balance robustness and semantic strength. Experiments on ZoME-Bench and subjective tests show that the proposed framework outperforms both steering-only and anchoring-only baselines, enabling significant semantic transformations with high-fidelity structural preservation.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2B: new Contributions section mirroring paper's 4-bullet contributions list -->
+    <section id="contributions">
+      <div class="container">
+        <h2>Contributions</h2>
+        <div class="content">
+          <ul>
+            <li><strong>Hidden-state editing direction discovery.</strong> We identify reusable, label-free editing directions in the hidden states of text-to-music diffusion models, and propose a self-supervised reconstruction objective that extracts them as interpretable concept vectors usable as portable semantic representations.</li>
+            <li><strong>AnchorSteer framework.</strong> A structure-aware editing framework that couples self-discovered semantic steering with explicit structural anchoring, directly addressing the semantic-structural trade-off.</li>
+            <li><strong>Plug-and-play injection module.</strong> Two operating points: <em>unconditioned</em> injection for structural fidelity and <em>conditioned</em> injection for stronger semantic transfer under heavy anchoring.</li>
+            <li><strong>State-of-the-art evaluation.</strong> Demonstrated state-of-the-art semantic editing with practical structural preservation on ZoME-Bench, validated by both objective metrics and a subjective listening test with 28 participants.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="results">
+      <div class="container">
+        <h2>Experimental Results</h2>
+        <div class="content">
+
+          <h3 style="text-align:center; margin-top:1.25rem;">Spectrogram Comparison</h3>
+          <figure class="method-figure method-figure--bleed" data-scale="1.3">
+            <img src="src/mel.png" alt="Spectrogram comparison for Drums-to-Piano editing.">
+          </figure>
+          <p class="muted img-caption">
+            <strong>Figure:</strong> Spectrogram comparison for Drums→Piano editing. Rows (top-to-bottom): Source, Steering-only, Anchor-only (MuseControlLite), and AnchorSteer (Uncond.). Steering-only introduces harmonics but disrupts temporal alignment, whereas Anchor-only preserves onsets but limits semantic transfer. AnchorSteer maintains the temporal scaffold while successfully injecting piano-like harmonics.
+          </p>
+
+          <hr class="section-sep">
+
+          <h3 style="text-align:center; margin-top:1.25rem;">Audio Samples</h3>
+
+          <div class="demo-tab-group">
+          
+          <div class="demo-tabs">
+            <button class="demo-tab active" data-tab="instrument">Instrument Change</button>
+            <button class="demo-tab" data-tab="genre">Genre Change</button>
+          </div>
+
+          <div class="demo-content active" id="tab-instrument">
+
+            <div class="demo-task">
+              <div class="demo-task-title">Guitar → Piano</div>
+              <div class="source-card">
+                <div class="card-label">Source Audio</div>
+                <audio controls preload="none"><source src="demo/datasets/instrument/guitar_to_piano/orig.wav" type="audio/wav"></audio>
+              </div>
+              <div class="methods-grid">
+                <div class="method-card">
+                  <div class="card-label">SDEdit</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/guitar_to_piano/sdeedit.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">DDPM-friendly</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/guitar_to_piano/ddpm-friendly.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">MusicMagus</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/guitar_to_piano/musicmagus.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">MuseControlLite</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/guitar_to_piano/musecontrollite.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+              <div class="methods-grid-ours">
+                <div class="method-card ours">
+                  <div class="card-label">Ours (Uncond.)</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/guitar_to_piano/ours_uncond.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card ours">
+                  <div class="card-label">Ours (Cond.)</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/guitar_to_piano/ours_cond.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+            </div>
+
+            <div class="demo-task">
+              <div class="demo-task-title">Piano → Harp</div>
+              <div class="source-card">
+                <div class="card-label">Source Audio</div>
+                <audio controls preload="none"><source src="demo/datasets/instrument/piano_to_harp/orig.wav" type="audio/wav"></audio>
+              </div>
+              <div class="methods-grid">
+                <div class="method-card">
+                  <div class="card-label">SDEdit</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/piano_to_harp/sdeedit.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">DDPM-friendly</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/piano_to_harp/ddpm-friendly.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">MusicMagus</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/piano_to_harp/musicmagus.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">MuseControlLite</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/piano_to_harp/musecontrollite.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+              <div class="methods-grid-ours">
+                <div class="method-card ours">
+                  <div class="card-label">Ours (Uncond.)</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/piano_to_harp/ours_uncond.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card ours">
+                  <div class="card-label">Ours (Cond.)</div>
+                  <audio controls preload="none"><source src="demo/datasets/instrument/piano_to_harp/ours_cond.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="demo-content" id="tab-genre">
+
+            <div class="demo-task">
+              <div class="demo-task-title">Rock → Jazz</div>
+              <div class="source-card">
+                <div class="card-label">Source Audio</div>
+                <audio controls preload="none"><source src="demo/datasets/genre/rock_to_jazz/orig.wav" type="audio/wav"></audio>
+              </div>
+              <div class="methods-grid">
+                <div class="method-card">
+                  <div class="card-label">SDEdit</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/rock_to_jazz/sdeedit.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">DDPM-friendly</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/rock_to_jazz/ddpm-friendly.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">MusicMagus</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/rock_to_jazz/musicmagus.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">MuseControlLite</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/rock_to_jazz/musecontrollite.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+              <div class="methods-grid-ours">
+                <div class="method-card ours">
+                  <div class="card-label">Ours (Uncond.)</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/rock_to_jazz/ours_uncond.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card ours">
+                  <div class="card-label">Ours (Cond.)</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/rock_to_jazz/ours_cond.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+            </div>
+
+            <div class="demo-task">
+              <div class="demo-task-title">Latin → Jazz</div>
+              <div class="source-card">
+                <div class="card-label">Source Audio</div>
+                <audio controls preload="none"><source src="demo/datasets/genre/latin_to_jazz/orig.wav" type="audio/wav"></audio>
+              </div>
+              <div class="methods-grid">
+                <div class="method-card">
+                  <div class="card-label">SDEdit</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/latin_to_jazz/sdeedit.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">DDPM-friendly</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/latin_to_jazz/ddpm-friendly.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">MusicMagus</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/latin_to_jazz/musicmagus.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">MuseControlLite</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/latin_to_jazz/musecontrollite.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+              <div class="methods-grid-ours">
+                <div class="method-card ours">
+                  <div class="card-label">Ours (Uncond.)</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/latin_to_jazz/ours_uncond.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card ours">
+                  <div class="card-label">Ours (Cond.)</div>
+                  <audio controls preload="none"><source src="demo/datasets/genre/latin_to_jazz/ours_cond.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          </div>
+
+          <h3 style="text-align:center; margin-top:2rem;">Diverse Transformations</h3>
+          <p style="text-align:center; color:var(--muted); font-size:.95rem; margin-bottom:1rem;">
+            Showcasing the versatility of AnchorSteer across a wide range of instrument and genre transformations.
+          </p>
+
+          <div class="demo-tab-group">
+          <div class="demo-tabs">
+            <button class="demo-tab active" data-tab="sample1">Sample 1</button>
+            <button class="demo-tab" data-tab="sample2">Sample 2</button>
+          </div>
+
+          <div class="demo-content active" id="tab-sample1">
+            <div class="demo-task">
+              <div class="source-card">
+                <div class="card-label">Source Audio (Sample 1)</div>
+                <audio controls preload="none"><source src="demo/generated/1/stable_a%20music%20piece_orig_1_10s.wav" type="audio/wav"></audio>
+              </div>
+              <div class="demo-sublabel">Instrument Transformations</div>
+              <div class="methods-grid-3">
+                <div class="method-card">
+                  <div class="card-label">Drum</div>
+                  <audio controls preload="none"><source src="demo/generated/1/instrument/stable_a%20music%20piece_orig_1_drum-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Flute</div>
+                  <audio controls preload="none"><source src="demo/generated/1/instrument/stable_a%20music%20piece_orig_1_flute-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Harp</div>
+                  <audio controls preload="none"><source src="demo/generated/1/instrument/stable_a%20music%20piece_orig_1_harp-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Piano</div>
+                  <audio controls preload="none"><source src="demo/generated/1/instrument/stable_a%20music%20piece_orig_1_piano-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Ukulele</div>
+                  <audio controls preload="none"><source src="demo/generated/1/instrument/stable_a%20music%20piece_orig_1_ukulele-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Violin</div>
+                  <audio controls preload="none"><source src="demo/generated/1/instrument/stable_a%20music%20piece_orig_1_violin-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+              <div class="demo-sublabel">Genre Transformations</div>
+              <div class="methods-grid-3">
+                <div class="method-card">
+                  <div class="card-label">Ambient</div>
+                  <audio controls preload="none"><source src="demo/generated/1/genre/stable_a%20music%20piece_orig_1_ambient-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Folk</div>
+                  <audio controls preload="none"><source src="demo/generated/1/genre/stable_a%20music%20piece_orig_1_folk-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Jazz</div>
+                  <audio controls preload="none"><source src="demo/generated/1/genre/stable_a%20music%20piece_orig_1_jazz-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Metal</div>
+                  <audio controls preload="none"><source src="demo/generated/1/genre/stable_a%20music%20piece_orig_1_metal-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Reggae</div>
+                  <audio controls preload="none"><source src="demo/generated/1/genre/stable_a%20music%20piece_orig_1_reggae-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Rock</div>
+                  <audio controls preload="none"><source src="demo/generated/1/genre/stable_a%20music%20piece_orig_1_rock-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="demo-content" id="tab-sample2">
+            <div class="demo-task">
+              <div class="source-card">
+                <div class="card-label">Source Audio (Sample 2)</div>
+                <audio controls preload="none"><source src="demo/generated/8/stable_a%20music%20piece_orig_8_10s.wav" type="audio/wav"></audio>
+              </div>
+              <div class="demo-sublabel">Instrument Transformations</div>
+              <div class="methods-grid-3">
+                <div class="method-card">
+                  <div class="card-label">Drum</div>
+                  <audio controls preload="none"><source src="demo/generated/8/instrument/stable_a%20music%20piece_orig_8_drum-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Flute</div>
+                  <audio controls preload="none"><source src="demo/generated/8/instrument/stable_a%20music%20piece_orig_8_flute-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Harp</div>
+                  <audio controls preload="none"><source src="demo/generated/8/instrument/stable_a%20music%20piece_orig_8_harp-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Piano</div>
+                  <audio controls preload="none"><source src="demo/generated/8/instrument/stable_a%20music%20piece_orig_8_piano-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Ukulele</div>
+                  <audio controls preload="none"><source src="demo/generated/8/instrument/stable_a%20music%20piece_orig_8_ukulele-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Violin</div>
+                  <audio controls preload="none"><source src="demo/generated/8/instrument/stable_a%20music%20piece_orig_8_violin-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+              <div class="demo-sublabel">Genre Transformations</div>
+              <div class="methods-grid-3">
+                <div class="method-card">
+                  <div class="card-label">Ambient</div>
+                  <audio controls preload="none"><source src="demo/generated/8/genre/stable_a%20music%20piece_orig_8_ambient-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Folk</div>
+                  <audio controls preload="none"><source src="demo/generated/8/genre/stable_a%20music%20piece_orig_8_folk-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Jazz</div>
+                  <audio controls preload="none"><source src="demo/generated/8/genre/stable_a%20music%20piece_orig_8_jazz-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Metal</div>
+                  <audio controls preload="none"><source src="demo/generated/8/genre/stable_a%20music%20piece_orig_8_metal-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Reggae</div>
+                  <audio controls preload="none"><source src="demo/generated/8/genre/stable_a%20music%20piece_orig_8_reggae-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+                <div class="method-card">
+                  <div class="card-label">Rock</div>
+                  <audio controls preload="none"><source src="demo/generated/8/genre/stable_a%20music%20piece_orig_8_rock-transformer_10s.wav" type="audio/wav"></audio>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+          
+          <hr class="section-sep">
+
+          <h3 style="text-align:center; font-size:clamp(1.15rem, 1.8vw, 1.35rem); font-weight:800; color:var(--fg); margin:.2rem 0 .4rem;">
+            Quantitative Comparison
+          </h3>
+          <p>
+            We evaluate AnchorSteer against recent music editing baselines on ZoME-Bench under two editing tasks: instrument change and genre change.
+            Key metrics include CLAP (semantic alignment), GAP (net attribute shift), LPAPS (perceptual distance), and Chroma similarity (structural preservation).
+          </p>
+
+          <p class="muted" style="text-align:center; margin:.25rem 0 .35rem; font-weight:600;">
+            TABLE I — Objective Comparison on ZoME-Bench (Instrument Editing)
+          </p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>CLAP ↑</th>
+                  <th>ΔCLAP<sub>T</sub> ↑</th>
+                  <th>ΔCLAP<sub>S</sub> ↓</th>
+                  <th>GAP ↑</th>
+                  <th>LPAPS ↓</th>
+                  <th>Chroma ↑</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>SDEdit</td><td>0.260</td><td>0.135</td><td>0.011</td><td>0.124</td><td>10.525</td><td>0.213</td></tr>
+                <tr><td>DDPM-friendly</td><td>0.261</td><td>0.136</td><td>0.021</td><td>0.115</td><td>9.127</td><td>0.481</td></tr>
+                <tr><td>MusicMagus</td><td>0.217</td><td>0.092</td><td>0.046</td><td>0.047</td><td>7.774</td><td>0.395</td></tr>
+                <tr><td>MuseControlLite</td><td>0.250</td><td>0.126</td><td>0.013</td><td>0.113</td><td>9.828</td><td>0.488</td></tr>
+                <tr><td><strong>Ours (Uncond.)</strong></td><td>0.320</td><td>0.195</td><td>-0.003</td><td>0.198</td><td>10.346</td><td>0.470</td></tr>
+                <tr><td><strong>Ours (Cond.)</strong></td><td><strong>0.395</strong></td><td><strong>0.270</strong></td><td><strong>-0.008</strong></td><td><strong>0.279</strong></td><td>11.852</td><td>0.238</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="muted" style="text-align:center; margin:1.25rem 0 .35rem; font-weight:600;">
+            Ablation Audio Samples
+          </p>
+          <p style="text-align:center; color:var(--muted); font-size:.95rem; margin-bottom:1rem;">
+            Comparing Steering-only, Anchoring-only, and AnchorSteer (combined) variants.
+          </p>
+
+          <div class="demo-task">
+            <div class="demo-task-title">Ambient</div>
+            <div class="source-card">
+              <div class="card-label">Source Audio</div>
+              <audio controls preload="none"><source src="demo/table1/ambient/orig.wav" type="audio/wav"></audio>
+            </div>
+            <div class="methods-grid-3">
+              <div class="method-card">
+                <div class="card-label">Steering (Uncond.)</div>
+                <audio controls preload="none"><source src="demo/table1/ambient/uncond.wav" type="audio/wav"></audio>
+              </div>
+              <div class="method-card">
+                <div class="card-label">Steering (Cond.)</div>
+                <audio controls preload="none"><source src="demo/table1/ambient/cond.wav" type="audio/wav"></audio>
+              </div>
+              <div class="method-card">
+                <div class="card-label">Anchoring Only</div>
+                <audio controls preload="none"><source src="demo/table1/ambient/musecontrollite.wav" type="audio/wav"></audio>
+              </div>
+            </div>
+            <div class="methods-grid-ours">
+              <div class="method-card ours">
+                <div class="card-label">AnchorSteer (Uncond.)</div>
+                <audio controls preload="none"><source src="demo/table1/ambient/musecontrollite_uncond.wav" type="audio/wav"></audio>
+              </div>
+              <div class="method-card ours">
+                <div class="card-label">AnchorSteer (Cond.)</div>
+                <audio controls preload="none"><source src="demo/table1/ambient/musecontrollite_cond.wav" type="audio/wav"></audio>
+              </div>
+            </div>
+          </div>
+
+          <div class="demo-task">
+            <div class="demo-task-title">Electric Guitar</div>
+            <div class="source-card">
+              <div class="card-label">Source Audio</div>
+              <audio controls preload="none"><source src="demo/table1/electric_guitar/orig.wav" type="audio/wav"></audio>
+            </div>
+            <div class="methods-grid-3">
+              <div class="method-card">
+                <div class="card-label">Steering (Uncond.)</div>
+                <audio controls preload="none"><source src="demo/table1/electric_guitar/stable_uncond.wav" type="audio/wav"></audio>
+              </div>
+              <div class="method-card">
+                <div class="card-label">Steering (Cond.)</div>
+                <audio controls preload="none"><source src="demo/table1/electric_guitar/stable_cond.wav" type="audio/wav"></audio>
+              </div>
+              <div class="method-card">
+                <div class="card-label">Anchoring Only</div>
+                <audio controls preload="none"><source src="demo/table1/electric_guitar/musecontrollite.wav" type="audio/wav"></audio>
+              </div>
+            </div>
+            <div class="methods-grid-ours">
+              <div class="method-card ours">
+                <div class="card-label">AnchorSteer (Uncond.)</div>
+                <audio controls preload="none"><source src="demo/table1/electric_guitar/musecontrollite_uncond.wav" type="audio/wav"></audio>
+              </div>
+              <div class="method-card ours">
+                <div class="card-label">AnchorSteer (Cond.)</div>
+                <audio controls preload="none"><source src="demo/table1/electric_guitar/musecontrollite_cond.wav" type="audio/wav"></audio>
+              </div>
+            </div>
+          </div>
+
+          <p class="muted" style="text-align:center; margin:1.25rem 0 .35rem; font-weight:600;">
+            TABLE II — Subjective Evaluation (MOS, 5-point Likert scale)
+          </p>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Target Match ↑</th>
+                  <th>Content Consistency ↑</th>
+                  <th>Audio Quality ↑</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>SDEdit</td><td>2.92</td><td>2.11</td><td>3.02</td></tr>
+                <tr><td>DDPM-friendly</td><td>3.16</td><td>3.17</td><td>3.26</td></tr>
+                <tr><td>MusicMagus</td><td>2.92</td><td>3.57</td><td>2.85</td></tr>
+                <tr><td>MuseControlLite</td><td>3.03</td><td><strong>3.85</strong></td><td>2.83</td></tr>
+                <tr><td><strong>Ours (Uncond.)</strong></td><td>3.18</td><td>3.45</td><td>2.60</td></tr>
+                <tr><td><strong>Ours (Cond.)</strong></td><td><strong>3.60</strong></td><td>2.94</td><td><strong>3.31</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <hr class="section-sep">
+
+          <h3 style="text-align:center; margin-top:1.25rem;">Key Findings</h3>
+          <ul>
+            <li><strong>Synergistic design validated:</strong> The Steering baseline achieves high GAP (0.263) but poor structure (Chroma 0.091); the Anchoring baseline preserves structure (Chroma 0.488) but limits editability (GAP 0.113). AnchorSteer achieves both (GAP 0.198, Chroma 0.470).</li>
+            <li><strong>State-of-the-art semantic editing:</strong> Conditioned injection achieves the highest GAP (0.279) for instrument editing, substantially outperforming all baselines.</li>
+            <li><strong>Strong perceptual quality:</strong> Subjective listening tests confirm highest Target Attribute Match (MOS 3.60/5) and Audio Quality (MOS 3.31/5) among all methods.</li>
+            <li><strong>Plug-and-play reusability:</strong> Once discovered, concept vectors can be reused across diverse audio contexts without retraining, enabling portable semantic steering.</li>
+          </ul>
+
+          <hr class="section-sep">
+
+          <h3 style="text-align:center; margin-top:1.25rem;">Fine-grained Acoustic Analysis — Chroma vs. Mel</h3>
+          <p>
+            Beyond high-level CLAP-based metrics, we provide a controlled <strong>chroma-vs-mel analysis</strong> to probe <strong>isolated acoustic factors</strong> such as pitch and timbre. Both methods are compared at matched edit strengths (SDEdit $\sigma{=}0.42$, AnchorSteer uncond. $\sigma{=}0.55$, tuned for comparable edit magnitude). <strong>Chroma</strong> tracks pitch / harmonic structure; <strong>Mel</strong> tracks timbre. A successful edit should keep the <em>chroma aligned with the source</em> (structure preserved) while letting the <em>mel diverge from the source</em> toward the target timbre.
+          </p>
+
+          <div class="demo-task">
+            <div class="demo-task-title">Piano-target edit · ZoME-Bench segment <code>-FlvaZQOr2I_seg001</code></div>
+            <div class="source-card">
+              <div class="card-label">Source Audio</div>
+              <audio controls preload="none"><source src="demo/chroma_analysis/source.wav" type="audio/wav"></audio>
+            </div>
+            <div class="methods-grid-ours">
+              <div class="method-card">
+                <div class="card-label">SDEdit ($\sigma{=}0.42$)</div>
+                <audio controls preload="none"><source src="demo/chroma_analysis/sdeedit.wav" type="audio/wav"></audio>
+              </div>
+              <div class="method-card ours">
+                <div class="card-label">Ours — Uncond. ($\sigma{=}0.55$)</div>
+                <audio controls preload="none"><source src="demo/chroma_analysis/ours_uncond.wav" type="audio/wav"></audio>
+              </div>
+            </div>
+          </div>
+
+          <h4 style="text-align:center; margin-top:1.5rem;">Chroma Alignment (pitch / harmonic structure)</h4>
+          <p class="muted" style="text-align:center; margin:-.25rem 0 .75rem;">
+            Tip: rapidly toggle the two tabs — the figures share the same layout, so visual persistence makes the difference jump out.
+          </p>
+
+          <div class="demo-tab-group">
+            <div class="demo-tabs">
+              <button class="demo-tab active" data-tab="chroma-sdeedit">SDEdit ($\sigma{=}0.42$)</button>
+              <button class="demo-tab" data-tab="chroma-ours">Ours — Uncond. ($\sigma{=}0.55$)</button>
+            </div>
+
+            <!-- Chroma tabs: previously used combined chroma_alignment.png (3-panel composite with mis-aligned top1 pitch-class match); replaced with separate source_chroma + edited_chroma per method for clean X-axis alignment. Old version commented out below. -->
+            <!--
+            <div class="demo-content active" id="tab-chroma-sdeedit">
+              <figure style="margin:0;">
+                <img src="src/chroma_analysis/sdeedit_0_42/chroma_alignment.png" loading="eager" alt="SDEdit chroma alignment between source and edited audio." style="width:100%; display:block;">
+                <figcaption class="muted img-caption"><strong>SDEdit ($\sigma{=}0.42$)</strong> — chroma drifts away from the source, indicating that pitch / harmonic structure is disrupted.</figcaption>
+              </figure>
+            </div>
+
+            <div class="demo-content" id="tab-chroma-ours">
+              <figure style="margin:0;">
+                <img src="src/chroma_analysis/vector_0_55/chroma_alignment.png" loading="eager" alt="AnchorSteer chroma alignment between source and edited audio." style="width:100%; display:block;">
+                <figcaption class="muted img-caption"><strong>Ours — Uncond. ($\sigma{=}0.55$)</strong> — chroma stays tightly aligned with the source, evidencing preserved pitch structure.</figcaption>
+              </figure>
+            </div>
+            -->
+            <div class="demo-content active" id="tab-chroma-sdeedit">
+              <figure style="margin:0;">
+                <img src="src/chroma_analysis/sdeedit_0_42/source_chroma.png" loading="eager" alt="Source chroma." style="width:100%; display:block;">
+                <figcaption class="muted img-caption" style="text-align:center;">Source chroma</figcaption>
+              </figure>
+              <figure style="margin:.5rem 0 0;">
+                <img src="src/chroma_analysis/sdeedit_0_42/edited_chroma.png" loading="eager" alt="SDEdit edited chroma." style="width:100%; display:block;">
+                <figcaption class="muted img-caption" style="text-align:center;"><strong>SDEdit ($\sigma{=}0.42$)</strong> — edited chroma drifts away from the source, indicating that pitch / harmonic structure is disrupted.</figcaption>
+              </figure>
+            </div>
+
+            <div class="demo-content" id="tab-chroma-ours">
+              <figure style="margin:0;">
+                <img src="src/chroma_analysis/vector_0_55/source_chroma.png" loading="eager" alt="Source chroma." style="width:100%; display:block;">
+                <figcaption class="muted img-caption" style="text-align:center;">Source chroma</figcaption>
+              </figure>
+              <figure style="margin:.5rem 0 0;">
+                <img src="src/chroma_analysis/vector_0_55/edited_chroma.png" loading="eager" alt="AnchorSteer edited chroma." style="width:100%; display:block;">
+                <figcaption class="muted img-caption" style="text-align:center;"><strong>Ours — Uncond. ($\sigma{=}0.55$)</strong> — edited chroma stays tightly aligned with the source, evidencing preserved pitch structure.</figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <h4 style="text-align:center; margin-top:1.5rem;">Mel-spectrogram (timbre)</h4>
+          <p class="muted" style="text-align:center; margin:-.25rem 0 .75rem;">
+            Toggle the tabs to flicker-compare: both methods shift the mel toward the piano target, but AnchorSteer does so <em>without</em> compromising chroma.
+          </p>
+
+          <div class="demo-tab-group">
+            <div class="demo-tabs">
+              <button class="demo-tab active" data-tab="mel-sdeedit">SDEdit ($\sigma{=}0.42$)</button>
+              <button class="demo-tab" data-tab="mel-ours">Ours — Uncond. ($\sigma{=}0.55$)</button>
+            </div>
+
+            <div class="demo-content active" id="tab-mel-sdeedit">
+              <div style="display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:16px; align-items:start;">
+                <figure class="method-figure" data-scale="2.2">
+                  <img src="src/chroma_analysis/sdeedit_0_42/source_mel.png" loading="eager" alt="SDEdit source mel-spectrogram.">
+                </figure>
+                <figure class="method-figure" data-scale="2.2">
+                  <img src="src/chroma_analysis/sdeedit_0_42/edited_mel.png" loading="eager" alt="SDEdit edited mel-spectrogram.">
+                </figure>
+              </div>
+              <div style="display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:16px; text-align:center;" class="muted img-caption">
+                <div>Source mel</div>
+                <div>Edited mel</div>
+              </div>
+            </div>
+
+            <div class="demo-content" id="tab-mel-ours">
+              <div style="display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:16px; align-items:start;">
+                <figure class="method-figure" data-scale="2.2">
+                  <img src="src/chroma_analysis/vector_0_55/source_mel.png" loading="eager" alt="AnchorSteer source mel-spectrogram.">
+                </figure>
+                <figure class="method-figure" data-scale="2.2">
+                  <img src="src/chroma_analysis/vector_0_55/edited_mel.png" loading="eager" alt="AnchorSteer edited mel-spectrogram.">
+                </figure>
+              </div>
+              <div style="display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:16px; text-align:center;" class="muted img-caption">
+                <div>Source mel</div>
+                <div>Edited mel</div>
+              </div>
+            </div>
+          </div>
+
+          <p class="muted img-caption" style="margin-top:.75rem;">
+            <strong>Takeaway:</strong> At matched edit strengths, AnchorSteer preserves chroma (pitch) while still transferring timbre, whereas SDEdit sacrifices chroma alignment to achieve a similar timbre change. This directly supports the chroma-metric results in Table 1 with per-sample visual evidence.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="method">
+      <div class="container">
+        <h2>Method Overview</h2>
+        <div class="content">
+          <p>
+            AnchorSteer operates within a pretrained Transformer-based music diffusion model (Stable Audio Open) and comprises two complementary mechanisms:
+          </p>
+
+          <hr class="section-sep">
+
+          <h3 style="text-align:center; margin-top:1rem;">A. Structure-Anchored Steering Pipeline</h3>
+          <figure class="method-figure method-figure--bleed" data-scale="1.3">
+            <img src="src/3.png" alt="The synergistic editing pipeline integrating structural guidance from MuseControlLite with semantic steering from concept injection modules.">
+          </figure>
+          <p>
+            The core of our inference pipeline is the <strong>synergistic coupling</strong> of two distinct mechanisms:
+            (1) <strong>Structure-Anchoring Unit</strong>: MuseControlLite adaptor injects explicit structural conditions $C_{struct}$ (melody, rhythm, dynamics) via RoPE-augmented decoupled cross-attention to enforce strict temporal alignment.
+            (2) <strong>Semantic-Steering Unit</strong>: The optimized concept injection modules $\mathcal{F}^*$ are activated to drive the attribute shift.
+          </p>
+          <p>
+            By integrating these units, we achieve <strong>structure-anchored steering</strong>, allowing the model to traverse the semantic manifold while remaining tethered to the original musical skeleton:
+          </p>
+          <p style="text-align:center">
+            $$\hat{h}_l = h_l(z_t, t, P_{edit}, C_{struct}) + \lambda_{edit} \cdot f_l^*(h_l)$$
+          </p>
+
+          <hr class="section-sep">
+
+          <h3 style="text-align:center;">B. Self-Supervised Concept Vector Discovery</h3>
+          <figure class="method-figure method-figure--bleed" data-scale="1.3">
+            <img src="src/2.png" alt="Self-discovery approach: generate reference samples with target prompt, then optimize concept injection modules to reconstruct references conditioned on a generic base prompt.">
+          </figure>
+          <p>
+            We first generate reference samples $X_{ref}$ using a target prompt $P_{tgt}$ (e.g., "A piano music piece").
+            To capture the semantic attribute, we optimize learnable concept injection modules $\mathcal{F}=\{f_l\}_{l\in\mathcal{L}}$ to reconstruct these references, but conditioned on a generic base prompt $P_{base}$ (e.g., "A music piece").
+            This forces the modules to learn the semantic gap between the generic and specific contexts:
+          </p>
+          <p style="text-align:center">
+            $$\mathcal{F}^* = \arg\min_{\mathcal{F}} \mathbb{E}_{x \sim X_{ref}, t, \epsilon} \| \epsilon - \epsilon_\theta(z_t, t, P_{base}, \mathcal{F}) \|^2$$
+          </p>
+          <p>
+            The discovered concept modules capture the semantic direction and can be reused across diverse source audio without re-optimization.
+          </p>
+
+          <hr class="section-sep">
+
+          <h3 style="text-align:center;">C. Injection Variants</h3>
+          <p>
+            <strong>Unconditioned Injection:</strong> A standalone learnable vector $v_l$ that applies a static semantic bias independent of the current hidden state, i.e., $f_l(h_l) \equiv v_l$. Simple and efficient, prioritizing structural fidelity under strong anchoring.
+          </p>
+          <p>
+            <strong>Conditioned Injection:</strong> A lightweight bottleneck Transformer that dynamically computes the injection based on input features $h_l$. This enables stronger and more robust semantic transfer, effective precisely in the over-constrained regime where anchoring alone yields weak edits.
+          </p>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 3: BibTeX section. ACM DOI is placeholder until ACM DL goes live. -->
+    <section id="bibtex">
+      <div class="container">
+        <h2>BibTeX</h2>
+        <div class="content">
+<pre>@inproceedings{chang2026anchorsteer,
+  title     = {AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing},
+  author    = {Chang, Chih-Heng and Ho, Keng-Seng and Tsai, Chih-Yu and Chen, Kuan-Lin and Yang, Yi-Hsuan and Ding, Jian-Jiun},
+  booktitle = {Proceedings of the 32nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD '26)},
+  year      = {2026},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  doi       = {[ACM_DOI_TODO]},
+}</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span>
+        This page was built using the
+        <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank" rel="noopener">
+          Academic Project Page Template
+        </a>.
+      </span>
+    </div>
+  </footer>
+
+  <script>
+    // Tab switching functionality (scoped per .demo-tab-group)
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.demo-tab-group').forEach(function(group) {
+        var tabs = group.querySelectorAll('.demo-tab');
+        var contents = group.querySelectorAll('.demo-content');
+
+        tabs.forEach(function(tab) {
+          tab.addEventListener('click', function() {
+            tabs.forEach(function(t) { t.classList.remove('active'); });
+            contents.forEach(function(c) { c.classList.remove('active'); });
+            tab.classList.add('active');
+            var targetId = 'tab-' + tab.dataset.tab;
+            document.getElementById(targetId).classList.add('active');
+          });
+        });
+      });
+    });
+
+    // Single-playback lock + playing indicator
+    (function() {
+      var allAudios = document.querySelectorAll('audio');
+
+      function lockOthers(current) {
+        allAudios.forEach(function(a) {
+          var card = a.closest('.method-card, .source-card');
+          if (!card) return;
+          if (a !== current) {
+            card.classList.add('audio-locked');
+          } else {
+            card.classList.add('audio-playing');
+          }
+        });
+      }
+
+      function unlockAll() {
+        document.querySelectorAll('.audio-locked').forEach(function(el) {
+          el.classList.remove('audio-locked');
+        });
+        document.querySelectorAll('.audio-playing').forEach(function(el) {
+          el.classList.remove('audio-playing');
+        });
+      }
+
+      allAudios.forEach(function(audio) {
+        audio.addEventListener('play', function() { lockOthers(audio); });
+        audio.addEventListener('pause', function() { unlockAll(); });
+        audio.addEventListener('ended', function() { unlockAll(); });
+
+        // Loading indicator: show during initial download + mid-playback buffering
+        audio.addEventListener('play', function() {
+          if (audio.readyState < 3) {
+            var card = audio.closest('.method-card, .source-card');
+            if (card) card.classList.add('audio-loading');
+          }
+        });
+        audio.addEventListener('waiting', function() {
+          var card = audio.closest('.method-card, .source-card');
+          if (card) card.classList.add('audio-loading');
+        });
+        audio.addEventListener('playing', function() {
+          var card = audio.closest('.method-card, .source-card');
+          if (card) card.classList.remove('audio-loading');
+        });
+        audio.addEventListener('canplaythrough', function() {
+          var card = audio.closest('.method-card, .source-card');
+          if (card) card.classList.remove('audio-loading');
+        });
+      });
+    })();
+
+    // Sticky nav + Back to top + active section highlight
+    (function() {
+      var stickyNav = document.getElementById('stickyNav');
+      var backToTop = document.getElementById('backToTop');
+      var navLinks  = stickyNav.querySelectorAll('.sticky-nav-links a');
+      var sections  = document.querySelectorAll('section[id]');
+      var heroBottom = 300; // show sticky nav after scrolling past hero
+
+      function onScroll() {
+        var y = window.scrollY || window.pageYOffset;
+
+        // Toggle sticky nav
+        if (y > heroBottom) {
+          stickyNav.classList.add('visible');
+        } else {
+          stickyNav.classList.remove('visible');
+        }
+
+        // Toggle back-to-top
+        if (y > 600) {
+          backToTop.classList.add('visible');
+        } else {
+          backToTop.classList.remove('visible');
+        }
+
+        // Highlight active section in nav
+        var current = '';
+        sections.forEach(function(sec) {
+          if (y >= sec.offsetTop - 120) {
+            current = sec.id;
+          }
+        });
+        navLinks.forEach(function(link) {
+          if (link.getAttribute('href') === '#' + current) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      // Back to top click
+      backToTop.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      // Smooth scroll for nav links
+      navLinks.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          var target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+    })();
+
+    // Hover zoom for method figures
+    (function () {
+      const m = window.matchMedia ? window.matchMedia.bind(window) : null;
+      const canHover = !m || m('(hover:hover)').matches || m('(any-pointer:fine)').matches;
+      if (!canHover) return;
+
+      const DEFAULT_SCALE = 1.3;
+
+      document.querySelectorAll('.method-figure').forEach(fig => {
+        const img = fig.querySelector('img');
+        if (!img) return;
+
+        img.style.transition = 'transform .18s ease, box-shadow .18s ease';
+        img.style.willChange  = 'transform';
+
+        const scale = parseFloat(fig.dataset.scale || '') || DEFAULT_SCALE;
+
+        function elevate() {
+          fig.style.position = 'relative';
+          fig.style.zIndex   = 9999;
+          fig.style.overflow = 'visible';
+          img.style.boxShadow = '0 6px 18px rgba(0,0,0,.15)';
+        }
+        function reset() {
+          fig.style.position = '';
+          fig.style.zIndex   = '';
+          fig.style.overflow = '';
+          img.style.boxShadow = '';
+          img.style.transform = '';
+          img.style.transformOrigin = 'center center';
+        }
+
+        fig.addEventListener('mouseenter', elevate);
+        fig.addEventListener('mouseleave', reset);
+
+        fig.addEventListener('mousemove', (e) => {
+          const r = fig.getBoundingClientRect();
+          const x = ((e.clientX - r.left) / r.width)  * 100;
+          const y = ((e.clientY - r.top)  / r.height) * 100;
+          img.style.transformOrigin = `${x}% ${y}%`;
+          img.style.transform = `scale(${scale})`;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
