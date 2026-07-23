@@ -1,0 +1,2403 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>BOCCHI: A More Realistic and Challenging Benchmark for Local Motion Blur Detection with MSDCT-UNet</title>
+  <meta name="description" content="BOCCHI: a 633-image real-captured benchmark for local motion blur detection, paired with MSDCT-UNet, a frequency-aware encoder-decoder." />
+  <meta name="keywords" content="Motion blur detection, Local motion blur dataset, DCT attention, Frequency-domain learning, Semantic segmentation" />
+  <meta name="color-scheme" content="light" />
+  <link rel="icon" href="assets/bocchi_icon.jpg" />
+
+  <!--
+    SOCIAL SHARE CARD
+    og:url and og:image must be ABSOLUTE URLs: most platforms (Twitter/X, Slack, LINE,
+    Facebook) will not resolve relative paths. Once the deploy location is known, replace
+    every REPLACE_SITE_URL below with the site root, no trailing slash, e.g.
+        https://brianchen1120.github.io/BOCCHI
+    Then re-scrape with the Facebook Sharing Debugger / Twitter Card Validator, since both
+    cache aggressively.
+    The card itself is assets/og_card.jpg (1200x630) — regenerate it if the headline
+    numbers ever change.
+  -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="BOCCHI &amp; MSDCT-UNet" />
+  <meta property="og:title" content="BOCCHI: A More Realistic and Challenging Benchmark for Local Motion Blur Detection" />
+  <meta property="og:description" content="A 633-image real-captured benchmark whose textured blurred foregrounds defeat gradient shortcuts, paired with MSDCT-UNet, a frequency-aware encoder-decoder. First in in-domain mIoU (0.850) and the strongest cross-dataset training source." />
+  <meta property="og:url" content="REPLACE_SITE_URL/" />
+  <meta property="og:image" content="REPLACE_SITE_URL/assets/og_card.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="BOCCHI project card: a real-captured image of a motion-blurred car with its pixel-level blur region outlined in red." />
+  <meta property="og:locale" content="en_US" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="BOCCHI: A Benchmark for Local Motion Blur Detection" />
+  <meta name="twitter:description" content="633 real-captured, pixel-annotated images that defeat gradient shortcuts, plus MSDCT-UNet, a frequency-aware encoder-decoder that reads blur in the DCT domain." />
+  <meta name="twitter:image" content="REPLACE_SITE_URL/assets/og_card.jpg" />
+  <meta name="twitter:image:alt" content="BOCCHI project card: a motion-blurred car with its blur region outlined in red." />
+
+  <style>
+  /* ==========================================================================
+     DESIGN TOKENS
+     ========================================================================== */
+  :root{
+    /* Ink (dark surfaces) */
+    --ink-900:#08090a;
+    --ink-800:#0d0f12;
+    --ink-700:#14181d;
+    --ink-600:#1e242b;
+    --on-ink:#f4f6f8;
+    --on-ink-2:#9aa4b2;
+    --on-ink-3:#6b7684;
+
+    /* Paper (light surfaces) */
+    --paper:#ffffff;
+    --paper-2:#f7f8fa;
+    --line:#e7e9ee;
+    --line-strong:#d3d7de;
+    --text:#0f1115;
+    --text-2:#59616e;
+    --text-3:#8b93a1;
+
+    /* Accents */
+    --ours:#ef4444;
+    --ours-soft:rgba(239,68,68,.10);
+    --gt:#16a34a;
+    --gt-soft:rgba(22,163,74,.10);
+    --link:#2563eb;
+    --bocchi:#ec4899;
+    --inference:#dc2626;
+
+    /* Table rank shades */
+    --best:#fde2e2; --second:#ffe6cd; --third:#fdf3cf;
+
+    /* Motion */
+    --ease-out:cubic-bezier(.23,1,.32,1);
+    --ease-in-out:cubic-bezier(.77,0,.175,1);
+    --ease-soft:cubic-bezier(.4,0,.2,1);
+    --t-press:130ms;
+    --t-hover:180ms;
+    --t-panel:240ms;
+
+    /* Layout */
+    --container:1080px;
+    --wide:1240px;
+    --radius:14px;
+    --radius-sm:10px;
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+  body{
+    margin:0; background:var(--paper); color:var(--text);
+    font-family:system-ui,-apple-system,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:1rem; line-height:1.65; overflow-x:hidden;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  img{ max-width:100%; height:auto; display:block; }
+  a{ color:var(--link); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  ::selection{ background:rgba(239,68,68,.18); }
+
+  .container{ max-width:var(--container); margin:0 auto; padding:0 24px; }
+  .container-wide{ max-width:var(--wide); margin:0 auto; padding:0 24px; }
+  .muted{ color:var(--text-2); }
+  .tnum{ font-variant-numeric:tabular-nums; }
+
+  /* ==========================================================================
+     TYPOGRAPHY  (size-specific tracking + leading, per Apple type guidance)
+     ========================================================================== */
+  .t-display{
+    font-size:clamp(2rem,4.4vw,3.35rem);
+    line-height:1.06; letter-spacing:-.025em; font-weight:700;
+    margin:0;
+  }
+  .t-h2{
+    font-size:clamp(1.5rem,2.6vw,2rem);
+    line-height:1.15; letter-spacing:-.018em; font-weight:680;
+    margin:0 0 .5rem;
+  }
+  .t-h3{
+    font-size:1.075rem; line-height:1.35; letter-spacing:-.008em; font-weight:650;
+    margin:0 0 .35rem;
+  }
+  .t-eyebrow{
+    font-size:.75rem; font-weight:640; letter-spacing:.11em; text-transform:uppercase;
+    color:var(--text-3); margin:0 0 .7rem;
+  }
+  .t-lead{ font-size:1.06rem; line-height:1.62; color:var(--text-2); letter-spacing:-.004em; }
+  .t-small{ font-size:.875rem; line-height:1.6; }
+
+  /* ==========================================================================
+     NAV  (translucent material; adapts over the dark hero)
+     ========================================================================== */
+  .nav{
+    position:fixed; inset:0 0 auto 0; z-index:900;
+    padding:0 24px;
+    background:rgba(255,255,255,.72);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    transition:background var(--t-panel) var(--ease-soft),
+               color var(--t-panel) var(--ease-soft),
+               transform 320ms var(--ease-out),
+               opacity 220ms var(--ease-soft);
+  }
+  /* scroll-edge effect instead of a hard 1px divider */
+  .nav::after{
+    content:''; position:absolute; left:0; right:0; top:100%; height:20px;
+    background:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,0));
+    pointer-events:none; opacity:0; transition:opacity var(--t-panel) var(--ease-soft);
+  }
+  .nav.is-scrolled::after{ opacity:1; }
+  .nav.over-hero{
+    background:rgba(8,9,10,.28);
+    backdrop-filter:blur(16px) saturate(140%);
+    -webkit-backdrop-filter:blur(16px) saturate(140%);
+  }
+  .nav.is-hidden{ transform:translateY(-100%); opacity:0; }
+  .nav-inner{
+    max-width:var(--wide); margin:0 auto; height:54px;
+    display:flex; align-items:center; justify-content:space-between; gap:20px;
+  }
+  .nav-mark{
+    display:inline-flex; align-items:center; gap:9px;
+    font-size:.93rem; font-weight:660; letter-spacing:-.01em; color:var(--text);
+    transition:color var(--t-panel) var(--ease-soft);
+    white-space:nowrap; text-decoration:none;
+  }
+  .nav-mark:hover{ text-decoration:none; }
+  .nav-icon{
+    width:24px; height:24px; border-radius:26%; flex:none;
+    box-shadow:0 0 0 1px rgba(15,17,21,.1);
+    transition:transform var(--t-press) var(--ease-out), box-shadow var(--t-panel) var(--ease-soft);
+  }
+  .nav.over-hero .nav-icon{ box-shadow:0 0 0 1px rgba(255,255,255,.18); }
+  .nav-mark:active .nav-icon{ transform:scale(.92); }
+  .nav.over-hero .nav-mark{ color:var(--on-ink); }
+  .nav-mark .dot{ color:var(--ours); }
+  .nav-links{ position:relative; display:flex; gap:2px; }
+  .nav-links a{
+    position:relative; z-index:1;
+    padding:6px 12px; border-radius:999px;
+    font-size:.855rem; font-weight:520; letter-spacing:-.004em;
+    color:var(--text-2); text-decoration:none;
+    transition:color var(--t-hover) var(--ease-soft);
+    white-space:nowrap;
+  }
+  .nav-links a:hover{ color:var(--text); text-decoration:none; }
+  .nav-links a.active{ color:var(--text); }
+  .nav.over-hero .nav-links a{ color:var(--on-ink-2); }
+  .nav.over-hero .nav-links a:hover,
+  .nav.over-hero .nav-links a.active{ color:var(--on-ink); }
+  /* sliding pill that tracks the active / hovered link */
+  .nav-pill{
+    position:absolute; z-index:0; top:0; left:0; height:100%;
+    border-radius:999px; background:rgba(15,17,21,.06);
+    opacity:0; pointer-events:none;
+    transition:transform 320ms var(--ease-out), width 320ms var(--ease-out),
+               opacity 180ms var(--ease-soft), background var(--t-panel) var(--ease-soft);
+  }
+  .nav.over-hero .nav-pill{ background:rgba(255,255,255,.14); }
+  /* Narrow screens: keep navigation reachable by scrolling the links instead of hiding them. */
+  @media (max-width:760px){
+    .nav-inner{ gap:12px; }
+    .nav-mark{ font-size:0; gap:0; }          /* icon only, label folds away */
+    .nav-mark .dot{ display:none; }
+    .nav-links{
+      flex:1; overflow-x:auto; scrollbar-width:none;
+      -webkit-overflow-scrolling:touch;
+      mask-image:linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 14px),transparent 100%);
+    }
+    .nav-links::-webkit-scrollbar{ display:none; }
+    .nav-links a{ padding:6px 10px; font-size:.82rem; }
+    .nav-pill{ display:none; }                /* offsetLeft is unreliable inside a scroller */
+  }
+
+  /* ==========================================================================
+     HERO  (dark, full-bleed)
+     ========================================================================== */
+  .hero{
+    position:relative; background:var(--ink-900); color:var(--on-ink);
+    padding:112px 0 64px; overflow:hidden;
+    isolation:isolate;
+  }
+  /* soft light source behind the title, and a warm one behind the figure */
+  .hero::before{
+    content:''; position:absolute; z-index:-1; inset:-30% -10% auto -10%; height:120%;
+    background:
+      radial-gradient(56% 42% at 50% 8%, rgba(120,150,200,.16), transparent 70%),
+      radial-gradient(40% 34% at 78% 62%, rgba(239,68,68,.10), transparent 72%);
+    pointer-events:none;
+  }
+  .hero-inner{ max-width:var(--wide); margin:0 auto; padding:0 24px; text-align:center; }
+
+  /* wordmark: icon tile + BOCCHI lockup */
+  .lockup{
+    display:flex; align-items:center; justify-content:center; gap:clamp(14px,2vw,24px);
+    margin:0 0 18px;
+  }
+  .lockup-icon{
+    width:clamp(96px,11vw,148px); height:clamp(96px,11vw,148px);
+    border-radius:24%; overflow:hidden; flex:none;
+    box-shadow:0 14px 34px -12px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.14);
+    transition:transform 420ms var(--ease-out);
+  }
+  .lockup-icon img{ width:100%; height:100%; object-fit:cover; }
+  @media (hover:hover) and (pointer:fine){
+    .hero:hover .lockup-icon{ transform:translateY(-2px) rotate(-1.5deg); }
+  }
+  .wordmark{
+    font-size:clamp(2.9rem,7.4vw,5.4rem);
+    line-height:.95; letter-spacing:-.045em; font-weight:760;
+    margin:0;
+    background:linear-gradient(168deg,#ffffff 18%,#ffc9c9 96%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .wordmark-sub{
+    display:block; font-size:clamp(.66rem,1.05vw,.78rem);
+    font-weight:620; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--on-ink-3); margin-top:.5em; -webkit-text-fill-color:var(--on-ink-3);
+  }
+
+  .hero h1{
+    font-size:clamp(1.02rem,1.72vw,1.35rem);
+    line-height:1.42; letter-spacing:-.012em; font-weight:560;
+    margin:0 auto .8rem; max-width:44ch;
+    color:#e9edf2; text-wrap:balance;
+  }
+  .hero h1 .nb{ white-space:nowrap; }
+  .hero h1 .kw{ color:#fff; font-weight:640; }
+  .hero .subtitle{
+    max-width:56ch; margin:0 auto 22px;
+    font-size:clamp(.98rem,1.35vw,1.12rem); line-height:1.55;
+    color:var(--on-ink-2); letter-spacing:-.006em;
+  }
+  .hero .authors{
+    font-size:1.02rem; letter-spacing:-.006em; color:#e8ecf1; margin:0 0 5px;
+  }
+  .hero .authors .sep{ color:var(--on-ink-3); margin:0 .35em; }
+  .hero .authors sup{ font-size:.62em; margin-left:.12em; color:var(--on-ink-3); }
+  .hero .affil{
+    display:flex; flex-wrap:wrap; justify-content:center; gap:2px 20px;
+    font-size:.86rem; color:var(--on-ink-3); margin:0 0 22px;
+  }
+  .hero .affil sup{ font-size:.72em; margin-right:.25em; }
+
+  /* --- resource buttons --- */
+  .links{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:0 0 36px; }
+  .link-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:10px 18px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.07);
+    color:#e9edf2; font-size:.9rem; font-weight:560; letter-spacing:-.005em;
+    text-decoration:none; cursor:pointer;
+    transition:transform var(--t-press) var(--ease-out),
+               background var(--t-hover) var(--ease-soft),
+               border-color var(--t-hover) var(--ease-soft);
+  }
+  .link-btn svg{ width:16px; height:16px; flex:none; }
+  .link-btn .soon{
+    font-size:.68rem; font-weight:640; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--on-ink-3); padding-left:2px;
+  }
+  @media (hover:hover) and (pointer:fine){
+    .link-btn:not(.is-disabled):hover{
+      background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.3);
+      text-decoration:none;
+    }
+  }
+  .link-btn:not(.is-disabled):active{ transform:scale(.97); }
+  .link-btn.is-disabled{
+    opacity:.44; cursor:not-allowed; border-style:dashed;
+  }
+  .link-btn.is-disabled:active{ transform:scale(.985); }
+
+  /* --- blur slider --- */
+  .bs-wrap{ max-width:1000px; margin:0 auto; }
+  .bs{
+    --p:50%;   /* JS drives clip-path/left directly; this is the pre-script resting state */
+    position:relative; overflow:hidden; border-radius:var(--radius);
+    aspect-ratio:3/2; touch-action:none; cursor:ew-resize;
+    background:var(--ink-700);
+    box-shadow:0 28px 70px -24px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.09);
+    user-select:none; -webkit-user-select:none;
+  }
+  /* Two stacked layers: base = input photos, clip = annotation photos revealed on the
+     right of the divider. Each layer holds a horizontal track of slides. */
+  .bs-viewport, .bs-clip{ position:absolute; inset:0; overflow:hidden; }
+  .bs-clip{
+    clip-path:inset(0 0 0 var(--p,50%));
+    will-change:clip-path;
+  }
+  /* Slides are stacked absolutely; JS transforms each per its offset from the current
+     page (translateX + scale + opacity), so a page change materializes rather than
+     just sliding. */
+  .bs-track{ position:absolute; inset:0; }
+  .bs-slide{
+    position:absolute; inset:0; will-change:transform, opacity;
+    backface-visibility:hidden;
+  }
+  .bs-slide img{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    pointer-events:none; -webkit-user-drag:none;
+  }
+
+  /* nav arrows */
+  .bs-nav{
+    position:absolute; top:50%; transform:translateY(-50%); z-index:3;
+    width:40px; height:40px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(255,255,255,.22); background:rgba(8,9,10,.42); color:#fff;
+    cursor:pointer; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+    transition:transform var(--t-press) var(--ease-out), background var(--t-hover) var(--ease-soft),
+               border-color var(--t-hover) var(--ease-soft), opacity 200ms var(--ease-soft);
+  }
+  .bs-nav svg{ width:20px; height:20px; }
+  .bs-nav.prev{ left:12px; }
+  .bs-nav.next{ right:12px; }
+  @media (hover:hover) and (pointer:fine){
+    .bs-nav:hover{ background:rgba(8,9,10,.72); border-color:rgba(255,255,255,.4); }
+  }
+  .bs-nav:active{ transform:translateY(-50%) scale(.9); }
+  .bs-nav:disabled{ opacity:0; pointer-events:none; }   /* loops, so normally never disabled */
+
+  /* dots */
+  .bs-dots{ display:flex; justify-content:center; gap:9px; margin:16px 0 0; }
+  .bs-dot{
+    width:8px; height:8px; border-radius:999px; padding:0;
+    border:0; background:rgba(255,255,255,.24); cursor:pointer;
+    transition:width 320ms var(--ease-out), background 220ms var(--ease-soft), transform var(--t-press) var(--ease-out);
+  }
+  @media (hover:hover) and (pointer:fine){ .bs-dot:hover{ background:rgba(255,255,255,.5); } }
+  .bs-dot:active{ transform:scale(.85); }
+  .bs-dot.active{ width:22px; background:var(--ours); }
+  .bs-handle{
+    position:absolute; top:0; bottom:0; left:var(--p,50%);
+    width:2px; margin-left:-1px; background:rgba(255,255,255,.92);
+    box-shadow:0 0 14px rgba(0,0,0,.5);
+    pointer-events:none; will-change:left;
+  }
+  .bs-knob{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:40px; height:40px; border-radius:50%;
+    background:rgba(255,255,255,.94); color:#0f1115;
+    display:flex; align-items:center; justify-content:center; gap:2px;
+    box-shadow:0 6px 20px rgba(0,0,0,.42);
+    transition:transform 160ms var(--ease-out);
+  }
+  .bs.is-dragging .bs-knob{ transform:translate(-50%,-50%) scale(1.12); }
+  .bs-knob svg{ width:18px; height:18px; }
+  .bs-tag{
+    position:absolute; top:12px; z-index:2;
+    padding:4px 11px; border-radius:999px;
+    font-size:.72rem; font-weight:640; letter-spacing:.045em; text-transform:uppercase;
+    background:rgba(8,9,10,.62); color:#fff;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    pointer-events:none;
+  }
+  .bs-tag{ z-index:3; }
+  .bs-tag.left{ left:56px; }
+  .bs-tag.right{ right:56px; color:#ffd7d7; }
+  @media (max-width:560px){
+    .bs-tag.left{ left:12px; }
+    .bs-tag.right{ right:12px; }
+    .bs-nav{ width:34px; height:34px; }
+  }
+  .bs-caption{
+    text-align:center; font-size:.83rem; color:var(--on-ink-3);
+    margin:14px 0 0; letter-spacing:-.003em;
+  }
+  .bs-caption kbd{
+    font:inherit; font-size:.78rem; padding:1px 6px; border-radius:5px;
+    border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.06);
+    color:var(--on-ink-2);
+  }
+
+  /* ==========================================================================
+     SECTIONS  (paper)
+     ========================================================================== */
+  .section{ padding:76px 0; scroll-margin-top:70px; }
+  .section.tinted{ background:var(--paper-2); border-block:1px solid var(--line); }
+  .section-head{ text-align:center; max-width:64ch; margin:0 auto 34px; }
+  .section-head .t-lead{ margin:.4rem 0 0; }
+  .divider{ height:1px; background:var(--line); border:0; margin:0; }
+
+  /* figure with a soft frame */
+  .fig{
+    margin:0; border-radius:var(--radius); overflow:hidden;
+    border:1px solid var(--line); background:var(--paper);
+    box-shadow:0 1px 2px rgba(15,17,21,.04), 0 12px 32px -18px rgba(15,17,21,.25);
+  }
+  .fig-cap{
+    font-size:.85rem; line-height:1.6; color:var(--text-2);
+    max-width:78ch; margin:14px auto 0; text-align:center;
+  }
+
+  /* zoom-on-hover figures */
+  .zoomable{ cursor:zoom-in; }
+  .zoomable > img{ transition:transform 220ms var(--ease-out); will-change:transform; }
+
+  /* ==========================================================================
+     FOCUS
+     The ring colour is a custom property so dark panels can override it on the
+     focused element itself; a blue ring is invisible against the ink hero.
+     ========================================================================== */
+  :root{ --focus:#2563eb; }
+  :focus-visible{
+    outline:2.5px solid var(--focus);
+    outline-offset:3px;
+    border-radius:8px;
+  }
+  .hero *:focus-visible,
+  .closing *:focus-visible,
+  .nav.over-hero *:focus-visible,
+  .lightbox:focus-visible{ --focus:#ffffff; }
+  .bs:focus-visible{ outline-offset:4px; }
+  /* Cells already carry their own radius; match it so the ring hugs the shape. */
+  .cell:focus-visible,
+  .qual-cell:focus-visible{ border-radius:var(--radius-sm); }
+
+  .skip-link{
+    position:fixed; top:8px; left:8px; z-index:1200;
+    padding:10px 18px; border-radius:10px;
+    background:var(--paper); color:var(--text);
+    font-size:.9rem; font-weight:600; text-decoration:none;
+    box-shadow:0 8px 24px -8px rgba(0,0,0,.5);
+    transform:translateY(-160%);
+    transition:transform 200ms var(--ease-out);
+  }
+  .skip-link:focus-visible{ transform:none; text-decoration:none; }
+
+  /* ==========================================================================
+     TL;DR
+     ========================================================================== */
+  .tldr{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+    max-width:1000px; margin:0 auto;
+  }
+  .tldr-card{
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--paper);
+    padding:28px 24px 24px; text-align:center;
+    box-shadow:0 1px 2px rgba(15,17,21,.04);
+    transition:transform 260ms var(--ease-out), box-shadow 260ms var(--ease-out);
+  }
+  @media (hover:hover) and (pointer:fine){
+    .tldr-card:hover{ transform:translateY(-3px); box-shadow:0 18px 40px -24px rgba(15,17,21,.5); }
+  }
+  .tldr-card.is-ours{ border-color:rgba(239,68,68,.4); background:linear-gradient(180deg,rgba(239,68,68,.045),transparent 60%); }
+  .tldr-value{
+    font-size:clamp(2.1rem,3.9vw,2.9rem); font-weight:720; line-height:1;
+    letter-spacing:-.035em; font-variant-numeric:tabular-nums;
+  }
+  .tldr-card.is-ours .tldr-value{ color:var(--ours); }
+  .tldr-value .unit{ font-size:.42em; font-weight:640; letter-spacing:-.01em; margin-left:.18em; color:var(--text-3); }
+  .tldr-card.is-ours .tldr-value .unit{ color:rgba(239,68,68,.65); }
+  .tldr-title{ font-size:.94rem; font-weight:620; letter-spacing:-.01em; margin:14px 0 5px; }
+  .tldr-note{ font-size:.83rem; line-height:1.55; color:var(--text-2); margin:0; }
+  @media (max-width:800px){ .tldr{ grid-template-columns:1fr; } }
+
+  /* ==========================================================================
+     DATA EFFICIENCY
+     ========================================================================== */
+  .de{ max-width:860px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+  .de-row{
+    display:grid; grid-template-columns:190px 1fr 58px; gap:18px; align-items:center;
+  }
+  .de-label{ text-align:right; }
+  .de-name{ font-size:.94rem; font-weight:620; letter-spacing:-.01em; }
+  .de-row.is-ours .de-name{ color:var(--ours); }
+  .de-count{ font-size:.78rem; color:var(--text-3); font-variant-numeric:tabular-nums; }
+  .de-track{
+    position:relative; height:36px; border-radius:11px;
+    background:var(--paper-2); border:1px solid var(--line); overflow:hidden;
+  }
+  .de-fill{
+    position:absolute; inset:0 auto 0 0; width:0;
+    border-radius:10px; background:linear-gradient(90deg,#d5dae1,#b3bcc7);
+  }
+  .de-row.is-ours .de-fill{ background:linear-gradient(90deg,#fb8f8f,#ef4444); }
+  .de-val{
+    text-align:right; font-size:.94rem; font-weight:650;
+    font-variant-numeric:tabular-nums; letter-spacing:-.015em;
+  }
+  .de-row.is-ours .de-val{ color:var(--ours); }
+  .de-axis{
+    display:grid; grid-template-columns:190px 1fr 58px; gap:18px;
+    max-width:860px; margin:6px auto 0; font-size:.75rem; color:var(--text-3);
+  }
+  .de-axis span:nth-child(2){ text-align:center; }
+  @media (max-width:720px){
+    .de-row{ grid-template-columns:1fr 56px; }
+    .de-label{ grid-column:1 / -1; text-align:left; }
+    .de-axis{ display:none; }
+  }
+
+  /* ==========================================================================
+     TABS
+     ========================================================================== */
+  .tabs{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin:0 0 22px; }
+  .tab{
+    position:relative; padding:8px 16px; border-radius:999px;
+    border:1px solid var(--line-strong); background:var(--paper);
+    color:var(--text-2); font-size:.875rem; font-weight:560; letter-spacing:-.005em;
+    cursor:pointer; font-family:inherit;
+    transition:transform var(--t-press) var(--ease-out),
+               color var(--t-hover) var(--ease-soft),
+               border-color var(--t-hover) var(--ease-soft),
+               background var(--t-hover) var(--ease-soft);
+  }
+  @media (hover:hover) and (pointer:fine){
+    .tab:hover:not(.active){ color:var(--text); border-color:var(--text-3); }
+  }
+  .tab:active{ transform:scale(.97); }
+  .tab.active{ color:#fff; background:var(--text); border-color:var(--text); }
+  .tab.is-ours{ color:var(--ours); border-color:rgba(239,68,68,.45); }
+  .tab.is-ours.active{ background:var(--ours); border-color:var(--ours); color:#fff; }
+  .tab.is-gt{ color:var(--gt); border-color:rgba(22,163,74,.45); }
+  .tab.is-gt.active{ background:var(--gt); border-color:var(--gt); color:#fff; }
+  .tab.is-bocchi{ color:#be185d; border-color:#f5b5d0; }
+  .tab.is-bocchi.active{ background:var(--bocchi); border-color:var(--bocchi); color:#fff; }
+  .tab.is-inference{ color:#b91c1c; border-color:#f7b3b3; }
+  .tab.is-inference.active{ background:var(--inference); border-color:var(--inference); color:#fff; }
+
+  .tab-group{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:7px 12px; border-radius:999px; border:1px dashed transparent;
+  }
+  .tab-group-label{
+    font-size:.72rem; font-weight:680; letter-spacing:.08em; text-transform:uppercase;
+  }
+  .tab-group.g-bocchi{ background:rgba(236,72,153,.05); border-color:#f7c4dc; }
+  .tab-group.g-bocchi .tab-group-label{ color:#be185d; }
+  .tab-group.g-inference{ background:rgba(220,38,38,.05); border-color:#f8c0c0; }
+  .tab-group.g-inference .tab-group-label{ color:#b91c1c; }
+
+  /* qualitative 14-tab grid */
+  .tabs-grid{
+    position:relative;
+    display:grid; grid-template-columns:repeat(7,1fr); gap:8px;
+    max-width:1000px; margin:0 auto 22px;
+  }
+  /* One indicator slides between cells, so the active state travels instead of blinking. */
+  .tab-indicator{
+    position:absolute; top:0; left:0; z-index:0;
+    border-radius:999px; background:var(--text);
+    opacity:0; pointer-events:none;
+    transition:transform 360ms var(--ease-out), width 360ms var(--ease-out),
+               height 360ms var(--ease-out), background 260ms var(--ease-soft),
+               opacity 180ms var(--ease-soft);
+  }
+  .tabs-grid .tab{ position:relative; z-index:1; }
+  .tabs-grid .tab.active{ background:transparent; border-color:transparent; color:#fff; }
+  .tabs-grid .tab{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+    min-height:62px; padding:7px 8px; line-height:1.2; text-align:center;
+  }
+  .tabs-grid .tab-name{ font-size:.84rem; font-weight:600; pointer-events:none; }
+  .tabs-grid .tab-meta{ font-size:.7rem; opacity:.7; font-variant-numeric:tabular-nums; pointer-events:none; }
+  .tabs-grid .tab.active .tab-meta{ opacity:.9; }
+  @media (max-width:900px){ .tabs-grid{ grid-template-columns:repeat(4,1fr); } }
+  @media (max-width:560px){ .tabs-grid{ grid-template-columns:repeat(2,1fr); } }
+
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  /* ==========================================================================
+     DATASET GALLERY
+     ========================================================================== */
+  .gallery{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
+    max-width:var(--container); margin:0 auto;
+  }
+  .cell{
+    position:relative; aspect-ratio:3/2; overflow:hidden; border-radius:var(--radius-sm);
+    background:var(--paper-2); border:1px solid var(--line); cursor:zoom-in;
+    transition:transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
+  }
+  .cell img{ width:100%; height:100%; object-fit:cover; }
+  @media (hover:hover) and (pointer:fine){
+    .cell:hover{ transform:translateY(-2px); box-shadow:0 10px 24px -12px rgba(15,17,21,.4); }
+  }
+  .cell:active{ transform:scale(.985); }
+  .cell.placeholder{
+    background:repeating-linear-gradient(135deg,#f3f4f6 0 6px,#e9ebef 6px 12px);
+  }
+
+  /* hover-reveal: the annotation wipes in over the photo */
+  .cell-reveal{
+    position:absolute; inset:0;
+    clip-path:inset(0 100% 0 0);
+    transition:clip-path 340ms var(--ease-out);
+    pointer-events:none;
+  }
+  .cell-reveal img{ width:100%; height:100%; object-fit:cover; }
+  .cell-hint{
+    position:absolute; left:7px; bottom:6px;
+    padding:2px 8px; border-radius:7px; font-size:.68rem; font-weight:620;
+    letter-spacing:.03em; text-transform:uppercase;
+    background:rgba(8,9,10,.68); color:#fff;
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    opacity:0; transform:translateY(3px);
+    transition:opacity 200ms var(--ease-soft), transform 200ms var(--ease-out);
+    pointer-events:none;
+  }
+  @media (hover:hover) and (pointer:fine){
+    .cell:hover .cell-reveal{ clip-path:inset(0 0 0 0); }
+    .cell:hover .cell-hint{ opacity:1; transform:none; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .cell-reveal{ transition:opacity 160ms linear; clip-path:none; opacity:0; }
+    .cell:hover .cell-reveal{ opacity:1; }
+  }
+
+  .stats{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:20px;
+    max-width:840px; margin:36px auto 0; padding-top:26px; border-top:1px solid var(--line);
+  }
+  .stat{ text-align:center; }
+  .stat-value{
+    font-size:1.85rem; font-weight:700; letter-spacing:-.02em; line-height:1.1;
+    font-variant-numeric:tabular-nums; color:var(--text);
+  }
+  .stat-label{ font-size:.8rem; color:var(--text-3); margin-top:4px; letter-spacing:-.002em; }
+  @media (max-width:720px){
+    .gallery{ grid-template-columns:repeat(2,1fr); }
+    .stats{ grid-template-columns:repeat(2,1fr); }
+  }
+
+  /* ==========================================================================
+     QUALITATIVE
+     ========================================================================== */
+  .qual-frame{
+    border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+    background:var(--paper);
+    box-shadow:0 1px 2px rgba(15,17,21,.04), 0 16px 40px -24px rgba(15,17,21,.3);
+    transition:border-color var(--t-panel) var(--ease-soft), box-shadow var(--t-panel) var(--ease-soft);
+  }
+  .qual-frame.is-ours{ border-color:rgba(239,68,68,.5); box-shadow:0 0 0 4px var(--ours-soft); }
+  .qual-frame.is-gt{ border-color:rgba(22,163,74,.5); box-shadow:0 0 0 4px var(--gt-soft); }
+  .qual-frame-head{
+    display:flex; align-items:baseline; justify-content:center; gap:10px; flex-wrap:wrap;
+    padding:13px 18px; background:var(--paper-2); border-bottom:1px solid var(--line);
+    transition:background var(--t-panel) var(--ease-soft);
+  }
+  .qual-frame.is-ours .qual-frame-head{ background:var(--ours-soft); }
+  .qual-frame.is-gt .qual-frame-head{ background:var(--gt-soft); }
+  .qual-frame-label{ font-size:.74rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-3); }
+  .qual-frame-method{ font-size:1.05rem; font-weight:660; letter-spacing:-.012em; }
+  .qual-frame.is-ours .qual-frame-method{ color:var(--ours); }
+  .qual-frame.is-gt .qual-frame-method{ color:var(--gt); }
+  .qual-frame-meta{ font-size:.84rem; color:var(--text-2); font-variant-numeric:tabular-nums; }
+
+  .qual-grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:16px;
+    transition:filter 200ms var(--ease-soft), opacity 200ms var(--ease-soft);
+  }
+  /* Blur bridges the swap so two masks never read as two overlapping objects. */
+  .qual-grid.swapping{ filter:blur(3px); opacity:.55; }
+  @media (prefers-reduced-motion:reduce){ .qual-grid.swapping{ filter:none; opacity:.6; } }
+  .qual-cell{
+    position:relative; aspect-ratio:3/2; overflow:hidden; border-radius:var(--radius-sm);
+    background:var(--paper-2); border:1px solid var(--line); cursor:zoom-in;
+    transition:transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out),
+               border-color var(--t-panel) var(--ease-soft);
+  }
+  .qual-cell img{ width:100%; height:100%; object-fit:cover; }
+  @media (hover:hover) and (pointer:fine){
+    .qual-cell:hover{ transform:translateY(-2px); box-shadow:0 10px 24px -12px rgba(15,17,21,.4); }
+  }
+  .qual-cell:active{ transform:scale(.985); }
+  .qual-cell.is-ours{ border-color:rgba(239,68,68,.55); }
+  .qual-cell.is-gt{ border-color:rgba(22,163,74,.55); }
+  .qual-cell.placeholder{
+    background:repeating-linear-gradient(135deg,#f3f4f6 0 6px,#e9ebef 6px 12px);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-3); font-size:.75rem;
+  }
+  .cell-tag{
+    position:absolute; bottom:6px; left:7px;
+    padding:2px 8px; border-radius:7px; font-size:.7rem; font-weight:620;
+    background:rgba(8,9,10,.68); color:#fff;
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  }
+  .cell-iou{
+    position:absolute; top:6px; right:7px;
+    padding:2px 7px; border-radius:6px; font-size:.7rem; font-weight:640;
+    background:rgba(8,9,10,.74); color:#fff; font-variant-numeric:tabular-nums;
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  }
+  .qual-cell.flash{ box-shadow:0 0 0 4px rgba(37,99,235,.65); }
+  @media (max-width:720px){ .qual-grid{ grid-template-columns:repeat(2,1fr); } }
+
+  /* ==========================================================================
+     TABLES
+     ========================================================================== */
+  .table-wrap{
+    width:100%; overflow-x:auto; margin:0 auto;
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--paper);
+    box-shadow:0 1px 2px rgba(15,17,21,.04);
+  }
+  table{ border-collapse:collapse; width:100%; font-size:.865rem; }
+  th,td{ padding:9px 13px; text-align:center; white-space:nowrap; }
+  thead th{
+    background:var(--paper-2); font-weight:620; font-size:.8rem; color:var(--text-2);
+    letter-spacing:-.002em; border-bottom:1px solid var(--line);
+  }
+  tbody td{ border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  tbody tr:last-child td{ border-bottom:0; }
+  tbody th, td:first-child{ text-align:left; white-space:nowrap; }
+  @media (hover:hover) and (pointer:fine){
+    tbody tr{ transition:background var(--t-hover) var(--ease-soft); }
+    tbody tr:hover{ background:rgba(15,17,21,.028); }
+  }
+  .best{ background:var(--best); }
+  .second{ background:var(--second); }
+  .third{ background:var(--third); }
+  tr.ours-row{ background:rgba(239,68,68,.045); }
+  tr.ours-row td:first-child{ color:var(--ours); font-weight:660; }
+  tr.avg-row{ font-style:italic; }
+  tr.avg-row td{ border-top:1px solid var(--line-strong); }
+  .rank-key{
+    display:inline-block; padding:1px 7px; border-radius:5px; font-size:.8rem; font-weight:600;
+  }
+
+  /* ==========================================================================
+     SCATTER
+     ========================================================================== */
+  .scatter-wrap{ max-width:560px; margin:0 auto; position:relative; }
+  .scatter-wrap svg{ width:100%; height:auto; display:block; }
+  .scatter-axis{ stroke:#475569; stroke-width:1; }
+  .scatter-tick{ stroke:#e3e6eb; stroke-width:1; }
+  .scatter-tick-text{ fill:var(--text-3); font-size:10px; font-family:inherit; }
+  .scatter-axis-label{ fill:var(--text); font-size:12px; font-weight:600; font-family:inherit; }
+  .scatter-diag{ stroke:#a8b0bc; stroke-width:1; stroke-dasharray:4 4; }
+  .scatter-dot{ transition:r 160ms var(--ease-out), stroke-width 160ms var(--ease-out); }
+  .scatter-dot.win{ fill:#10b981; fill-opacity:.5; stroke:#047857; stroke-width:.8; }
+  .scatter-dot.loss{ fill:#ef4444; fill-opacity:.5; stroke:#b91c1c; stroke-width:.8; }
+  .scatter-dot.hi{ stroke:var(--link); stroke-width:2; fill-opacity:.85; cursor:pointer; }
+  .scatter-tip{
+    position:absolute; pointer-events:none; z-index:5;
+    background:var(--ink-800); color:#fff; font-size:.78rem; line-height:1.45;
+    padding:7px 11px; border-radius:8px; white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+    opacity:0; transform:translate(-50%,-108%) scale(.96);
+    transition:opacity 140ms var(--ease-out), transform 140ms var(--ease-out);
+    box-shadow:0 8px 24px -10px rgba(0,0,0,.6);
+  }
+  .scatter-tip.show{ opacity:1; transform:translate(-50%,-112%) scale(1); }
+  .scatter-tip::after{
+    content:''; position:absolute; left:50%; bottom:-5px; transform:translateX(-50%);
+    border:5px solid transparent; border-top-color:var(--ink-800); border-bottom:0;
+  }
+  .scatter-legend{
+    display:flex; flex-wrap:wrap; justify-content:center; gap:16px;
+    font-size:.82rem; margin-top:14px; color:var(--text-2);
+  }
+  .lg-dot{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+  .lg-win{ background:#10b981; border:1px solid #047857; }
+  .lg-loss{ background:#ef4444; border:1px solid #b91c1c; }
+  .lg-hi{ background:#10b981; border:2px solid var(--link); }
+
+  /* ==========================================================================
+     METHOD MODULES
+     ========================================================================== */
+  .modules{ display:flex; flex-direction:column; gap:22px; max-width:940px; margin:0 auto; }
+  .module{
+    border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; background:var(--paper);
+    box-shadow:0 1px 2px rgba(15,17,21,.04);
+    transition:box-shadow 240ms var(--ease-out), transform 240ms var(--ease-out);
+  }
+  @media (hover:hover) and (pointer:fine){
+    .module:hover{ transform:translateY(-2px); box-shadow:0 16px 36px -22px rgba(15,17,21,.45); }
+  }
+  .module h4{ margin:0 0 12px; font-size:1.03rem; font-weight:650; letter-spacing:-.012em; text-align:center; }
+  .module-fig{
+    background:var(--paper-2); border-radius:var(--radius-sm); padding:12px; margin-bottom:14px;
+    display:flex; align-items:center; justify-content:center; min-height:120px;
+    color:var(--text-3); font-size:.85rem;
+  }
+  .module-fig{ cursor:zoom-in; }
+  .module-fig img{ width:100%; max-height:420px; object-fit:contain; }
+  .module p{ margin:0; font-size:.9rem; color:var(--text-2); text-align:center; }
+
+  /* ==========================================================================
+     CLOSING (dark) + FOOTER
+     ========================================================================== */
+  .closing{ background:var(--ink-900); color:var(--on-ink); padding:72px 0 0; }
+  /* Citation hidden: without it the band is just the footer, so drop the lead-in space. */
+  .closing.is-bare{ padding-top:0; }
+  .closing.is-bare .foot{ margin-top:0; padding:30px 0 34px; border-top:0; }
+  .closing .t-h2{ color:#fff; }
+  .closing .t-eyebrow{ color:var(--on-ink-3); }
+  .closing .t-lead{ color:var(--on-ink-2); }
+  .code-block{
+    position:relative; max-width:760px; margin:0 auto;
+    border:1px solid rgba(255,255,255,.12); border-radius:var(--radius);
+    background:rgba(255,255,255,.04); overflow:hidden;
+  }
+  .code-block pre{
+    margin:0; padding:18px 20px; overflow-x:auto;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.82rem; line-height:1.65; color:#dbe2ea;
+  }
+  .copy-btn{
+    position:absolute; top:10px; right:10px;
+    padding:5px 12px; border-radius:8px; font-family:inherit;
+    border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.07);
+    color:#e9edf2; font-size:.76rem; font-weight:580; cursor:pointer;
+    transition:transform var(--t-press) var(--ease-out), background var(--t-hover) var(--ease-soft);
+  }
+  @media (hover:hover) and (pointer:fine){ .copy-btn:hover{ background:rgba(255,255,255,.15); } }
+  .copy-btn:active{ transform:scale(.95); }
+  @media (max-width:640px){
+    /* Narrow: the button would sit on top of the first line, so give it its own band. */
+    .code-block pre{ padding-top:46px; }
+  }
+  .foot{
+    margin-top:64px; padding:24px 0 30px;
+    border-top:1px solid rgba(255,255,255,.09);
+    text-align:center; font-size:.82rem; color:var(--on-ink-3);
+  }
+
+  /* ==========================================================================
+     LIGHTBOX
+     ========================================================================== */
+  .lightbox{
+    position:fixed; inset:0; z-index:1000; display:none;
+    align-items:center; justify-content:center; padding:5vmin;
+    background:rgba(8,9,10,.86);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    cursor:zoom-out;
+    opacity:0; transition:opacity 200ms var(--ease-soft);
+  }
+  .lightbox.mounted{ display:flex; }
+  .lightbox.open{ opacity:1; }
+  .lightbox img{
+    max-width:92vw; max-height:88vh; object-fit:contain; border-radius:10px;
+    box-shadow:0 30px 80px -20px rgba(0,0,0,.8);
+    transform:scale(.94); opacity:0;
+    transition:transform 260ms var(--ease-out), opacity 200ms var(--ease-soft);
+  }
+  .lightbox.open img{ transform:scale(1); opacity:1; }
+  body.lb-open{ overflow:hidden; }
+
+  /* ==========================================================================
+     SCROLL REVEAL
+     ========================================================================== */
+  .reveal{ opacity:0; transform:translateY(14px); }
+  .reveal.in{
+    opacity:1; transform:none;
+    transition:opacity 520ms var(--ease-out), transform 520ms var(--ease-out);
+  }
+
+  /* ==========================================================================
+     ACCESSIBILITY PREFERENCES
+     ========================================================================== */
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; }
+    *,*::before,*::after{
+      animation-duration:.01ms !important; animation-iteration-count:1 !important;
+      transition-duration:120ms !important;
+    }
+    .reveal{ opacity:1; transform:none; }
+    .cell:hover,.qual-cell:hover,.module:hover{ transform:none; }
+    .lightbox img{ transform:none; }
+  }
+  @media (prefers-reduced-transparency:reduce){
+    .nav{ background:#fff; backdrop-filter:none; -webkit-backdrop-filter:none; }
+    .nav.over-hero{ background:var(--ink-900); backdrop-filter:none; -webkit-backdrop-filter:none; }
+    .lightbox{ background:rgba(8,9,10,.97); backdrop-filter:none; -webkit-backdrop-filter:none; }
+    .cell-tag,.cell-iou,.bs-tag{ backdrop-filter:none; -webkit-backdrop-filter:none; }
+  }
+  @media (prefers-contrast:more){
+    :root{ --line:#b9bec7; --line-strong:#8d95a1; --text-2:#3b424d; --text-3:#59616e; }
+  }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#abstract">Skip to content</a>
+
+<!-- ============================== NAV ============================== -->
+<nav class="nav over-hero" id="nav">
+  <div class="nav-inner">
+    <a class="nav-mark" href="#top">
+      <img class="nav-icon" src="assets/bocchi_icon.jpg" alt="" aria-hidden="true" />
+      BOCCHI<span class="dot">·</span>MSDCT-UNet
+    </a>
+    <div class="nav-links" id="navLinks">
+      <span class="nav-pill" id="navPill"></span>
+      <a href="#abstract">Abstract</a>
+      <a href="#dataset">Dataset</a>
+      <a href="#efficiency">Efficiency</a>
+      <a href="#qualitative">Qualitative</a>
+      <a href="#results">Results</a>
+      <a href="#method">Method</a>
+      <!-- <a href="#cite">Cite</a> -->
+    </div>
+  </div>
+</nav>
+
+<!-- ============================== HERO ============================== -->
+<header class="hero" id="top">
+  <div class="hero-inner">
+    <div class="lockup">
+      <span class="lockup-icon"><img src="assets/bocchi_icon.jpg" alt="" aria-hidden="true" /></span>
+      <p class="wordmark">
+        BOCCHI
+        <span class="wordmark-sub">&amp; MSDCT-UNet</span>
+      </p>
+    </div>
+
+    <h1>A More Realistic and Challenging Benchmark for <span class="kw nb">Local Motion Blur Detection</span> with <span class="nb">MSDCT-UNet</span></h1>
+
+    <p class="subtitle">
+      A real-captured benchmark whose textured blurred foregrounds defeat gradient shortcuts,
+      paired with a frequency-aware encoder&ndash;decoder that reads blur in the DCT domain.
+    </p>
+
+    <p class="authors">
+      Kuan-Lin Chen<sup>1</sup><span class="sep">·</span>Yuan-Kang Lee<sup>2</sup><span class="sep">·</span>Cheng-Yuan Chiang<sup>1</sup><span class="sep">·</span>Jian-Jiun Ding<sup>1</sup>
+    </p>
+    <p class="affil">
+      <span><sup>1</sup>Graduate Institute of Communication Engineering, National Taiwan University</span>
+      <span><sup>2</sup>MediaTek Inc.</span>
+    </p>
+
+    <!--
+      RESOURCE LINKS
+      All five are intentionally disabled for now.
+      To enable one: remove `is-disabled`, replace href="REPLACE_*_URL" with the real URL,
+      add target="_blank" rel="noopener", and delete its <span class="soon">…</span>.
+    -->
+    <div class="links">
+      <a class="link-btn is-disabled" href="REPLACE_PAPER_URL" aria-disabled="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Paper<span class="soon">soon</span>
+      </a>
+      <a class="link-btn is-disabled" href="REPLACE_CODE_URL" aria-disabled="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>
+        Code<span class="soon">soon</span>
+      </a>
+      <a class="link-btn is-disabled" href="REPLACE_DATASET_URL" aria-disabled="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+        Dataset<span class="soon">soon</span>
+      </a>
+      <a class="link-btn is-disabled" href="REPLACE_MODEL_URL" aria-disabled="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V4"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/></svg>
+        Model<span class="soon">soon</span>
+      </a>
+    </div>
+
+    <!-- Hero blur slider + carousel.
+         Slides are built by JS from HERO_SLIDES. The divider/handle is a single overlay
+         layer that stays put while the photo underneath changes: drag = compare (one
+         gesture), arrows/dots/keys = flip page (a separate, unambiguous action). -->
+    <div class="bs-wrap">
+      <div class="bs" id="bs" role="slider" tabindex="0"
+           aria-label="Reveal the annotated blur region; use the arrows to change image"
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="50 percent revealed">
+        <span class="bs-tag left">Input</span>
+        <span class="bs-tag right">Blur annotation</span>
+
+        <div class="bs-viewport">
+          <div class="bs-track" id="bsTrack"><!-- slides injected here --></div>
+        </div>
+
+        <!-- clip mask for the right (annotation) half, driven by --p -->
+        <div class="bs-clip" id="bsClip" aria-hidden="true">
+          <div class="bs-track" id="bsTrackTop"><!-- overlay slides injected here --></div>
+        </div>
+
+        <div class="bs-handle" id="bsHandle">
+          <span class="bs-knob">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 7-5 5 5 5"/><path d="m15 7 5 5-5 5"/></svg>
+          </span>
+        </div>
+
+        <button class="bs-nav prev" id="bsPrev" type="button" aria-label="Previous image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button class="bs-nav next" id="bsNext" type="button" aria-label="Next image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+
+      <div class="bs-dots" id="bsDots" role="tablist" aria-label="Choose hero image"></div>
+      <p class="bs-caption">Drag to reveal the blur annotation &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> change image</p>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============================== TL;DR ============================== -->
+  <section class="section" id="tldr" style="padding-top:64px;padding-bottom:64px;">
+    <div class="container">
+      <div class="tldr">
+        <div class="tldr-card is-ours reveal">
+          <div class="tldr-value" data-count="0.850" data-decimals="3">0.850</div>
+          <p class="tldr-title">In-domain mIoU on BOCCHI</p>
+          <p class="tldr-note">First among 13 methods, +1.2 pp over the second-best baseline.</p>
+        </div>
+        <div class="tldr-card reveal">
+          <div class="tldr-value" data-count="633" data-decimals="0">633</div>
+          <p class="tldr-title">Training images</p>
+          <p class="tldr-note">Enough to beat every other training source on cross-dataset transfer.</p>
+        </div>
+        <div class="tldr-card reveal">
+          <div class="tldr-value" data-count="3" data-decimals="0">3</div>
+          <p class="tldr-title">of 3 cross-dataset metrics</p>
+          <p class="tldr-note">BOCCHI-trained models lead on mIoU, Dice and Recall alike.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== ABSTRACT ============================== -->
+  <section class="section tinted" id="abstract">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="t-eyebrow">Abstract</p>
+        <h2 class="t-h2">Fewer images, better transfer</h2>
+      </div>
+      <p class="t-lead reveal" style="max-width:74ch;margin:0 auto;">
+        Local motion blur detection requires pixel-level localization of blurred regions. Existing benchmarks let models rely on
+        gradient shortcuts that fail to transfer. We introduce <strong>BOCCHI</strong>
+        (<strong>B</strong>lurred <strong>O</strong>bjects <strong>C</strong>aptured across <strong>C</strong>ameras with
+        <strong>H</strong>uman-annotated <strong>I</strong>magery), a real-captured benchmark of 633 pixel-annotated images whose
+        textured blurred foregrounds against varied backgrounds defeat these shortcuts, and propose <strong>MSDCT-UNet</strong>
+        (Multi-Scale Discrete Cosine Transform UNet), a frequency-aware encoder-decoder injecting multi-scale DCT priors through
+        DCT Attention and FiLM. MSDCT-UNet ranks first in in-domain mIoU (0.850, +1.2 pp over the second-best baseline) and
+        boundary localization on BOCCHI. BOCCHI-trained models <strong>outperform every other training source</strong> on
+        cross-dataset transfer with only 633 training images: +2.2 pp mIoU over OMoBlur, +13.8 pp over ReLoBlur,
+        and +34.9 pp over CUHK<sub>motion</sub>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================== DATASET ============================== -->
+  <section class="section" id="dataset">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="t-eyebrow">Benchmark</p>
+        <h2 class="t-h2">The BOCCHI dataset</h2>
+        <p class="t-lead">633 real-captured images across 5 cameras and diverse indoor/outdoor scenes, each annotated at pixel level.</p>
+      </div>
+
+      <div class="tabs reveal" id="dataset-tabs" role="tablist" aria-label="Dataset gallery view" aria-orientation="horizontal">
+        <div class="tab-group g-bocchi" role="presentation">
+          <span class="tab-group-label" role="presentation">BOCCHI</span>
+          <button class="tab is-bocchi active" data-tab="bocchi-rgb" id="dstab-bocchi-rgb"
+                  role="tab" aria-selected="true" aria-controls="dataset-bocchi-rgb" tabindex="0">Input</button>
+          <button class="tab is-bocchi" data-tab="bocchi-mask" id="dstab-bocchi-mask"
+                  role="tab" aria-selected="false" aria-controls="dataset-bocchi-mask" tabindex="-1">Mask</button>
+        </div>
+        <div class="tab-group g-inference" role="presentation">
+          <span class="tab-group-label" role="presentation">Inference Set</span>
+          <button class="tab is-inference" data-tab="inference-rgb" id="dstab-inference-rgb"
+                  role="tab" aria-selected="false" aria-controls="dataset-inference-rgb" tabindex="-1">Input</button>
+          <button class="tab is-inference" data-tab="inference-mask" id="dstab-inference-mask"
+                  role="tab" aria-selected="false" aria-controls="dataset-inference-mask" tabindex="-1">Mask</button>
+        </div>
+      </div>
+
+      <div class="reveal">
+        <div id="dataset-bocchi-rgb" class="tab-panel active" role="tabpanel" aria-labelledby="dstab-bocchi-rgb" tabindex="0"><div class="gallery" id="grid-bocchi-rgb"></div></div>
+        <div id="dataset-bocchi-mask" class="tab-panel" role="tabpanel" aria-labelledby="dstab-bocchi-mask" tabindex="0"><div class="gallery" id="grid-bocchi-mask"></div></div>
+        <div id="dataset-inference-rgb" class="tab-panel" role="tabpanel" aria-labelledby="dstab-inference-rgb" tabindex="0"><div class="gallery" id="grid-inference-rgb"></div></div>
+        <div id="dataset-inference-mask" class="tab-panel" role="tabpanel" aria-labelledby="dstab-inference-mask" tabindex="0"><div class="gallery" id="grid-inference-mask"></div></div>
+      </div>
+
+      <div class="stats reveal">
+        <div class="stat"><div class="stat-value">633</div><div class="stat-label">Images</div></div>
+        <div class="stat"><div class="stat-value">5</div><div class="stat-label">Cameras</div></div>
+        <div class="stat"><div class="stat-value">0.22</div><div class="stat-label">Mean blur ratio</div></div>
+        <div class="stat"><div class="stat-value">68.7</div><div class="stat-label">Mean sharp gradient</div></div>
+      </div>
+
+      <div class="section-head reveal" style="margin-top:64px;">
+        <h3 class="t-h3">Two distinguishing properties</h3>
+      </div>
+      <figure class="fig zoomable reveal" data-scale="1.5" style="max-width:960px;margin:0 auto;">
+        <img src="assets/blur_gradient_combined.svg" loading="lazy" decoding="async"
+             alt="Blur-ratio distribution and gradient statistics across datasets" />
+      </figure>
+      <p class="fig-cap reveal">
+        <strong>(a)</strong> Blur-ratio distribution across 5 datasets: CUHK<sub>motion</sub> spans uniformly;
+        ReLoBlur and BOCCHI concentrate at low ratios; OMoBlur occupies the moderate range;
+        the Inference Dataset spans the intermediate regime.
+        <strong>(b)</strong> Per-dataset distribution of mean gradient in blur vs.&nbsp;sharp regions. BOCCHI shows the largest
+        PR25/&mu;<sub>blur</sub> ratio (0.68): the sharp-region bottom-25% gradient overlaps the blur mean, defeating
+        gradient-based shortcuts.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================== DATA EFFICIENCY ============================== -->
+  <section class="section" id="efficiency" style="padding-top:0;">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="t-eyebrow">Data efficiency</p>
+        <h2 class="t-h2">Which training source transfers best?</h2>
+        <p class="t-lead">
+          Same 13 models, same held-out Inference Dataset, no fine-tuning. Only the training source changes.
+        </p>
+      </div>
+
+      <div class="de reveal" id="de">
+        <div class="de-row is-ours" data-v="0.563">
+          <div class="de-label"><div class="de-name">BOCCHI</div><div class="de-count">633 images</div></div>
+          <div class="de-track"><div class="de-fill"></div></div>
+          <div class="de-val">0.000</div>
+        </div>
+        <div class="de-row" data-v="0.541">
+          <div class="de-label"><div class="de-name">OMoBlur</div><div class="de-count">994 images</div></div>
+          <div class="de-track"><div class="de-fill"></div></div>
+          <div class="de-val">0.000</div>
+        </div>
+        <div class="de-row" data-v="0.425">
+          <div class="de-label"><div class="de-name">ReLoBlur</div><div class="de-count">1,200 images</div></div>
+          <div class="de-track"><div class="de-fill"></div></div>
+          <div class="de-val">0.000</div>
+        </div>
+        <div class="de-row" data-v="0.214">
+          <div class="de-label"><div class="de-name">CUHK<sub>motion</sub></div><div class="de-count">200 images</div></div>
+          <div class="de-track"><div class="de-fill"></div></div>
+          <div class="de-val">0.000</div>
+        </div>
+      </div>
+      <div class="de-axis reveal"><span></span><span>Cross-dataset mIoU, averaged over 13 models &nbsp;(0 &ndash; 0.60)</span><span></span></div>
+
+      <p class="fig-cap reveal">
+        More training images do not buy better transfer: ReLoBlur has almost twice BOCCHI's images and lands 13.8 pp lower.
+        The OMoBlur average aggregates 12 of 13 models (NAFNet &times; OMoBlur omitted).
+      </p>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ============================== QUALITATIVE ============================== -->
+  <section class="section tinted" id="qualitative">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="t-eyebrow">Qualitative</p>
+        <h2 class="t-h2">Predictions, method by method</h2>
+        <p class="t-lead">Switch methods to compare predictions on the BOCCHI validation set. Each panel shows 4 input&ndash;prediction pairs.</p>
+      </div>
+
+      <div class="tabs-grid reveal" id="qual-tabs" role="tablist" aria-label="Prediction method" aria-orientation="horizontal">
+        <button class="tab is-gt active" data-m="gt" id="qtab-gt" role="tab" aria-controls="qualFrame" aria-selected="true" tabindex="0"><span class="tab-name">GT</span><span class="tab-meta">reference</span></button>
+        <button class="tab is-ours" data-m="DCTNet" id="qtab-DCTNet" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">MSDCT-UNet</span><span class="tab-meta">0.850 · #1</span></button>
+        <button class="tab" data-m="Cellpose3" id="qtab-Cellpose3" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">Cellpose3</span><span class="tab-meta">0.838 · #2</span></button>
+        <button class="tab" data-m="STDC2" id="qtab-STDC2" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">STDC2</span><span class="tab-meta">0.799 · #3</span></button>
+        <button class="tab" data-m="MSDU_Net" id="qtab-MSDU_Net" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">MSDU-Net</span><span class="tab-meta">0.796 · #4</span></button>
+        <button class="tab" data-m="KDSNet_R50" id="qtab-KDSNet_R50" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">KDSNet-R50</span><span class="tab-meta">0.783 · #5</span></button>
+        <button class="tab" data-m="STDC1" id="qtab-STDC1" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">STDC1</span><span class="tab-meta">0.778 · #6</span></button>
+        <button class="tab" data-m="BEVANet" id="qtab-BEVANet" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">BEVANet</span><span class="tab-meta">0.778 · #6</span></button>
+        <button class="tab" data-m="KDSNet_R101" id="qtab-KDSNet_R101" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">KDSNet-R101</span><span class="tab-meta">0.773 · #8</span></button>
+        <button class="tab" data-m="BiSeNetV2" id="qtab-BiSeNetV2" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">BiSeNetV2</span><span class="tab-meta">0.760 · #9</span></button>
+        <button class="tab" data-m="NAFNet" id="qtab-NAFNet" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">NAFNet</span><span class="tab-meta">0.760 · #9</span></button>
+        <button class="tab" data-m="MSDSeg" id="qtab-MSDSeg" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">MSDSeg</span><span class="tab-meta">0.714 · #11</span></button>
+        <button class="tab" data-m="DDRNet_23" id="qtab-DDRNet_23" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">DDRNet-23</span><span class="tab-meta">0.701 · #12</span></button>
+        <button class="tab" data-m="ESMDL_UNet" id="qtab-ESMDL_UNet" role="tab" aria-controls="qualFrame" aria-selected="false" tabindex="-1"><span class="tab-name">ESMDL-UNet</span><span class="tab-meta">0.677 · #13</span></button>
+      </div>
+
+      <div class="qual-frame reveal" id="qualFrame" role="tabpanel" aria-labelledby="qtab-gt" tabindex="0">
+        <div class="qual-frame-head">
+          <span class="qual-frame-label">Currently showing</span>
+          <span class="qual-frame-method" id="qualMethod">GT</span>
+          <span class="qual-frame-meta" id="qualMeta">reference</span>
+        </div>
+        <div class="qual-grid" id="qualGrid"></div>
+      </div>
+
+      <p class="fig-cap reveal">
+        Selected success cases where MSDCT-UNet outperforms baselines. Predictions are binary masks
+        (white = sharp, black = predicted blur).
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================== RESULTS ============================== -->
+  <section class="section" id="results">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="t-eyebrow">Quantitative</p>
+        <h2 class="t-h2">Results</h2>
+      </div>
+
+      <div class="section-head reveal" style="margin-bottom:14px;">
+        <h3 class="t-h3">In-domain performance</h3>
+        <p class="t-small muted">
+          Per-cell metrics: mIoU / BdF1 on each dataset's own validation set. Cells shaded
+          <span class="rank-key best">1st</span> <span class="rank-key second">2nd</span> <span class="rank-key third">3rd</span> per column.
+          <sup>*</sup>NAFNet &times; OMoBlur omitted (aspect-ratio width collapse).
+        </p>
+      </div>
+      <div class="table-wrap reveal">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2">Method</th>
+              <th colspan="2">BOCCHI</th>
+              <th colspan="2">CUHK<sub>motion</sub></th>
+              <th colspan="2">ReLoBlur</th>
+              <th colspan="2">OMoBlur</th>
+            </tr>
+            <tr>
+              <th>mIoU</th><th>BdF1</th><th>mIoU</th><th>BdF1</th>
+              <th>mIoU</th><th>BdF1</th><th>mIoU</th><th>BdF1</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>MSDU-Net</td><td>0.796</td><td class="third">0.561</td><td class="second">0.640</td><td class="third">0.330</td><td class="third">0.923</td><td class="third">0.820</td><td class="third">0.772</td><td class="second">0.667</td></tr>
+            <tr><td>BiSeNetV2</td><td>0.760</td><td>0.470</td><td>0.525</td><td>0.166</td><td>0.916</td><td>0.800</td><td>0.749</td><td>0.613</td></tr>
+            <tr><td>STDC1</td><td>0.778</td><td>0.457</td><td>0.550</td><td>0.260</td><td>0.918</td><td>0.795</td><td>0.748</td><td>0.631</td></tr>
+            <tr><td>STDC2</td><td class="third">0.799</td><td>0.495</td><td>0.558</td><td>0.197</td><td>0.918</td><td>0.800</td><td>0.755</td><td>0.627</td></tr>
+            <tr><td>NAFNet</td><td>0.760</td><td>0.452</td><td>0.523</td><td>0.213</td><td>0.914</td><td>0.821</td><td>N/A<sup>*</sup></td><td>N/A<sup>*</sup></td></tr>
+            <tr><td>DDRNet-23</td><td>0.701</td><td>0.351</td><td>0.520</td><td>0.172</td><td>0.910</td><td>0.766</td><td>0.703</td><td>0.583</td></tr>
+            <tr><td>Cellpose3</td><td class="second">0.838</td><td class="second">0.643</td><td class="best">0.665</td><td class="best">0.403</td><td class="second">0.927</td><td class="second">0.850</td><td class="best">0.791</td><td class="best">0.675</td></tr>
+            <tr><td>KDSNet-R50</td><td>0.783</td><td>0.469</td><td>0.549</td><td>0.219</td><td>0.918</td><td>0.803</td><td>0.748</td><td>0.627</td></tr>
+            <tr><td>KDSNet-R101</td><td>0.773</td><td>0.446</td><td>0.544</td><td>0.243</td><td>0.921</td><td>0.812</td><td>0.744</td><td>0.630</td></tr>
+            <tr><td>MSDSeg</td><td>0.714</td><td>0.360</td><td>0.517</td><td>0.202</td><td>0.909</td><td>0.766</td><td>0.721</td><td>0.607</td></tr>
+            <tr><td>BEVANet</td><td>0.778</td><td>0.518</td><td>0.548</td><td>0.217</td><td>0.919</td><td>0.798</td><td>0.721</td><td>0.622</td></tr>
+            <tr><td>ESMDL-UNet</td><td>0.677</td><td>0.270</td><td>0.432</td><td>0.139</td><td>0.788</td><td>0.364</td><td>0.627</td><td>0.552</td></tr>
+            <tr class="ours-row"><td><strong>MSDCT-UNet (Ours)</strong></td><td class="best"><strong>0.850</strong></td><td class="best"><strong>0.683</strong></td><td class="third">0.640</td><td class="second">0.369</td><td class="best"><strong>0.930</strong></td><td class="best"><strong>0.851</strong></td><td class="second">0.775</td><td class="third">0.664</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-head reveal" style="margin-top:56px;margin-bottom:14px;">
+        <h3 class="t-h3">Cross-dataset generalization</h3>
+        <p class="t-small muted">
+          mIoU / Dice / Recall on the Inference Dataset, no fine-tuning. The average row highlights BOCCHI as the
+          strongest training source. <sup>*</sup>NAFNet &times; OMoBlur omitted (OMoBlur average aggregates 12 of 13).
+        </p>
+      </div>
+      <div class="table-wrap reveal">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2">Method</th>
+              <th>Trained on<br/>BOCCHI</th>
+              <th>Trained on<br/>OMoBlur</th>
+              <th>Trained on<br/>ReLoBlur</th>
+              <th>Trained on<br/>CUHK<sub>motion</sub></th>
+            </tr>
+            <tr>
+              <th>mIoU / Dice / Rec</th><th>mIoU / Dice / Rec</th><th>mIoU / Dice / Rec</th><th>mIoU / Dice / Rec</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>MSDU-Net</td><td>0.609 / 0.830 / 0.876</td><td>0.616 / 0.805 / 0.810</td><td>0.556 / 0.758 / 0.736</td><td>0.142 / 0.307 / 0.268</td></tr>
+            <tr><td>BiSeNetV2</td><td>0.539 / 0.791 / 0.843</td><td>0.526 / 0.704 / 0.666</td><td>0.470 / 0.695 / 0.651</td><td>0.248 / 0.445 / 0.455</td></tr>
+            <tr><td>STDC1</td><td>0.541 / 0.789 / 0.840</td><td>0.496 / 0.657 / 0.597</td><td>0.283 / 0.518 / 0.538</td><td>0.197 / 0.310 / 0.286</td></tr>
+            <tr><td>STDC2</td><td>0.577 / 0.823 / 0.882</td><td>0.530 / 0.705 / 0.655</td><td>0.269 / 0.443 / 0.437</td><td>0.182 / 0.288 / 0.277</td></tr>
+            <tr><td>NAFNet</td><td>0.568 / 0.818 / 0.882</td><td>N/A<sup>*</sup></td><td>0.478 / 0.730 / 0.718</td><td>0.285 / 0.529 / 0.533</td></tr>
+            <tr><td>DDRNet-23</td><td>0.517 / 0.800 / 0.877</td><td>0.489 / 0.673 / 0.626</td><td>0.462 / 0.704 / 0.665</td><td>0.292 / 0.548 / 0.490</td></tr>
+            <tr><td>Cellpose3</td><td>0.662 / 0.858 / 0.910</td><td>0.628 / 0.825 / 0.848</td><td>0.555 / 0.758 / 0.744</td><td>0.160 / 0.324 / 0.306</td></tr>
+            <tr><td>KDSNet-R50</td><td>0.557 / 0.809 / 0.871</td><td>0.528 / 0.717 / 0.684</td><td>0.275 / 0.465 / 0.465</td><td>0.225 / 0.424 / 0.369</td></tr>
+            <tr><td>KDSNet-R101</td><td>0.557 / 0.794 / 0.835</td><td>0.525 / 0.718 / 0.696</td><td>0.274 / 0.433 / 0.423</td><td>0.230 / 0.432 / 0.372</td></tr>
+            <tr><td>MSDSeg</td><td>0.518 / 0.816 / 0.901</td><td>0.547 / 0.788 / 0.828</td><td>0.463 / 0.726 / 0.711</td><td>0.141 / 0.128 / 0.121</td></tr>
+            <tr><td>BEVANet</td><td>0.552 / 0.804 / 0.861</td><td>0.535 / 0.746 / 0.731</td><td>0.484 / 0.718 / 0.692</td><td>0.271 / 0.493 / 0.434</td></tr>
+            <tr><td>ESMDL-UNet</td><td>0.518 / 0.806 / 0.873</td><td>0.458 / 0.698 / 0.684</td><td>0.391 / 0.631 / 0.593</td><td>0.231 / 0.397 / 0.352</td></tr>
+            <tr class="ours-row"><td><strong>MSDCT-UNet (Ours)</strong></td><td>0.610 / 0.848 / 0.925</td><td>0.610 / 0.783 / 0.781</td><td>0.563 / 0.815 / 0.897</td><td>0.183 / 0.290 / 0.226</td></tr>
+            <tr class="avg-row">
+              <td><em>Average</em></td>
+              <td class="best"><strong><em>0.563 / 0.814 / 0.875</em></strong></td>
+              <td class="second"><em>0.541 / 0.735 / 0.717</em><sup>*</sup></td>
+              <td class="third"><em>0.425 / 0.646 / 0.636</em></td>
+              <td><em>0.214 / 0.378 / 0.345</em></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section-head reveal" style="margin-top:64px;margin-bottom:14px;">
+        <h3 class="t-h3">Per-image comparison</h3>
+        <p class="t-small muted">
+          Each dot is one validation image (n = 63). x = mIoU of the strongest baseline on that image; y = mIoU of MSDCT-UNet.
+          Above the diagonal we win, below the baseline wins. Highlighted dots are the 8 cases in the qualitative panel; click one to jump there.
+        </p>
+      </div>
+      <div class="reveal">
+        <div id="scatterWrap" class="scatter-wrap"></div>
+        <div class="scatter-legend">
+          <span><span class="lg-dot lg-win"></span>Ours wins</span>
+          <span><span class="lg-dot lg-loss"></span>Baseline wins</span>
+          <span><span class="lg-dot lg-hi"></span>Shown above (click to jump)</span>
+          <span class="muted" id="scatterSummary"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ============================== METHOD ============================== -->
+  <section class="section" id="method">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="t-eyebrow">Method</p>
+        <h2 class="t-h2">MSDCT-UNet</h2>
+      </div>
+
+      <figure class="fig zoomable reveal" data-scale="1.5" style="max-width:960px;margin:0 auto;">
+        <img src="assets/Overview.svg" loading="lazy" decoding="async"
+             alt="MSDCT-UNet architecture: DCT extraction plus a 4-stage encoder-decoder with NeXtBlock, FiLM, AFASPP and DCT Attention" />
+      </figure>
+      <p class="fig-cap reveal">
+        <strong>Left:</strong> DCT feature extraction (grayscale + Sobel &rarr; multi-scale local DCTs at
+        <em>n</em> &isin; {3, 7, 15, 31} &rarr; 57-channel <em>F</em><sub>DCT</sub>).
+        <strong>Middle:</strong> 4-stage encoder-decoder with NeXtBlock + FiLM fusion, an Attentive Frequency ASPP bottleneck,
+        and stage-specific DCT Attention.
+        <strong>Right:</strong> Deep supervision over the main and three auxiliary heads.
+      </p>
+
+      <div class="section-head reveal" style="margin-top:56px;">
+        <h3 class="t-h3">Key modules</h3>
+      </div>
+      <div class="modules">
+        <div class="module reveal">
+          <h4>DCT Attention</h4>
+          <div class="module-fig"><img src="assets/DCTAttn.svg" loading="lazy" decoding="async" alt="DCT Attention" /></div>
+          <p>Multi-head, position-dependent frequency weighting over 57 DCT channels with SE-gating and temperature-scaled softmax.</p>
+        </div>
+        <div class="module reveal">
+          <h4>FiLM Fusion</h4>
+          <div class="module-fig"><img src="assets/En-Decoder%20bottleneck.svg" loading="lazy" decoding="async" alt="FiLM Fusion" /></div>
+          <p>Frequency-conditioned affine modulation prevents strong spatial edges from overriding weaker frequency cues.</p>
+        </div>
+        <div class="module reveal">
+          <h4>AFASPP</h4>
+          <div class="module-fig"><img src="assets/AFASPP.svg" loading="lazy" decoding="async" alt="AFASPP" /></div>
+          <p>Attentive Frequency ASPP fuses multi-scale spatial context with global frequency evidence at the bottleneck.</p>
+        </div>
+      </div>
+
+      <p class="fig-cap reveal">
+        Full method details, including DCT extraction pseudocode and ablations, are available in the paper.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================== CLOSING ============================== -->
+<section class="closing is-bare" id="cite">
+  <div class="container">
+
+    <!--
+      CITATION — hidden until the paper is officially out.
+      To bring it back:
+        1. delete the two comment markers around the block below,
+        2. remove `is-bare` from the <section> class above (it collapses the top padding
+           that this block would otherwise fill),
+        3. uncomment the "Cite" entry in the nav,
+        4. replace REPLACE_BIBKEY and REPLACE_PAGES with the real values.
+    -->
+    <!--
+    <div class="section-head reveal">
+      <p class="t-eyebrow">Citation</p>
+      <h2 class="t-h2">Cite this work</h2>
+      <p class="t-lead">The BibTeX entry below is a placeholder and will be finalized at camera-ready.</p>
+    </div>
+
+    <div class="code-block reveal">
+      <button class="copy-btn" id="copyBib" type="button">Copy</button>
+      <pre id="bibText">@inproceedings{REPLACE_BIBKEY,
+  title     = {BOCCHI: A More Realistic and Challenging Benchmark for
+               Local Motion Blur Detection with MSDCT-UNet},
+  author    = {Chen, Kuan-Lin and Lee, Yuan-Kang and Chiang, Cheng-Yuan and
+               Ding, Jian-Jiun},
+  booktitle = {Asian Conference on Computer Vision (ACCV)},
+  year      = {2026},
+  pages     = {REPLACE_PAGES},
+  publisher = {Springer}
+}</pre>
+    </div>
+    -->
+
+    <div class="foot">
+      BOCCHI &nbsp;·&nbsp; MSDCT-UNet &nbsp;·&nbsp; National Taiwan University
+    </div>
+  </div>
+</section>
+
+<!-- Lightbox -->
+<!-- Placeholder is a 1x1 transparent GIF: src="" would count as a broken image, and
+     omitting src entirely is invalid HTML. The real source is set when the box opens. -->
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <img id="lbImg" alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" />
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var FINE_POINTER = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+
+/* ==========================================================================
+   Spring — Apple's (damping ratio, response) parameterization, mass = 1.
+   Interruptible by construction: retargeting keeps the current value AND
+   the current velocity, so a reversal never produces a discontinuity.
+   ========================================================================== */
+function Spring(opts){
+  opts = opts || {};
+  this.value = opts.value || 0;
+  this.target = this.value;
+  this.velocity = 0;
+  this.setParams(opts.damping == null ? 1 : opts.damping, opts.response || 0.4);
+  this.onUpdate = opts.onUpdate || function(){};
+  this._raf = 0;
+  this._last = 0;
+}
+Spring.prototype.setParams = function(damping, response){
+  var w = 2 * Math.PI / response;
+  this.k = w * w;              // stiffness
+  this.c = 2 * damping * w;    // damping coefficient
+};
+Spring.prototype.set = function(v){            // hard set, kills motion
+  this.stop(); this.value = this.target = v; this.velocity = 0; this.onUpdate(v);
+};
+Spring.prototype.track = function(v, dt){      // 1:1 drag: follow exactly, measure velocity
+  this.stop();
+  if(dt > 0) this.velocity = (v - this.value) / dt;
+  this.value = this.target = v;
+  this.onUpdate(v);
+};
+Spring.prototype.to = function(target, velocity){
+  this.target = target;
+  if(velocity != null) this.velocity = velocity;
+  if(REDUCED){ this.value = target; this.velocity = 0; this.onUpdate(target); return; }
+  this._start();
+};
+Spring.prototype._start = function(){
+  if(this._raf) return;
+  var self = this;
+  this._last = performance.now();
+  var step = function(now){
+    var dt = Math.min((now - self._last) / 1000, 1/30);   // clamp to survive tab switches
+    self._last = now;
+    // semi-implicit Euler, sub-stepped for stability at high stiffness
+    var steps = 4, h = dt / steps;
+    for(var i = 0; i < steps; i++){
+      var a = -self.k * (self.value - self.target) - self.c * self.velocity;
+      self.velocity += a * h;
+      self.value += self.velocity * h;
+    }
+    self.onUpdate(self.value);
+    if(Math.abs(self.value - self.target) < 0.0015 && Math.abs(self.velocity) < 0.0015){
+      self.value = self.target; self.velocity = 0; self.onUpdate(self.value);
+      self._raf = 0; return;
+    }
+    self._raf = requestAnimationFrame(step);
+  };
+  this._raf = requestAnimationFrame(step);
+};
+Spring.prototype.stop = function(){
+  if(this._raf){ cancelAnimationFrame(this._raf); this._raf = 0; }
+};
+
+/* Apple's momentum projection (exponential decay, not v^2/2a) */
+function project(velocity, decel){
+  decel = decel == null ? 0.995 : decel;
+  return (velocity / 1000) * decel / (1 - decel);
+}
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+
+/* Rubber-band resistance past a boundary */
+function rubberband(overshoot, dimension, c){
+  c = c == null ? 0.55 : c;
+  return (overshoot * dimension * c) / (dimension + c * Math.abs(overshoot));
+}
+
+/* ==========================================================================
+   TABLIST — roving tabindex + arrow keys (WAI-ARIA tabs pattern)
+   Only the selected tab is in the tab order, so Tab enters and leaves the group
+   in one press instead of walking all 14 buttons. Activation follows focus:
+   switching is cheap here and the swap logic already tolerates rapid changes.
+   ========================================================================== */
+function wireTablist(root, activate){
+  function tabs(){ return Array.prototype.slice.call(root.querySelectorAll('[role="tab"]')); }
+  function commit(btn, moveFocus){
+    tabs().forEach(function(b){
+      var on = b === btn;
+      b.tabIndex = on ? 0 : -1;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    if(moveFocus) btn.focus();
+    activate(btn);
+  }
+  root.addEventListener('click', function(e){
+    var btn = e.target.closest('[role="tab"]');
+    if(btn) commit(btn, false);
+  });
+  root.addEventListener('keydown', function(e){
+    var list = tabs();
+    var i = list.indexOf(document.activeElement);
+    if(i < 0) return;
+    var next = null;
+    if(e.key === 'ArrowRight' || e.key === 'ArrowDown') next = list[(i + 1) % list.length];
+    else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = list[(i - 1 + list.length) % list.length];
+    else if(e.key === 'Home') next = list[0];
+    else if(e.key === 'End') next = list[list.length - 1];
+    if(!next) return;
+    e.preventDefault();
+    commit(next, true);
+  });
+}
+
+/* ==========================================================================
+   HERO — blur-compare slider + image carousel
+   Two functions on one element, split so their gestures never collide:
+     divider  : drag (fine pointer) or tap-to-place (touch) reveals the annotation
+     carousel : arrows / dots / keys (all pointers), or horizontal swipe (touch)
+   The divider position is kept across page changes, so a detail you lined up
+   stays lined up on the next image.
+   ========================================================================== */
+var HERO_SLIDES = [
+  { input:'assets/hero_01_input.jpg', overlay:'assets/hero_01_overlay.jpg',
+    alt:'A moving car with its motion-blurred body annotated' },
+  { input:'assets/hero_02_input.jpg', overlay:'assets/hero_02_overlay.jpg',
+    alt:'A climber in motion with the blurred figure annotated' },
+  { input:'assets/hero_03_input.jpg', overlay:'assets/hero_03_overlay.jpg',
+    alt:'A passing high-speed train with the motion-blurred background annotated' },
+  { input:'assets/hero_04_input.jpg', overlay:'assets/hero_04_overlay.jpg',
+    alt:'Pool balls in motion with the blurred balls annotated' }
+];
+
+(function(){
+  var bs = document.getElementById('bs');
+  if(!bs) return;
+  // The divider clip + handle are driven purely by the --p CSS var on .bs (see paintDivider).
+  var baseTrack = document.getElementById('bsTrack');
+  var topTrack = document.getElementById('bsTrackTop');
+  var dotsWrap = document.getElementById('bsDots');
+  var N = HERO_SLIDES.length;
+  var DIST = 100;   // slide travel, in % of viewport width
+
+  // ---- build slides into both layers ----
+  var baseSlides = [], topSlides = [];
+  HERO_SLIDES.forEach(function(s, i){
+    function mk(track, src, alt){
+      var slide = document.createElement('div');
+      slide.className = 'bs-slide';
+      var img = document.createElement('img');
+      img.src = src; img.alt = alt;
+      img.loading = i === 0 ? 'eager' : 'lazy'; img.decoding = 'async';
+      slide.appendChild(img);
+      track.appendChild(slide);
+      return slide;
+    }
+    baseSlides.push(mk(baseTrack, s.input, s.alt));
+    topSlides.push(mk(topTrack, s.overlay, ''));   // overlay is decorative; base carries alt
+  });
+
+  // ---- dots (role=tab, wired via the shared tablist helper) ----
+  HERO_SLIDES.forEach(function(s, i){
+    var d = document.createElement('button');
+    d.type = 'button';
+    d.className = 'bs-dot' + (i === 0 ? ' active' : '');
+    d.setAttribute('role', 'tab');
+    d.setAttribute('aria-label', 'Image ' + (i + 1) + ' of ' + N);
+    d.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+    d.tabIndex = i === 0 ? 0 : -1;
+    d.dataset.idx = i;
+    dotsWrap.appendChild(d);
+  });
+  var dots = Array.prototype.slice.call(dotsWrap.querySelectorAll('.bs-dot'));
+
+  // ================= divider =================
+  var dSpring = new Spring({ value:50, damping:1.0, response:0.34, onUpdate:paintDivider });
+  function paintDivider(p){
+    var v = clamp(p, 0, 100);
+    bs.style.setProperty('--p', v + '%');
+    bs.setAttribute('aria-valuenow', Math.round(v));
+    bs.setAttribute('aria-valuetext', Math.round(v) + ' percent revealed');
+  }
+  paintDivider(50);
+
+  // ================= carousel =================
+  // pos is a continuous page index; target is an integer. Rendering wraps each slide
+  // to its shortest signed distance from pos, so 5 -> 1 travels one step, not four.
+  var pSpring = new Spring({ value:0, damping:1.0, response:0.5, onUpdate:renderPages });
+  var pageTarget = 0;
+
+  function wrapNearest(delta){
+    var d = ((delta % N) + N) % N;
+    return d > N / 2 ? d - N : d;
+  }
+  function renderPages(pos){
+    for(var i = 0; i < N; i++){
+      var off = wrapNearest(i - pos);
+      var a = Math.abs(off);
+      var hidden = a > 1.05;
+      var tx = off * DIST;
+      var op = hidden ? 0 : Math.max(0, 1 - a);
+      var sc = 1 - 0.045 * Math.min(a, 1);
+      var t = 'translateX(' + tx + '%) scale(' + sc + ')';
+      [baseSlides[i], topSlides[i]].forEach(function(el){
+        el.style.transform = t;
+        el.style.opacity = op;
+        el.style.visibility = hidden ? 'hidden' : 'visible';
+      });
+    }
+  }
+  renderPages(0);
+
+  function curIndex(){ return ((Math.round(pageTarget) % N) + N) % N; }
+  function syncDots(){
+    var c = curIndex();
+    dots.forEach(function(d, i){
+      var on = i === c;
+      d.classList.toggle('active', on);
+      d.setAttribute('aria-selected', on ? 'true' : 'false');
+      d.tabIndex = on ? 0 : -1;
+    });
+  }
+  function goTo(targetContinuous, velocity){
+    pageTarget = targetContinuous;
+    pSpring.setParams(1.0, 0.5);
+    pSpring.to(pageTarget, velocity);
+    syncDots();
+  }
+  function step(dir){ goTo(pageTarget + dir); }
+  function toIndex(idx){ goTo(pageTarget + wrapNearest(idx - curIndex())); }
+
+  document.getElementById('bsPrev').addEventListener('click', function(){ step(-1); });
+  document.getElementById('bsNext').addEventListener('click', function(){ step(1); });
+  wireTablist(dotsWrap, function(btn){ toIndex(parseInt(btn.dataset.idx, 10)); });
+
+  // ================= pointer handling =================
+  var mode = null;          // 'divider' | 'pending' | 'swipe'
+  var startX = 0, grabOffset = 0, swipeBase = 0, history = [];
+  function width(){ return bs.getBoundingClientRect().width; }
+  function pctFromEvent(e){
+    var r = bs.getBoundingClientRect();
+    return ((e.clientX - r.left) / r.width) * 100;
+  }
+  function pushHistory(val){
+    history.push([performance.now(), val]);
+    while(history.length > 6) history.shift();
+  }
+  function releaseVelocity(){
+    if(history.length < 2) return 0;
+    var a = history[0], b = history[history.length - 1];
+    var dt = (b[0] - a[0]) / 1000;
+    return dt > 0.004 ? (b[1] - a[1]) / dt : 0;
+  }
+
+  bs.addEventListener('pointerdown', function(e){
+    if(e.button != null && e.button !== 0) return;
+    if(e.target.closest('.bs-nav')) return;   // let the arrow buttons handle themselves
+    try{ bs.setPointerCapture(e.pointerId); }catch(err){}   // never let a capture failure abort the gesture
+    history.length = 0;
+    startX = e.clientX;
+    var coarse = e.pointerType === 'touch' || !FINE_POINTER;
+    if(coarse){
+      // Wait to see if this is a tap (place divider) or a swipe (flip page).
+      mode = 'pending';
+    }else{
+      mode = 'divider';
+      bs.classList.add('is-dragging');
+      var p = pctFromEvent(e);
+      grabOffset = Math.abs(p - dSpring.value) < 6 ? dSpring.value - p : 0;
+      dSpring.set(clamp(p + grabOffset, 0, 100));
+      pushHistory(dSpring.value);
+    }
+    e.preventDefault();
+  });
+
+  bs.addEventListener('pointermove', function(e){
+    if(mode === 'pending'){
+      if(Math.abs(e.clientX - startX) > 8){
+        mode = 'swipe';
+        pSpring.stop();
+        swipeBase = pSpring.value;
+        history.length = 0;
+        pushHistory(pSpring.value);
+      }else return;
+    }
+    if(mode === 'swipe'){
+      var pos = swipeBase - (e.clientX - startX) / width();   // 1:1, loops so no clamp
+      var last = history.length ? history[history.length - 1] : null;
+      var dt = last ? (performance.now() - last[0]) / 1000 : 0;
+      pSpring.track(pos, dt);
+      pushHistory(pos);
+      return;
+    }
+    if(mode === 'divider'){
+      var raw = pctFromEvent(e) + grabOffset;
+      var v = raw < 0 ? -rubberband(-raw, 100) : raw > 100 ? 100 + rubberband(raw - 100, 100) : raw;
+      var l = history.length ? history[history.length - 1] : null;
+      var d = l ? (performance.now() - l[0]) / 1000 : 0;
+      dSpring.track(v, d);
+      pushHistory(v);
+    }
+    // No idle hover-follow: the divider must stay where the user put it, so a lined-up
+    // detail survives both mouse movement and a page change.
+  });
+
+  function endPointer(e){
+    try{ bs.releasePointerCapture(e.pointerId); }catch(err){}
+    if(mode === 'pending'){
+      // A tap on touch places the divider where the finger landed.
+      dSpring.setParams(1.0, 0.3);
+      dSpring.to(clamp(pctFromEvent(e), 0, 100));
+    }else if(mode === 'swipe'){
+      var v = releaseVelocity();                       // pages/s
+      var projected = pSpring.value + project(v, 0.9);  // carousel HAS snap points
+      pageTarget = Math.round(projected);
+      pSpring.setParams(Math.abs(v) > 1.2 ? 0.85 : 1.0, 0.5);
+      pSpring.to(pageTarget, v);
+      syncDots();
+    }else if(mode === 'divider'){
+      bs.classList.remove('is-dragging');
+      var dv = releaseVelocity();
+      var glide = clamp(project(dv, 0.975), -18, 18);
+      dSpring.setParams(Math.abs(dv) > 40 ? 0.82 : 1.0, 0.4);
+      dSpring.to(clamp(dSpring.value + glide, 0, 100), dv);
+    }
+    mode = null;
+  }
+  bs.addEventListener('pointerup', endPointer);
+  bs.addEventListener('pointercancel', endPointer);
+
+  // Keyboard: Left/Right flip image (matches the caption); Up/Down nudge the divider;
+  // Home/End send the divider to an edge. Screen readers still hear aria-valuenow.
+  bs.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); step(-1); return; }
+    if(e.key === 'ArrowRight'){ e.preventDefault(); step(1); return; }
+    var t = null;
+    if(e.key === 'ArrowUp')   t = clamp(dSpring.target - (e.shiftKey ? 10 : 4), 0, 100);
+    if(e.key === 'ArrowDown') t = clamp(dSpring.target + (e.shiftKey ? 10 : 4), 0, 100);
+    if(e.key === 'Home') t = 0;
+    if(e.key === 'End')  t = 100;
+    if(t === null) return;
+    e.preventDefault();
+    dSpring.setParams(1.0, 0.3);
+    dSpring.to(t);
+  });
+
+  // One-time invitation: nudge the divider so it reads as draggable.
+  if(!REDUCED){
+    var hinted = false;
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting || hinted) return;
+        hinted = true;
+        dSpring.set(66);
+        dSpring.setParams(0.82, 0.85);
+        setTimeout(function(){ dSpring.to(50); }, 420);
+        io.disconnect();
+      });
+    }, { threshold:0.4 });
+    io.observe(bs);
+  }
+})();
+
+/* ==========================================================================
+   NAV — material swap over the hero, sliding pill, active section
+   ========================================================================== */
+(function(){
+  var nav = document.getElementById('nav');
+  var hero = document.getElementById('top');
+  var linksWrap = document.getElementById('navLinks');
+  var pill = document.getElementById('navPill');
+  if(!nav) return;
+
+  var links = Array.prototype.slice.call(linksWrap.querySelectorAll('a'));
+
+  // Hero material
+  if(hero && 'IntersectionObserver' in window){
+    new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ nav.classList.toggle('over-hero', en.isIntersecting); });
+    }, { rootMargin:'-54px 0px 0px 0px', threshold:0 }).observe(hero);
+  }
+
+  // Scroll-edge effect
+  var ticking = false;
+  window.addEventListener('scroll', function(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      nav.classList.toggle('is-scrolled', window.scrollY > 8);
+      ticking = false;
+    });
+  }, { passive:true });
+
+  // Sliding pill (tracks hover, falls back to the active section)
+  var activeLink = null;
+  function movePill(el){
+    if(!el){ pill.style.opacity = '0'; return; }
+    pill.style.transform = 'translateX(' + el.offsetLeft + 'px)';
+    pill.style.width = el.offsetWidth + 'px';
+    pill.style.opacity = '1';
+  }
+  links.forEach(function(a){
+    a.addEventListener('pointerenter', function(){ movePill(a); });
+  });
+  linksWrap.addEventListener('pointerleave', function(){ movePill(activeLink); });
+
+  // Active section
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  if('IntersectionObserver' in window){
+    var visible = {};
+    var obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ visible[en.target.id] = en.isIntersecting ? en.intersectionRatio : 0; });
+      var bestId = null, best = 0;
+      Object.keys(visible).forEach(function(id){ if(visible[id] > best){ best = visible[id]; bestId = id; } });
+      links.forEach(function(a){
+        var on = bestId && a.getAttribute('href') === '#' + bestId;
+        a.classList.toggle('active', !!on);
+        if(on) activeLink = a;
+      });
+      if(!bestId){ activeLink = null; }
+      movePill(activeLink);
+    }, { rootMargin:'-56px 0px -55% 0px', threshold:[0, .15, .4, .75] });
+    sections.forEach(function(s){ if(s) obs.observe(s); });
+  }
+})();
+
+/* ==========================================================================
+   SCROLL REVEAL — short stagger within each section, plays once
+   ========================================================================== */
+(function(){
+  var items = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if(REDUCED || !('IntersectionObserver' in window)){
+    items.forEach(function(el){ el.classList.add('in'); });
+    return;
+  }
+  var groupSeen = new WeakMap();
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(!en.isIntersecting) return;
+      var el = en.target;
+      var section = el.closest('section, header') || document.body;
+      var n = groupSeen.get(section) || 0;
+      groupSeen.set(section, n + 1);
+      el.style.transitionDelay = Math.min(n, 4) * 55 + 'ms';
+      el.classList.add('in');
+      obs.unobserve(el);
+    });
+  }, { rootMargin:'0px 0px -8% 0px', threshold:0.06 });
+  items.forEach(function(el){ obs.observe(el); });
+})();
+
+/* ==========================================================================
+   TABS — dataset
+   ========================================================================== */
+(function(){
+  var tabsRoot = document.getElementById('dataset-tabs');
+  if(!tabsRoot) return;
+  wireTablist(tabsRoot, function(btn){
+    Array.prototype.forEach.call(tabsRoot.querySelectorAll('.tab'), function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    var id = btn.getAttribute('data-tab');
+    ['bocchi-rgb','bocchi-mask','inference-rgb','inference-mask'].forEach(function(k){
+      var panel = document.getElementById('dataset-' + k);
+      if(panel) panel.classList.toggle('active', k === id);
+    });
+  });
+})();
+
+/* ==========================================================================
+   DATASET GALLERIES
+   ========================================================================== */
+(function(){
+  var BASE = 'dataset_samples/bocchi_samples_pack/';
+  function fill(containerId, prefix, suffix, withReveal){
+    var c = document.getElementById(containerId);
+    if(!c) return;
+    for(var i = 1; i <= 16; i++){
+      var num = String(i).padStart(2, '0');
+      var cell = document.createElement('div');
+      cell.className = 'cell';
+
+      var img = document.createElement('img');
+      img.loading = 'lazy'; img.decoding = 'async';
+      img.src = BASE + prefix + '_' + num + '_' + suffix;
+      img.alt = prefix + ' sample ' + num;
+      img.onerror = function(){ this.parentElement.classList.add('placeholder'); this.style.display = 'none'; };
+      cell.appendChild(img);
+
+      // On the photo tabs, hovering wipes the annotation across the cell.
+      if(withReveal){
+        var layer = document.createElement('div');
+        layer.className = 'cell-reveal';
+        var mask = document.createElement('img');
+        mask.loading = 'lazy'; mask.decoding = 'async';
+        mask.src = BASE + prefix + '_' + num + '_mask.png';
+        mask.alt = '';
+        mask.setAttribute('aria-hidden', 'true');
+        mask.onerror = function(){ this.parentElement.remove(); };
+        layer.appendChild(mask);
+        cell.appendChild(layer);
+
+        var hint = document.createElement('span');
+        hint.className = 'cell-hint';
+        hint.textContent = 'Annotation';
+        cell.appendChild(hint);
+      }
+
+      c.appendChild(cell);
+    }
+  }
+  fill('grid-bocchi-rgb', 'bocchi', 'rgb.jpg', true);
+  fill('grid-bocchi-mask', 'bocchi', 'mask.png', false);
+  fill('grid-inference-rgb', 'inference', 'rgb.jpg', true);
+  fill('grid-inference-mask', 'inference', 'mask.png', false);
+})();
+
+/* ==========================================================================
+   QUALITATIVE
+   ========================================================================== */
+var QUAL_METRICS = {
+  "success_06_img0056_margin+0.0260": {"DCTNet":0.7076,"BiSeNetV2":0.2110,"Cellpose3":0.5788,"DDRNet_23":0.0516,"KDSNet_R50":0.1569,"KDSNet_R101":0.5954,"MSDSeg":0.6816,"MSDU_Net":0.4532,"NAFNet":0.4658,"STDC1":0.3359,"STDC2":0.4800,"BEVANet":0.0536,"ESMDL_UNet":0.3173},
+  "success_08_img0585_margin+0.0254": {"DCTNet":0.9440,"BiSeNetV2":0.6688,"Cellpose3":0.2877,"DDRNet_23":0.5993,"KDSNet_R50":0.8210,"KDSNet_R101":0.1608,"MSDSeg":0.8638,"MSDU_Net":0.9073,"NAFNet":0.9185,"STDC1":0.8706,"STDC2":0.8868,"BEVANet":0.8261,"ESMDL_UNet":0.7406},
+  "success_09_img0062_margin+0.0248": {"DCTNet":0.8826,"BiSeNetV2":0.7983,"Cellpose3":0.8462,"DDRNet_23":0.6696,"KDSNet_R50":0.8092,"KDSNet_R101":0.8289,"MSDSeg":0.7937,"MSDU_Net":0.8578,"NAFNet":0.8095,"STDC1":0.8034,"STDC2":0.8060,"BEVANet":0.7860,"ESMDL_UNet":0.7908},
+  "success_04_img0607_margin+0.0312": {"DCTNet":0.9582,"BiSeNetV2":0.8589,"Cellpose3":0.9045,"DDRNet_23":0.8048,"KDSNet_R50":0.9211,"KDSNet_R101":0.9270,"MSDSeg":0.7945,"MSDU_Net":0.7268,"NAFNet":0.9269,"STDC1":0.9032,"STDC2":0.8628,"BEVANet":0.8454,"ESMDL_UNet":0.6604},
+  "success_01_img0338_margin+0.0426": {"DCTNet":0.7552,"BiSeNetV2":0.3528,"Cellpose3":0.7126,"DDRNet_23":0.0831,"KDSNet_R50":0.6253,"KDSNet_R101":0.5386,"MSDSeg":0.4707,"MSDU_Net":0.4502,"NAFNet":0.4983,"STDC1":0.3918,"STDC2":0.4421,"BEVANet":0.1788,"ESMDL_UNet":0.1972},
+  "success_02_img0599_margin+0.0362": {"DCTNet":0.9409,"BiSeNetV2":0.8164,"Cellpose3":0.8945,"DDRNet_23":0.6730,"KDSNet_R50":0.8969,"KDSNet_R101":0.8072,"MSDSeg":0.7247,"MSDU_Net":0.8932,"NAFNet":0.8722,"STDC1":0.9047,"STDC2":0.8981,"BEVANet":0.8744,"ESMDL_UNet":0.2315},
+  "success_05_img0499_margin+0.0280": {"DCTNet":0.8981,"BiSeNetV2":0.7265,"Cellpose3":0.8701,"DDRNet_23":0.6240,"KDSNet_R50":0.6753,"KDSNet_R101":0.6255,"MSDSeg":0.7577,"MSDU_Net":0.8398,"NAFNet":0.6917,"STDC1":0.7900,"STDC2":0.8199,"BEVANet":0.8320,"ESMDL_UNet":0.5891},
+  "success_07_img0067_margin+0.0257": {"DCTNet":0.9183,"BiSeNetV2":0.8591,"Cellpose3":0.8926,"DDRNet_23":0.7112,"KDSNet_R50":0.8743,"KDSNet_R101":0.8751,"MSDSeg":0.7611,"MSDU_Net":0.8905,"NAFNet":0.8373,"STDC1":0.8811,"STDC2":0.8738,"BEVANet":0.8669,"ESMDL_UNet":0.7824}
+};
+
+var QUAL_CASES = [
+  'success_06_img0056_margin+0.0260',
+  'success_08_img0585_margin+0.0254',
+  'success_09_img0062_margin+0.0248',
+  'success_04_img0607_margin+0.0312',
+  'success_01_img0338_margin+0.0426',
+  'success_02_img0599_margin+0.0362',
+  'success_05_img0499_margin+0.0280',
+  'success_07_img0067_margin+0.0257'
+];
+
+(function(){
+  var tabsRoot = document.getElementById('qual-tabs');
+  var grid = document.getElementById('qualGrid');
+  var frame = document.getElementById('qualFrame');
+  if(!tabsRoot || !grid) return;
+
+  var predCells = [];   // { img, iouEl, spring, caseId }
+  var current = null;
+  var swapToken = 0;
+
+  // Build the 16 cells once. Switching methods then only retargets image sources and
+  // IoU values, so the grid never tears down and rebuilds under the user.
+  QUAL_CASES.forEach(function(caseId, idx){
+    var inCell = document.createElement('div');
+    inCell.className = 'cell qual-cell';
+    var inImg = document.createElement('img');
+    inImg.loading = 'lazy'; inImg.decoding = 'async';
+    inImg.src = 'qualitative_raw/' + caseId + '/input.png';
+    inImg.alt = 'Input image, case ' + (idx + 1);
+    inImg.onerror = function(){ this.style.display = 'none'; };
+    var tag = document.createElement('span');
+    tag.className = 'cell-tag'; tag.textContent = 'Input';
+    inCell.appendChild(inImg); inCell.appendChild(tag);
+    grid.appendChild(inCell);
+
+    var outCell = document.createElement('div');
+    outCell.className = 'cell qual-cell';
+    var outImg = document.createElement('img');
+    outImg.loading = 'lazy'; outImg.decoding = 'async';
+    outImg.onerror = function(){ this.style.display = 'none'; };
+    var iouEl = document.createElement('span');
+    iouEl.className = 'cell-iou';
+    outCell.appendChild(outImg); outCell.appendChild(iouEl);
+    grid.appendChild(outCell);
+
+    var entry = { cell:outCell, img:outImg, iouEl:iouEl, caseId:caseId, spring:null };
+    entry.spring = new Spring({ value:0, damping:1, response:0.45, onUpdate:function(v){
+      entry.iouEl.textContent = 'IoU ' + v.toFixed(2);
+    }});
+    predCells.push(entry);
+  });
+
+  function srcFor(caseId, method){
+    return 'qualitative_raw/' + caseId + '/' + (method === 'gt' ? 'gt_mask.png' : method + '_mask.png');
+  }
+
+  function apply(method, btn){
+    if(btn){
+      var nm = btn.querySelector('.tab-name'), mt = btn.querySelector('.tab-meta');
+      document.getElementById('qualMethod').textContent = nm ? nm.textContent : method;
+      document.getElementById('qualMeta').textContent = mt ? mt.textContent : '';
+    }
+    frame.classList.toggle('is-ours', method === 'DCTNet');
+    frame.classList.toggle('is-gt', method === 'gt');
+
+    predCells.forEach(function(e){
+      e.img.src = srcFor(e.caseId, method);
+      e.img.alt = (method === 'gt' ? 'Ground-truth mask' : method + ' prediction');
+      e.img.style.display = '';
+      e.cell.classList.toggle('is-ours', method === 'DCTNet');
+      e.cell.classList.toggle('is-gt', method === 'gt');
+
+      var m = QUAL_METRICS[e.caseId] && QUAL_METRICS[e.caseId][method];
+      if(method === 'gt' || m === undefined){
+        e.spring.stop();
+        e.iouEl.style.display = 'none';
+      }else{
+        e.iouEl.style.display = '';
+        // Retarget rather than reset: rapid tab clicks blend instead of snapping.
+        if(current === null || current === 'gt') e.spring.set(m);
+        else e.spring.to(m);
+      }
+    });
+    current = method;
+  }
+
+  function select(method, btn){
+    if(method === current) return;
+    var token = ++swapToken;
+
+    if(REDUCED){ apply(method, btn); return; }
+
+    // Blur bridges the crossfade so the outgoing and incoming masks never read as two
+    // separate objects. Swap only once the new images are decoded, so nothing flickers.
+    grid.classList.add('swapping');
+    var pending = predCells.length;
+    var done = false;
+    function go(){
+      if(done || token !== swapToken) return;
+      done = true;
+      apply(method, btn);
+      requestAnimationFrame(function(){ grid.classList.remove('swapping'); });
+    }
+    predCells.forEach(function(e){
+      var pre = new Image();
+      pre.onload = pre.onerror = function(){ if(--pending <= 0) go(); };
+      pre.src = srcFor(e.caseId, method);
+    });
+    setTimeout(go, 450);   // never let a slow asset hold the UI hostage
+  }
+
+  /* Sliding indicator: the active state travels between tabs instead of blinking. */
+  var indicator = document.createElement('span');
+  indicator.className = 'tab-indicator';
+  indicator.setAttribute('role', 'presentation');   // not a tab; keep it out of the tablist semantics
+  indicator.setAttribute('aria-hidden', 'true');
+  tabsRoot.appendChild(indicator);
+
+  function moveIndicator(btn){
+    if(!btn) return;
+    indicator.style.width = btn.offsetWidth + 'px';
+    indicator.style.height = btn.offsetHeight + 'px';
+    indicator.style.transform = 'translate(' + btn.offsetLeft + 'px,' + btn.offsetTop + 'px)';
+    indicator.style.background = btn.classList.contains('is-ours') ? 'var(--ours)'
+                               : btn.classList.contains('is-gt')   ? 'var(--gt)'
+                               : 'var(--text)';
+    indicator.style.opacity = '1';
+  }
+
+  wireTablist(tabsRoot, function(btn){
+    Array.prototype.forEach.call(tabsRoot.querySelectorAll('.tab'), function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    frame.setAttribute('aria-labelledby', btn.id);
+    moveIndicator(btn);
+    select(btn.getAttribute('data-m'), btn);
+  });
+
+  var first = tabsRoot.querySelector('.tab.active');
+  apply('gt', first);
+  // Wait for layout before placing the indicator, and keep it aligned on resize.
+  requestAnimationFrame(function(){ moveIndicator(first); });
+  window.addEventListener('resize', function(){
+    var active = tabsRoot.querySelector('.tab.active');
+    var prev = indicator.style.transition;
+    indicator.style.transition = 'none';
+    moveIndicator(active);
+    requestAnimationFrame(function(){ indicator.style.transition = prev; });
+  });
+})();
+
+/* ==========================================================================
+   SCATTER
+   ========================================================================== */
+(function(){
+  var DATA = [["0003",0.977,0.972,"BEVANet"],["0005",0.923,0.915,"Cellpose3"],["0027",0.787,0.781,"KDSNet-R101"],["0040",0.879,0.874,"Cellpose3"],["0045",0.915,0.921,"Cellpose3"],["0056",0.708,0.682,"MSDSeg"],["0059",0.921,0.933,"Cellpose3"],["0060",0.866,0.871,"Cellpose3"],["0062",0.883,0.858,"MSDU-Net"],["0063",0.892,0.931,"Cellpose3"],["0067",0.918,0.893,"Cellpose3"],["0095",0.932,0.929,"Cellpose3"],["0106",0.501,0.495,"STDC1"],["0112",0.449,0.623,"Cellpose3"],["0135",0.812,0.832,"STDC2"],["0146",0.852,0.878,"Cellpose3"],["0151",0.775,0.751,"Cellpose3"],["0155",0.64,0.802,"BEVANet"],["0163",0.863,0.859,"Cellpose3"],["0177",0.977,0.98,"Cellpose3"],["0196",0.858,0.909,"MSDU-Net"],["0217",0.872,0.854,"Cellpose3"],["0221",0.884,0.89,"Cellpose3"],["0244",0.74,0.796,"BEVANet"],["0257",0.903,0.89,"Cellpose3"],["0273",0.887,0.87,"Cellpose3"],["0288",0.928,0.911,"Cellpose3"],["0305",0.929,0.936,"Cellpose3"],["0319",0.875,0.897,"Cellpose3"],["0324",0.916,0.926,"Cellpose3"],["0338",0.755,0.713,"Cellpose3"],["0359",0.935,0.934,"MSDU-Net"],["0361",0.735,0.81,"Cellpose3"],["0362",0.968,0.956,"BiSeNetV2"],["0366",0.949,0.943,"Cellpose3"],["0370",0.902,0.868,"MSDU-Net"],["0380",0.252,0.4,"Cellpose3"],["0390",0.837,0.818,"Cellpose3"],["0399",0.812,0.828,"STDC1"],["0425",0.925,0.916,"Cellpose3"],["0426",0.903,0.884,"Cellpose3"],["0428",0.878,0.866,"STDC2"],["0429",0.849,0.864,"Cellpose3"],["0432",0.965,0.944,"Cellpose3"],["0438",0.961,0.954,"MSDU-Net"],["0471",0.839,0.899,"NAFNet"],["0473",0.827,0.827,"Cellpose3"],["0498",0.853,0.896,"KDSNet-R101"],["0499",0.898,0.87,"Cellpose3"],["0509",0.438,0.788,"STDC1"],["0514",0.957,0.948,"Cellpose3"],["0518",0.954,0.941,"Cellpose3"],["0519",0.943,0.937,"STDC2"],["0531",0.489,0.586,"Cellpose3"],["0535",0.959,0.952,"Cellpose3"],["0559",0.887,0.874,"STDC2"],["0561",0.822,0.87,"Cellpose3"],["0573",0.916,0.916,"Cellpose3"],["0585",0.944,0.919,"NAFNet"],["0594",0.984,0.972,"Cellpose3"],["0599",0.941,0.905,"STDC1"],["0604",0.953,0.93,"Cellpose3"],["0607",0.958,0.927,"KDSNet-R101"]];
+
+  var wrap = document.getElementById('scatterWrap');
+  if(!wrap) return;
+
+  var HIGHLIGHT = {};
+  QUAL_CASES.forEach(function(slug){
+    var m = slug.match(/img(\d+)/);
+    if(m) HIGHLIGHT[m[1]] = slug;
+  });
+
+  var W = 560, H = 560, ML = 56, MR = 18, MT = 18, MB = 50;
+  var PW = W - ML - MR, PH = H - MT - MB;
+  var DMIN = 0.2, DMAX = 1.0;
+  function sx(v){ return ML + (v - DMIN) / (DMAX - DMIN) * PW; }
+  function sy(v){ return MT + PH - (v - DMIN) / (DMAX - DMIN) * PH; }
+
+  var NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs){
+    var n = document.createElementNS(NS, tag);
+    Object.keys(attrs || {}).forEach(function(k){ n.setAttribute(k, attrs[k]); });
+    return n;
+  }
+
+  var svg = el('svg', { viewBox:'0 0 ' + W + ' ' + H, role:'img',
+                        'aria-label':'Per-image mIoU: MSDCT-UNet versus the strongest baseline' });
+  svg.appendChild(el('rect', { x:ML, y:MT, width:PW, height:PH, fill:'#fafbfc' }));
+
+  [0.2, 0.4, 0.6, 0.8, 1.0].forEach(function(t){
+    svg.appendChild(el('line', { class:'scatter-tick', x1:sx(t), x2:sx(t), y1:MT, y2:MT + PH }));
+    svg.appendChild(el('line', { class:'scatter-tick', x1:ML, x2:ML + PW, y1:sy(t), y2:sy(t) }));
+    var tx = el('text', { class:'scatter-tick-text', x:sx(t), y:MT + PH + 15, 'text-anchor':'middle' });
+    tx.textContent = t.toFixed(1); svg.appendChild(tx);
+    var ty = el('text', { class:'scatter-tick-text', x:ML - 7, y:sy(t) + 3, 'text-anchor':'end' });
+    ty.textContent = t.toFixed(1); svg.appendChild(ty);
+  });
+
+  svg.appendChild(el('line', { class:'scatter-diag', x1:sx(DMIN), y1:sy(DMIN), x2:sx(DMAX), y2:sy(DMAX) }));
+  svg.appendChild(el('line', { class:'scatter-axis', x1:ML, y1:MT + PH, x2:ML + PW, y2:MT + PH }));
+  svg.appendChild(el('line', { class:'scatter-axis', x1:ML, y1:MT, x2:ML, y2:MT + PH }));
+
+  var xl = el('text', { class:'scatter-axis-label', x:ML + PW / 2, y:H - 10, 'text-anchor':'middle' });
+  xl.textContent = 'Best baseline mIoU →'; svg.appendChild(xl);
+  var yl = el('text', { class:'scatter-axis-label', x:0, y:0, 'text-anchor':'middle',
+                        transform:'translate(16,' + (MT + PH / 2) + ') rotate(-90)' });
+  yl.textContent = 'MSDCT-UNet mIoU →'; svg.appendChild(yl);
+
+  var tip = document.createElement('div');
+  tip.className = 'scatter-tip';
+  wrap.appendChild(tip);
+
+  DATA.slice().sort(function(a, b){
+    return (HIGHLIGHT[a[0]] ? 1 : 0) - (HIGHLIGHT[b[0]] ? 1 : 0);
+  }).forEach(function(row){
+    var id = row[0], ours = row[1], best = row[2], who = row[3];
+    var hi = HIGHLIGHT[id];
+    var win = ours > best + 0.0005;
+    var c = el('circle', {
+      cx:sx(best), cy:sy(ours), r:hi ? 6.5 : 4,
+      class:'scatter-dot ' + (win ? 'win' : 'loss') + (hi ? ' hi' : '')
+    });
+    c.addEventListener('pointerenter', function(){
+      var r = wrap.getBoundingClientRect();
+      tip.style.left = (sx(best) / W * r.width) + 'px';
+      tip.style.top = (sy(ours) / H * r.height) + 'px';
+      var d = ours - best;
+      tip.innerHTML = '<b>img' + id + '</b><br>Ours ' + ours.toFixed(3)
+        + '<br>Best (' + who + ') ' + best.toFixed(3)
+        + '<br><span style="opacity:.7">&Delta; ' + (d >= 0 ? '+' : '') + d.toFixed(3) + '</span>'
+        + (hi ? '<br><span style="color:#93c5fd">click to view qualitative</span>' : '');
+      tip.classList.add('show');
+      c.setAttribute('r', hi ? 8.5 : 5.5);
+    });
+    c.addEventListener('pointerleave', function(){
+      tip.classList.remove('show');
+      c.setAttribute('r', hi ? 6.5 : 4);
+    });
+    if(hi){
+      c.addEventListener('click', function(){
+        var frame = document.getElementById('qualFrame');
+        if(frame) frame.scrollIntoView({ behavior:REDUCED ? 'auto' : 'smooth', block:'center' });
+        setTimeout(function(){
+          var cells = document.querySelectorAll('#qualGrid .qual-cell');
+          Array.prototype.forEach.call(cells, function(cell){
+            var img = cell.querySelector('img');
+            if(!img || img.src.indexOf(hi + '/') === -1) return;
+            // transition-based, so rapid clicks retarget instead of restarting
+            cell.classList.add('flash');
+            setTimeout(function(){ cell.classList.remove('flash'); }, 900);
+          });
+        }, REDUCED ? 0 : 560);
+      });
+    }
+    svg.appendChild(c);
+  });
+
+  wrap.appendChild(svg);
+
+  var wins = 0, ties = 0;
+  DATA.forEach(function(r){
+    if(r[1] > r[2] + 0.0005) wins++;
+    else if(Math.abs(r[1] - r[2]) <= 0.0005) ties++;
+  });
+  var el2 = document.getElementById('scatterSummary');
+  if(el2){
+    el2.textContent = '· Ours wins ' + wins + '/' + DATA.length
+      + ' (' + Math.round(wins / DATA.length * 100) + '%)'
+      + (ties ? ', ties ' + ties : '') + ', loses ' + (DATA.length - wins - ties);
+  }
+})();
+
+/* ==========================================================================
+   TL;DR COUNTERS — headline numbers settle in once, on first view
+   ========================================================================== */
+(function(){
+  var nodes = Array.prototype.slice.call(document.querySelectorAll('[data-count]'));
+  if(!nodes.length) return;
+
+  function paintFinal(el){
+    var d = parseInt(el.getAttribute('data-decimals'), 10) || 0;
+    el.textContent = parseFloat(el.getAttribute('data-count')).toFixed(d);
+  }
+  if(REDUCED || !('IntersectionObserver' in window)){ nodes.forEach(paintFinal); return; }
+
+  nodes.forEach(function(el){
+    var target = parseFloat(el.getAttribute('data-count'));
+    var d = parseInt(el.getAttribute('data-decimals'), 10) || 0;
+    el.textContent = (0).toFixed(d);
+    var s = new Spring({ value:0, damping:1, response:0.9, onUpdate:function(v){
+      el.textContent = v.toFixed(d);
+    }});
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting) return;
+        s.to(target);
+        io.disconnect();
+      });
+    }, { threshold:0.5 });
+    io.observe(el);
+  });
+})();
+
+/* ==========================================================================
+   DATA-EFFICIENCY BARS — bar length encodes cross-dataset mIoU (0 to 0.60)
+   ========================================================================== */
+(function(){
+  var root = document.getElementById('de');
+  if(!root) return;
+  var SCALE = 0.60;
+  var rows = Array.prototype.slice.call(root.querySelectorAll('.de-row'));
+
+  function paintFinal(){
+    rows.forEach(function(row){
+      var v = parseFloat(row.getAttribute('data-v'));
+      row.querySelector('.de-fill').style.width = (v / SCALE * 100) + '%';
+      row.querySelector('.de-val').textContent = v.toFixed(3);
+    });
+  }
+  if(REDUCED || !('IntersectionObserver' in window)){ paintFinal(); return; }
+
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(!en.isIntersecting) return;
+      io.disconnect();
+      rows.forEach(function(row, i){
+        var v = parseFloat(row.getAttribute('data-v'));
+        var fill = row.querySelector('.de-fill');
+        var val = row.querySelector('.de-val');
+        var s = new Spring({ value:0, damping:1, response:0.75, onUpdate:function(cur){
+          fill.style.width = (Math.max(cur, 0) / SCALE * 100) + '%';
+          val.textContent = Math.max(cur, 0).toFixed(3);
+        }});
+        setTimeout(function(){ s.to(v); }, i * 70);   // short stagger, top row first
+      });
+    });
+  }, { threshold:0.35 });
+  io.observe(root);
+})();
+
+/* ==========================================================================
+   FIGURE HOVER ZOOM — spring-smoothed origin tracking
+   ========================================================================== */
+(function(){
+  if(!FINE_POINTER || REDUCED) return;
+  Array.prototype.forEach.call(document.querySelectorAll('.zoomable'), function(fig){
+    var img = fig.querySelector('img');
+    if(!img) return;
+    var scale = parseFloat(fig.getAttribute('data-scale')) || 1.4;
+    var ox = new Spring({ value:50, damping:1, response:0.28, onUpdate:apply });
+    var oy = new Spring({ value:50, damping:1, response:0.28, onUpdate:apply });
+    var active = false;
+    function apply(){
+      img.style.transformOrigin = ox.value + '% ' + oy.value + '%';
+      img.style.transform = active ? 'scale(' + scale + ')' : '';
+    }
+    fig.addEventListener('pointerenter', function(e){
+      var r = fig.getBoundingClientRect();
+      ox.set(((e.clientX - r.left) / r.width) * 100);
+      oy.set(((e.clientY - r.top) / r.height) * 100);
+      active = true; apply();
+    });
+    fig.addEventListener('pointermove', function(e){
+      var r = fig.getBoundingClientRect();
+      ox.to(((e.clientX - r.left) / r.width) * 100);
+      oy.to(((e.clientY - r.top) / r.height) * 100);
+    });
+    fig.addEventListener('pointerleave', function(){
+      active = false;
+      ox.stop(); oy.stop();
+      img.style.transform = '';
+    });
+  });
+})();
+
+/* ==========================================================================
+   LIGHTBOX — origin-aware: scales up from the cell that was clicked
+   ========================================================================== */
+(function(){
+  var overlay = document.getElementById('lightbox');
+  var lbImg = document.getElementById('lbImg');
+  if(!overlay || !lbImg) return;
+  var BLANK = lbImg.src;   // the 1x1 placeholder we reset to on close
+
+  document.body.addEventListener('click', function(e){
+    var cell = e.target.closest('.cell, .fig, .module-fig');
+    if(!cell) return;
+    var img = cell.querySelector('img');
+    if(!img || img.style.display === 'none') return;
+
+    // Anchor the entrance to the clicked cell (Apple: anchor to the source).
+    var r = cell.getBoundingClientRect();
+    var cx = ((r.left + r.width / 2) / window.innerWidth) * 100;
+    var cy = ((r.top + r.height / 2) / window.innerHeight) * 100;
+    lbImg.style.transformOrigin = cx + '% ' + cy + '%';
+
+    lbImg.src = img.src;
+    lbImg.alt = img.alt || '';
+    overlay.classList.add('mounted');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('lb-open');
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ overlay.classList.add('open'); });
+    });
+  });
+
+  function close(){
+    if(!overlay.classList.contains('open')) return;
+    overlay.classList.remove('open');
+    document.body.classList.remove('lb-open');
+    overlay.setAttribute('aria-hidden', 'true');
+    setTimeout(function(){
+      if(!overlay.classList.contains('open')){ overlay.classList.remove('mounted'); lbImg.src = BLANK; }
+    }, 220);
+  }
+  overlay.addEventListener('click', close);
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
+})();
+
+/* ==========================================================================
+   COPY BIBTEX
+   ========================================================================== */
+(function(){
+  var btn = document.getElementById('copyBib');
+  var pre = document.getElementById('bibText');
+  if(!btn || !pre) return;
+  btn.addEventListener('click', function(){
+    navigator.clipboard.writeText(pre.innerText).then(function(){
+      btn.textContent = 'Copied';
+      setTimeout(function(){ btn.textContent = 'Copy'; }, 1500);
+    });
+  });
+})();
+
+})();
+</script>
+
+</body>
+</html>
