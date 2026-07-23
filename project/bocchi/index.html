@@ -279,6 +279,18 @@
   }
   .hero .authors .sep{ color:var(--on-ink-3); margin:0 .35em; }
   .hero .authors sup{ font-size:.62em; margin-left:.12em; color:var(--on-ink-3); }
+  /* Linked authors stay the same colour as unlinked ones; a dotted underline is the only
+     cue, so the byline reads as one list rather than a row of blue links. */
+  .hero .authors a{
+    color:inherit; text-decoration:none;
+    border-bottom:1px solid rgba(255,255,255,.28);
+    padding-bottom:1px;
+    transition:border-color var(--t-hover) var(--ease-soft), color var(--t-hover) var(--ease-soft);
+  }
+  @media (hover:hover) and (pointer:fine){
+    .hero .authors a:hover{ color:#fff; border-bottom-color:rgba(255,255,255,.8); text-decoration:none; }
+  }
+  .hero .authors a:active{ color:#fff; }
   .hero .affil{
     display:flex; flex-wrap:wrap; justify-content:center; gap:2px 20px;
     font-size:.86rem; color:var(--on-ink-3); margin:0 0 22px;
@@ -401,9 +413,17 @@
   .bs-tag.left{ left:56px; }
   .bs-tag.right{ right:56px; color:#ffd7d7; }
   @media (max-width:560px){
-    .bs-tag.left{ left:12px; }
-    .bs-tag.right{ right:12px; }
-    .bs-nav{ width:34px; height:34px; }
+    .bs-tag.left{ left:10px; }
+    .bs-tag.right{ right:10px; }
+    .bs-tag{ font-size:.66rem; padding:3px 9px; }
+    /* Arrows are the only way to change image on touch, so keep them at the 44px
+       minimum target size and give the dots room to be tapped too. */
+    .bs-nav{ width:44px; height:44px; background:rgba(8,9,10,.55); }
+    .bs-nav.prev{ left:8px; }
+    .bs-nav.next{ right:8px; }
+    .bs-dots{ gap:14px; padding:6px 0; }
+    .bs-dot{ height:10px; width:10px; }
+    .bs-dot.active{ width:26px; }
   }
   .bs-caption{
     text-align:center; font-size:.83rem; color:var(--on-ink-3);
@@ -959,7 +979,7 @@
     </p>
 
     <p class="authors">
-      Kuan-Lin Chen<sup>1</sup><span class="sep">·</span>Yuan-Kang Lee<sup>2</sup><span class="sep">·</span>Cheng-Yuan Chiang<sup>1</sup><span class="sep">·</span>Jian-Jiun Ding<sup>1</sup>
+      <a href="https://brianchen1120.github.io/" target="_blank" rel="noopener">Kuan-Lin Chen</a><sup>1</sup><span class="sep">·</span><a href="https://ntuneillee.github.io/" target="_blank" rel="noopener">Yuan-Kang Lee</a><sup>2</sup><span class="sep">·</span>Cheng-Yuan Chiang<sup>1</sup><span class="sep">·</span><a href="https://djj.ee.ntu.edu.tw/index.htm" target="_blank" rel="noopener">Jian-Jiun Ding</a><sup>1</sup>
     </p>
     <p class="affil">
       <span><sup>1</sup>Graduate Institute of Communication Engineering, National Taiwan University</span>
@@ -1026,7 +1046,7 @@
       </div>
 
       <div class="bs-dots" id="bsDots" role="tablist" aria-label="Choose hero image"></div>
-      <p class="bs-caption">Drag to reveal the blur annotation &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> change image</p>
+      <p class="bs-caption">Drag the divider to reveal the blur annotation &nbsp;·&nbsp; arrows change image</p>
     </div>
   </div>
 </header>
@@ -1674,9 +1694,8 @@ var HERO_SLIDES = [
   wireTablist(dotsWrap, function(btn){ toIndex(parseInt(btn.dataset.idx, 10)); });
 
   // ================= pointer handling =================
-  var mode = null;          // 'divider' | 'pending' | 'swipe'
-  var startX = 0, grabOffset = 0, swipeBase = 0, history = [];
-  function width(){ return bs.getBoundingClientRect().width; }
+  var mode = null;          // 'divider' while a drag is in flight
+  var startX = 0, grabOffset = 0, history = [];
   function pctFromEvent(e){
     var r = bs.getBoundingClientRect();
     return ((e.clientX - r.left) / r.width) * 100;
@@ -1698,39 +1717,19 @@ var HERO_SLIDES = [
     try{ bs.setPointerCapture(e.pointerId); }catch(err){}   // never let a capture failure abort the gesture
     history.length = 0;
     startX = e.clientX;
-    var coarse = e.pointerType === 'touch' || !FINE_POINTER;
-    if(coarse){
-      // Wait to see if this is a tap (place divider) or a swipe (flip page).
-      mode = 'pending';
-    }else{
-      mode = 'divider';
-      bs.classList.add('is-dragging');
-      var p = pctFromEvent(e);
-      grabOffset = Math.abs(p - dSpring.value) < 6 ? dSpring.value - p : 0;
-      dSpring.set(clamp(p + grabOffset, 0, 100));
-      pushHistory(dSpring.value);
-    }
+    // Same gesture on every device: drag moves the divider, and page flips come from
+    // the arrows/dots. Swipe-to-flip was tried and removed: pairing "swipe = page" with
+    // "tap = divider" forced two different mental models per device.
+    mode = 'divider';
+    bs.classList.add('is-dragging');
+    var p = pctFromEvent(e);
+    grabOffset = Math.abs(p - dSpring.value) < 6 ? dSpring.value - p : 0;
+    dSpring.set(clamp(p + grabOffset, 0, 100));
+    pushHistory(dSpring.value);
     e.preventDefault();
   });
 
   bs.addEventListener('pointermove', function(e){
-    if(mode === 'pending'){
-      if(Math.abs(e.clientX - startX) > 8){
-        mode = 'swipe';
-        pSpring.stop();
-        swipeBase = pSpring.value;
-        history.length = 0;
-        pushHistory(pSpring.value);
-      }else return;
-    }
-    if(mode === 'swipe'){
-      var pos = swipeBase - (e.clientX - startX) / width();   // 1:1, loops so no clamp
-      var last = history.length ? history[history.length - 1] : null;
-      var dt = last ? (performance.now() - last[0]) / 1000 : 0;
-      pSpring.track(pos, dt);
-      pushHistory(pos);
-      return;
-    }
     if(mode === 'divider'){
       var raw = pctFromEvent(e) + grabOffset;
       var v = raw < 0 ? -rubberband(-raw, 100) : raw > 100 ? 100 + rubberband(raw - 100, 100) : raw;
@@ -1745,18 +1744,7 @@ var HERO_SLIDES = [
 
   function endPointer(e){
     try{ bs.releasePointerCapture(e.pointerId); }catch(err){}
-    if(mode === 'pending'){
-      // A tap on touch places the divider where the finger landed.
-      dSpring.setParams(1.0, 0.3);
-      dSpring.to(clamp(pctFromEvent(e), 0, 100));
-    }else if(mode === 'swipe'){
-      var v = releaseVelocity();                       // pages/s
-      var projected = pSpring.value + project(v, 0.9);  // carousel HAS snap points
-      pageTarget = Math.round(projected);
-      pSpring.setParams(Math.abs(v) > 1.2 ? 0.85 : 1.0, 0.5);
-      pSpring.to(pageTarget, v);
-      syncDots();
-    }else if(mode === 'divider'){
+    if(mode === 'divider'){
       bs.classList.remove('is-dragging');
       var dv = releaseVelocity();
       var glide = clamp(project(dv, 0.975), -18, 18);
