@@ -6,24 +6,26 @@
   <title>Gallery — Kuan-Lin (Brian) Chen</title>
   <meta name="description" content="Selected photography by Kuan-Lin (Brian) Chen." />
 
-  <!-- Open Graph -->
   <meta property="og:title" content="Gallery — Kuan-Lin (Brian) Chen" />
   <meta property="og:description" content="Selected photography by Kuan-Lin (Brian) Chen." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://brianchen1120.github.io/assets/og.png" />
   <meta property="og:url" content="https://brianchen1120.github.io/gallery.html" />
 
-  <!-- Bootstrap 5 + Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
   <link rel="icon" href="assets/favicon.png" sizes="any">
 
-  <!-- Confetti library -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <style>
-    html{ scroll-behavior:smooth; }
+    :root{
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+      --dur-press: 160ms;
+    }
 
-    /* Greeting overlay */
+    html{ scroll-behavior:smooth; }
+    body{ font-optical-sizing:auto; }
+
     .greeting-overlay {
       position: fixed; inset: 0; z-index: 99999;
       display: flex; align-items: center; justify-content: center;
@@ -32,11 +34,12 @@
     .greeting-text {
       font-size: clamp(1.8rem, 5vw, 3.5rem);
       font-weight: 800;
+      letter-spacing: -0.02em;
       background: linear-gradient(135deg, #6366f1, #06b6d4, #f59e0b, #ec4899);
       background-size: 200% 200%;
       -webkit-background-clip: text; background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: greetIn 0.5s ease-out, greetGradient 3s ease infinite, greetOut 0.6s 2.5s ease-in forwards;
+      animation: greetIn 0.55s var(--ease-out), greetGradient 3s ease infinite, greetOut 0.6s 2.5s ease-in forwards;
       opacity: 0; transform: scale(0.6);
       background-color: rgba(255,255,255,0.85);
       padding: .3rem 1.2rem;
@@ -46,100 +49,366 @@
     [data-bs-theme="dark"] .greeting-text {
       background-color: rgba(30,30,30,0.85);
     }
-    .confetti-trigger {
-      cursor: pointer;
-      display: inline-block;
-      transition: transform 0.2s ease;
-      user-select: none;
-    }
-    .confetti-trigger:hover { transform: scale(1.2); }
-    .confetti-trigger:active { transform: scale(0.9); }
-    @keyframes greetIn      { 0%{opacity:0;transform:scale(0.6)} 100%{opacity:1;transform:scale(1)} }
+
+    @keyframes greetIn      { 0%{opacity:0;transform:scale(0.6)} 70%{opacity:1;transform:scale(1.04)} 100%{opacity:1;transform:scale(1)} }
     @keyframes greetGradient { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
     @keyframes greetOut      { 0%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.15) translateY(-20px)} }
 
-    /* icon-only 按鈕（與首頁一致） */
+    .glass-nav{
+      background: rgba(255, 255, 255, .65);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, .04);
+      transition: box-shadow .3s ease, background-color .3s ease;
+    }
+    [data-bs-theme="dark"] .glass-nav{
+      background: rgba(18, 18, 20, .6);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, .06);
+    }
+    .glass-nav.scrolled{ box-shadow: 0 2px 16px rgba(0, 0, 0, .08); }
+    [data-bs-theme="dark"] .glass-nav.scrolled{ box-shadow: 0 2px 18px rgba(0, 0, 0, .45); }
+    @media (prefers-reduced-transparency: reduce){
+      .glass-nav{
+        background: var(--bs-body-bg);
+        backdrop-filter: none; -webkit-backdrop-filter: none;
+        border-bottom: 1px solid var(--bs-border-color);
+      }
+    }
+
     .icon-btn{ background:transparent; border:0; padding:.375rem; line-height:1; }
     .icon-btn:focus, .icon-btn:focus-visible{ outline:none; box-shadow:none; }
     .icon-btn:hover{ opacity:.85; }
     .nav-link .bi, .icon-btn .bi{ vertical-align:-2px; }
+    .btn, .icon-btn{
+      transition: transform var(--dur-press) ease-out, opacity .2s ease,
+                  background-color .2s ease, border-color .2s ease, color .2s ease;
+    }
+    .btn:active, .icon-btn:active{ transform: scale(.96); }
 
-    /* 頁頭說明段 */
     .lead-wrap{ max-width:820px; margin-inline:auto; }
+    .lead-wrap h1{ letter-spacing:-0.02em; }
 
-    /* ========= Gallery Grid：手機 1 欄；md+ 12 欄 ========= */
     .gallery-grid{
       --gap: 1rem;
       display: grid;
       gap: var(--gap);
-      grid-template-columns: 1fr;                 /* < md: 1 欄（每列 1 張） */
+      grid-template-columns: 1fr;
     }
     @media (min-width:768px){
       .gallery-grid{
-        grid-template-columns: repeat(12, 1fr);   /* md+ 使用 12 欄 */
-        grid-auto-flow: row;                      /* 維持順序、避免 dense 亂塞 */
+        grid-template-columns: repeat(12, 1fr);
+        grid-auto-flow: row;
       }
     }
 
-    /* 卡片外觀 */
     .g-item{
       position: relative; overflow: hidden; border-radius:.75rem;
       border:1px solid var(--bs-border-color); background:var(--bs-body-bg);
+      opacity: 0; transform: translateY(26px) scale(.985); filter: blur(10px);
+      transition: opacity .65s var(--ease-out),
+                  transform .65s var(--ease-out),
+                  filter .65s var(--ease-out);
     }
+    .g-item.in{ opacity:1; transform:none; filter:none; }
 
-    /* 固定比例框，避免載入跳動 */
     .g-media{ width:100%; display:block; }
-    .ratio-3x2 .g-media{ aspect-ratio: 3 / 2; }  /* 寬圖：3:2 */
-    .ratio-2x3 .g-media{ aspect-ratio: 2 / 3; }  /* 直圖：2:3 */
+    .ratio-3x2 .g-media{ aspect-ratio: 3 / 2; }
+    .ratio-2x3 .g-media{ aspect-ratio: 2 / 3; }
 
-    /* 版面規則（你指定的需求）：
-       3:2 一列 2 張 → 每張佔 6 欄；2:3 一列 3 張 → 每張佔 4 欄 */
     @media (min-width:768px){
-      .ratio-3x2{ grid-column: span 6; }  /* 12 / 6 = 2 張/列 */
-      .ratio-2x3{ grid-column: span 4; }  /* 12 / 4 = 3 張/列 */
+      .ratio-3x2{ grid-column: span 6; }
+      .ratio-2x3{ grid-column: span 4; }
     }
 
-    /* 圖片鋪滿容器＋微縮放 hover */
     .g-item img{
       width:100%; height:100%; object-fit:cover; display:block;
-      transition: transform .35s ease;
+      transition: transform .35s var(--ease-out);
     }
-    .g-item:hover img{ transform: scale(1.04); }
+    @media (hover:hover){
+      .g-item:hover img{ transform: scale(1.04); }
+    }
 
-    /* 覆蓋資訊（滑過顯示） */
     .g-cap{
       position:absolute; inset:0; display:flex; align-items:end;
       padding:.75rem .85rem; color:#fff;
       background: linear-gradient(to top, rgba(0,0,0,.55), rgba(0,0,0,0) 55%);
       opacity:0; transition:opacity .25s ease;
+      pointer-events:none;
     }
     .g-item:hover .g-cap{ opacity:1; }
     .g-cap .title{ font-weight:700; font-size:.95rem; line-height:1.2; }
     .g-cap .meta{ font-size:.8rem; opacity:.9; }
 
-    /* 深色模式：提高覆蓋資訊對比 */
     [data-bs-theme="dark"] .g-cap{
       background: linear-gradient(to top, rgba(0,0,0,.7), rgba(0,0,0,0) 55%);
     }
 
-    /* 可及性：減少動態效果 */
+    body.lb-open{ overflow:hidden; }
+    .lb-backdrop{
+      position:fixed; inset:0; z-index:3000;
+      background:rgba(8,8,10,.72);
+      backdrop-filter:blur(18px) saturate(140%);
+      -webkit-backdrop-filter:blur(18px) saturate(140%);
+      opacity:0; transition:opacity .4s var(--ease-out);
+      cursor:zoom-out;
+    }
+    .lb-backdrop.show{ opacity:1; }
+    .lb-img{
+      position:fixed; z-index:3001; margin:0;
+      transform-origin:top left;
+      border-radius:.75rem;
+      box-shadow:0 24px 80px rgba(0,0,0,.5);
+      will-change:transform;
+      cursor:zoom-out;
+      touch-action:none;
+      user-select:none; -webkit-user-drag:none;
+      object-fit:cover;
+    }
+    .lb-img.animating{
+      transition:transform .45s var(--ease-out), opacity .3s ease;
+    }
+    .lb-cap{
+      position:fixed; z-index:3002; left:50%; bottom:1.1rem;
+      transform:translateX(-50%);
+      max-width:min(92vw, 720px);
+      padding:.55rem 1rem; border-radius:.9rem;
+      background:rgba(20,20,24,.55);
+      backdrop-filter:blur(14px) saturate(160%);
+      -webkit-backdrop-filter:blur(14px) saturate(160%);
+      color:#fff; text-align:center;
+      opacity:0; transition:opacity .35s ease .1s;
+      pointer-events:none;
+    }
+    .lb-cap.show{ opacity:1; }
+    .lb-cap .title{ font-weight:700; font-size:.95rem; letter-spacing:-0.01em; }
+    .lb-cap .meta{ font-size:.75rem; opacity:.85; }
+    .lb-btn{
+      position:fixed; z-index:3003;
+      width:44px; height:44px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      border:0; color:#fff; font-size:1.25rem;
+      background:rgba(30,30,34,.5);
+      backdrop-filter:blur(12px) saturate(160%);
+      -webkit-backdrop-filter:blur(12px) saturate(160%);
+      opacity:0;
+      transition:opacity .3s ease .15s, transform var(--dur-press) ease-out, background-color .2s ease;
+      cursor:pointer;
+    }
+    .lb-btn.show{ opacity:1; }
+    .lb-btn:hover{ background:rgba(60,60,68,.65); }
+    .lb-btn:active{ transform:scale(.92); }
+    .lb-close{ top:1rem; right:1rem; }
+    .lb-prev{ left:.9rem; top:50%; margin-top:-22px; }
+    .lb-next{ right:.9rem; top:50%; margin-top:-22px; }
+    @media (max-width:576px){ .lb-prev, .lb-next{ display:none; } }
+
+    html.theme-transition, html.theme-transition *{
+      transition: background-color .35s ease, color .35s ease,
+                  border-color .35s ease, box-shadow .35s ease !important;
+    }
+
     @media (prefers-reduced-motion: reduce){
+      html{ scroll-behavior:auto; }
+      .g-item{ opacity:1; transform:none; filter:none; transition:none; }
       .g-item img{ transition:none; }
       .g-item:hover img{ transform:none; }
       .g-cap{ transition:none; }
+      .btn:active, .icon-btn:active, .lb-btn:active{ transform:none; }
+      html.theme-transition, html.theme-transition *{ transition:none !important; }
+
+      @keyframes greetIn  { 0%{opacity:0} 100%{opacity:1} }
+      @keyframes greetOut { 0%{opacity:1} 100%{opacity:0} }
+      .greeting-text{ transform:none; animation: greetIn .3s ease-out, greetOut .5s 2.3s ease-in forwards; }
+    }
+
+    .mg-launcher{
+      position: fixed; right: 1rem; bottom: 1rem; z-index: 2400;
+      display: flex; align-items: center; gap: .5rem;
+      background: none; border: 0; padding: 0;
+      cursor: pointer;
+      transition: transform .35s var(--ease-out);
+    }
+    .mg-launcher img{
+      width: 84px; height: auto; display: block;
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,.3));
+      pointer-events: none;
+    }
+    .mg-launcher .mg-label{
+      order: -1;
+      width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(20,20,24,.55);
+      font-size: .95rem; line-height: 1;
+      backdrop-filter: blur(12px) saturate(160%);
+      -webkit-backdrop-filter: blur(12px) saturate(160%);
+      transition: opacity .3s ease, transform .35s var(--ease-out);
+    }
+    @media (hover:hover){
+      .mg-launcher:hover{ transform: translateY(-5px); }
+      .mg-launcher .mg-label{ opacity:.75; }
+      .mg-launcher:hover .mg-label{ opacity:1; transform:translateX(-3px); }
+    }
+    .mg-launcher:active{ transform: scale(.94); }
+
+    .mg-launcher.wave img{ animation: mgWave .9s var(--ease-out) 1; }
+    @keyframes mgWave{
+      0%,100%{ transform: rotate(0) }
+      25%{ transform: rotate(-9deg) }
+      60%{ transform: rotate(7deg) }
+    }
+    @media (max-width:576px){
+      .mg-launcher img{ width: 68px; }
+      .mg-launcher .mg-label{ display:none; }
+    }
+
+    body.mg-open{ overflow:hidden; }
+    .mg-backdrop{
+      position:fixed; inset:0; z-index:3500;
+      background:rgba(8,8,10,.72);
+      backdrop-filter:blur(16px) saturate(140%);
+      -webkit-backdrop-filter:blur(16px) saturate(140%);
+      opacity:0; transition:opacity .4s var(--ease-out);
+    }
+    .mg-backdrop.show{ opacity:1; }
+    .mg-panel{
+      position:fixed; z-index:3501; left:50%; top:50%;
+      transform:translate(-50%,-50%) scale(.94); opacity:0;
+      transition:transform .45s var(--ease-out), opacity .3s ease;
+      border-radius:1rem; overflow:hidden;
+      box-shadow:0 30px 90px rgba(0,0,0,.5);
+      background:#111;
+    }
+    .mg-panel.show{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+
+    .mg-field{
+      position:relative;
+      aspect-ratio: 2 / 3;
+      height: min(84vh, 880px);
+      width: auto;
+      max-width: 92vw;
+      overflow:hidden;
+      cursor: url("assets/mascot/cursor_camera.png") 16 16, crosshair;
+      touch-action: manipulation;
+      background:#1a1a1e;
+    }
+    .mg-field .mg-bg{
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover;
+      filter:brightness(.86) saturate(.97);
+      user-select:none; -webkit-user-drag:none; pointer-events:none;
+    }
+    #mgMascot{
+      position:absolute; left:0; top:0;
+      will-change:transform; pointer-events:none;
+      user-select:none; -webkit-user-drag:none;
+    }
+    #mgMascot img{
+      width:100%; height:auto; display:block;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.45));
+    }
+
+    .mg-hud{
+      position:absolute; left:0; right:0; top:0; z-index:5;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:.6rem; padding:.6rem .8rem;
+      color:#fff; font-size:.85rem;
+      background:linear-gradient(to bottom, rgba(0,0,0,.5), rgba(0,0,0,0));
+      pointer-events:none;
+    }
+    .mg-hud .mg-score{ display:flex; gap:.9rem; align-items:center; }
+    .mg-hud .divider{ opacity:.35; }
+    .mg-hud button{ pointer-events:auto; }
+    .mg-iconbtn{
+      width:34px; height:34px; border-radius:50%; border:0;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(30,30,34,.55); color:#fff; cursor:pointer;
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      transition:background-color .2s ease, transform var(--dur-press) ease-out;
+    }
+    .mg-iconbtn:hover{ background:rgba(60,60,68,.7); }
+    .mg-iconbtn:active{ transform:scale(.92); }
+
+    .shutter-flash{
+      position:fixed; inset:0; z-index:4000; background:#fff;
+      opacity:0; pointer-events:none;
+    }
+    .shutter-flash.fire{ animation: flashFire .28s ease-out; }
+    @keyframes flashFire{ 0%{opacity:0} 12%{opacity:.95} 100%{opacity:0} }
+
+    .shot-backdrop{
+      position:fixed; inset:0; z-index:4100;
+      background:rgba(8,8,10,.6);
+      backdrop-filter:blur(12px) saturate(140%);
+      -webkit-backdrop-filter:blur(12px) saturate(140%);
+      opacity:0; transition:opacity .35s var(--ease-out);
+    }
+    .shot-backdrop.show{ opacity:1; }
+    .polaroid{
+      position:fixed; z-index:4101; left:50%; top:50%;
+      background:#fdfdf8;
+      padding:14px 14px 0;
+      border-radius:6px;
+      box-shadow:0 24px 70px rgba(0,0,0,.45);
+      transform:translate(-50%,-50%) scale(.5) rotate(-6deg);
+      opacity:0;
+      transition:transform .5s var(--ease-out), opacity .3s ease;
+      text-align:center;
+    }
+    .polaroid.show{ transform:translate(-50%,-50%) scale(1) rotate(-1.5deg); opacity:1; }
+    .polaroid canvas{
+      display:block; border-radius:2px; margin-inline:auto;
+      max-height:min(62vh, 660px); width:auto; max-width:82vw;
+    }
+
+    .polaroid .shot-foot{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:.7rem; padding:.6rem .1rem .8rem;
+    }
+    .polaroid .shot-qr{
+      width:46px; height:46px; flex:0 0 auto; display:block;
+      border-radius:3px;
+    }
+    .polaroid .shot-caption{
+      flex:1 1 auto; text-align:center;
+      font-weight:700; color:#2c2c2c;
+      font-size:1.05rem; letter-spacing:-0.01em;
+      font-family:'Segoe Print','Comic Sans MS',cursive,sans-serif;
+    }
+    .polaroid .shot-meta{
+      flex:0 0 auto; display:flex; flex-direction:column;
+      align-items:flex-end; gap:.3rem;
+    }
+    .polaroid .shot-date{
+      font-size:.7rem; color:#999; letter-spacing:.03em;
+      font-variant-numeric:tabular-nums;
+    }
+    .polaroid .shot-dl{
+      border:0; background:rgba(0,0,0,.06); color:#444;
+      width:30px; height:30px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; font-size:.85rem;
+      transition:background-color .2s ease, transform var(--dur-press) ease-out;
+    }
+    .polaroid .shot-dl:hover{ background:rgba(0,0,0,.12); }
+    .polaroid .shot-dl:active{ transform:scale(.9); }
+
+    @media (prefers-reduced-motion: reduce){
+      .mg-launcher{ transition:none; }
+      .mg-launcher.wave img{ animation:none; }
+      .mg-panel{ transition:opacity .25s ease; transform:translate(-50%,-50%); }
+      .polaroid{ transition:opacity .25s ease; transform:translate(-50%,-50%); }
+      .polaroid.show{ transform:translate(-50%,-50%); }
     }
 
     .footer{ opacity:.7; }
-  </style>
+</style>
 </head>
 <body>
-  <!-- Greeting overlay -->
   <div class="greeting-overlay" id="greetOverlay">
     <div class="greeting-text" id="greetText" style="opacity:1;transform:scale(1)">Welcome to my gallery!!</div>
   </div>
 
-  <!-- Top Bar（僅保留這一條） -->
-  <nav class="navbar bg-body border-bottom" id="topbar">
+  <nav class="navbar glass-nav sticky-top" id="topbar">
     <div class="container-xxl d-flex align-items-center justify-content-between" style="min-height:52px;">
       <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-decoration-none" href="/" aria-label="Go to home">
         <img src="assets/favicon.png" alt="" width="22" height="22" class="rounded-2">
@@ -152,7 +421,6 @@
           </a>
         </li>
         <li class="nav-item">
-          <!-- 這裡直連 Flickr（本頁已是站內 Gallery） -->
           <div class="nav-link d-flex align-items-center gap-1" rel="noopener" aria-label="Flickr">
             <i class="bi bi-camera"></i><span class="d-none d-xl-inline"><strong>Gallery</strong></span>
           </div>
@@ -169,19 +437,15 @@
 
   <main class="py-4 py-md-5">
     <div class="container-xxl">
-      <!-- 說明段 -->
       <div class="lead-wrap text-center mb-4 mb-md-5">
-        <h1 class="h3 fw-bold mb-2">📷 Curated Photography <span class="confetti-trigger" id="confettiBtn" title="Click for confetti!">🎊</span></h1>
+        <h1 class="h3 fw-bold mb-2">📷 Curated Photography</h1>
         <p class="text-muted mb-0">
           I’m into photography, so I’ve put a few favorite photos here. For more, see my Flickr (coming soon).
-<!--          <a href="https://www.flickr.com/photos/brianchen1120/" target="_blank" rel="noopener">Flickr</a>-->
         </p>
       </div>
 
-      <!-- ====== 圖片區 ====== -->
       <section aria-label="Selected photos" class="mb-5">
         <div class="gallery-grid" id="gallery">
-          <!-- ====== 3:2 寬圖（每列 2 張） ====== -->
           <figure class="g-item ratio-3x2" data-ratio="3x2">
             <div class="g-media">
               <img src="assets/gallery/1-1.JPG" alt="Portrait sample (3:2)" loading="lazy" decoding="async">
@@ -205,7 +469,6 @@
               </div>
             </figcaption>
           </figure>
-
 
           <figure class="g-item ratio-2x3" data-ratio="2x3">
             <div class="g-media">
@@ -303,7 +566,6 @@
             </figcaption>
           </figure>
 
-
           <figure class="g-item ratio-3x2" data-ratio="3x2">
             <div class="g-media">
               <img src="assets/gallery/5-1.jpg" alt="Portrait sample (3:2)" loading="lazy" decoding="async">
@@ -327,8 +589,6 @@
               </div>
             </figcaption>
           </figure>
-
-
 
           <figure class="g-item ratio-2x3" data-ratio="2x3">
             <div class="g-media">
@@ -366,7 +626,6 @@
             </figcaption>
           </figure>
 
-
           <figure class="g-item ratio-3x2" data-ratio="3x2">
             <div class="g-media">
               <img src="assets/gallery/7-1.jpg" alt="Portrait sample (3:2)" loading="lazy" decoding="async">
@@ -391,7 +650,6 @@
             </figcaption>
           </figure>
 
-
         </div>
       </section>
 
@@ -404,21 +662,24 @@
     </div>
   </main>
 
+  <button class="mg-launcher" id="mgLauncher" type="button" aria-label="開始抓拍小遊戲">
+    <span class="mg-label">📸</span>
+    <img src="assets/mascot/Stand1.webp" alt="" width="84">
+  </button>
+  <div class="shutter-flash" id="flash"></div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // 啟用 tooltip
     document.addEventListener('DOMContentLoaded', function () {
       [...document.querySelectorAll('[data-bs-toggle="tooltip"]')]
         .forEach(el => new bootstrap.Tooltip(el));
     });
 
-    // Footer 年份/時間
     const elYear = document.getElementById('year');
     const elUpdated = document.getElementById('updated');
     if (elYear)   elYear.textContent   = new Date().getFullYear();
     if (elUpdated)elUpdated.textContent= new Date().toISOString().slice(0,10);
 
-    // ----- 主題切換（沿用首頁） -----
     const root = document.documentElement;
     const STORAGE_KEY = 'pref-theme';
     const btnDesktop = document.getElementById('themeToggleDesktop');
@@ -452,65 +713,895 @@
     }
     function toggleTheme(){
       userSet = true;
+      root.classList.add('theme-transition');
+      setTimeout(()=> root.classList.remove('theme-transition'), 400);
       const curr = root.getAttribute('data-bs-theme') || 'light';
       applyTheme(curr === 'dark' ? 'light' : 'dark');
     }
     btnDesktop?.addEventListener('click', toggleTheme);
 
-    // // ----- 依比例自動分組（避免混排造成空洞） -----
-    // (function(){
-    //   const grid = document.getElementById('gallery');
-    //   if (!grid) return;
-    //   const items = Array.from(grid.children);
-    //
-    //   // 想先顯示寬圖(3:2)就 ['3x2','2x3']；想先直圖就 ['2x3','3x2']
-    //   const order = ['3x2','2x3'];
-    //
-    //   const grouped = order.flatMap(r =>
-    //     items.filter(el => (el.dataset.ratio || '').toLowerCase() === r)
-    //   );
-    //   const rest = items.filter(el => !order.includes((el.dataset.ratio || '').toLowerCase()));
-    //
-    //   [...grouped, ...rest].forEach(el => grid.appendChild(el));
-    // })();
-  </script>
+    (function(){
+      const navs = document.querySelectorAll('.glass-nav');
+      if (!navs.length) return;
+      const onScroll = () => {
+        const s = window.scrollY > 8;
+        navs.forEach(n => n.classList.toggle('scrolled', s));
+      };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    })();
 
-  <!-- Confetti effect -->
+    (function(){
+      const items = document.querySelectorAll('.g-item');
+      if (!items.length) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+        items.forEach(el => el.classList.add('in'));
+        return;
+      }
+      const obs = new IntersectionObserver(function(entries){
+        let enterIdx = 0;
+        entries.forEach(function(entry){
+          if (!entry.isIntersecting) return;
+          entry.target.style.transitionDelay = (enterIdx * 80) + 'ms';
+          enterIdx++;
+          entry.target.classList.add('in');
+          obs.unobserve(entry.target);
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -4% 0px' });
+      items.forEach(el => obs.observe(el));
+    })();
+</script>
+
   <script>
-    var confettiColors = [
-      '#6366f1','#06b6d4','#f59e0b','#ec4899','#10b981','#8b5cf6',
-      '#f43f5e','#14b8a6','#a855f7','#facc15','#fb923c','#38bdf8',
-      '#e879f9','#4ade80','#fbbf24','#f472b6'
-    ];
+    (function(){
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const grid = document.getElementById('gallery');
+      if (!grid) return;
+      const items = Array.from(grid.querySelectorAll('.g-item'));
+      let lb = null;
+      let cur = -1;
+      let closing = false;
 
-    function fireConfetti() {
-      var duration = 1250;
-      var end = Date.now() + duration;
-      (function frame() {
-        confetti({ particleCount:4, angle:60,  spread:60, origin:{x:0,y:0.6}, colors:confettiColors, gravity:0.9, drift:0.6,  ticks:180 });
-        confetti({ particleCount:4, angle:120, spread:60, origin:{x:1,y:0.6}, colors:confettiColors, gravity:0.9, drift:-0.6, ticks:180 });
-        if (Date.now() < end) requestAnimationFrame(frame);
-      })();
-      setTimeout(function () {
-        confetti({ particleCount:120, spread:140, origin:{y:0.35}, colors:confettiColors, gravity:1, scalar:1.2, ticks:250 });
-        confetti({ particleCount:80, spread:100, origin:{y:0.4},  colors:confettiColors, gravity:0.9, scalar:1, ticks:220 });
-      }, 200);
-    }
+      function thumbImg(i){ return items[i].querySelector('img'); }
+      function capHTML(i){
+        const c = items[i].querySelector('.g-cap');
+        return c ? c.innerHTML : '';
+      }
 
+      function finalRect(nw, nh){
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const maxW = Math.min(vw * .94, 1500);
+        const maxH = vh * .82;
+        const r = Math.min(maxW / nw, maxH / nh);
+        const w = Math.round(nw * r), h = Math.round(nh * r);
+        return { x: Math.round((vw - w) / 2), y: Math.round((vh - h) / 2 - 14), w, h };
+      }
+
+      function flipTransform(from, to){
+        return 'translate(' + (from.left - to.x) + 'px,' + (from.top - to.y) + 'px) ' +
+               'scale(' + (from.width / to.w) + ',' + (from.height / to.h) + ')';
+      }
+      function mkBtn(cls, html, fn){
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'lb-btn ' + cls; b.innerHTML = html;
+        b.addEventListener('click', function(e){ e.stopPropagation(); fn(); });
+        return b;
+      }
+      function mkImg(i, to){
+        const t = thumbImg(i);
+        const img = document.createElement('img');
+        img.className = 'lb-img';
+        img.src = t.src; img.alt = t.alt || '';
+        img.style.left = to.x + 'px'; img.style.top = to.y + 'px';
+        img.style.width = to.w + 'px'; img.style.height = to.h + 'px';
+        attachDrag(img);
+        return img;
+      }
+
+      function open(i){
+        if (lb) return;
+        cur = i; closing = false;
+        const t = thumbImg(i);
+        const to = finalRect(t.naturalWidth || 3, t.naturalHeight || 2);
+        const from = t.getBoundingClientRect();
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'lb-backdrop';
+        backdrop.addEventListener('click', close);
+        const img = mkImg(i, to);
+        const cap = document.createElement('div');
+        cap.className = 'lb-cap'; cap.innerHTML = capHTML(i);
+        const btns = [
+          mkBtn('lb-close', '<i class="bi bi-x-lg"></i>', close),
+          mkBtn('lb-prev', '<i class="bi bi-chevron-left"></i>', function(){ step(-1); }),
+          mkBtn('lb-next', '<i class="bi bi-chevron-right"></i>', function(){ step(1); })
+        ];
+        document.body.append(backdrop, img, cap);
+        btns.forEach(b => document.body.appendChild(b));
+        document.body.classList.add('lb-open');
+        t.style.visibility = 'hidden';
+        lb = { backdrop, img, cap, btns, to };
+
+        if (reduceMotion){
+          img.style.opacity = '0';
+          requestAnimationFrame(function(){
+            img.classList.add('animating');
+            img.style.opacity = '1';
+            showChrome();
+          });
+        } else {
+          img.style.transform = flipTransform(from, to);
+
+          requestAnimationFrame(function(){ requestAnimationFrame(function(){
+            img.classList.add('animating');
+            img.style.transform = 'none';
+            showChrome();
+          });});
+        }
+        document.addEventListener('keydown', onKey);
+      }
+
+      function showChrome(){
+        if (!lb) return;
+        lb.backdrop.classList.add('show');
+        lb.cap.classList.add('show');
+        lb.btns.forEach(b => b.classList.add('show'));
+      }
+      function hideChrome(){
+        if (!lb) return;
+        lb.backdrop.classList.remove('show');
+        lb.cap.classList.remove('show');
+        lb.btns.forEach(b => b.classList.remove('show'));
+      }
+
+      function close(){
+        if (!lb || closing) return;
+        closing = true;
+        const t = thumbImg(cur);
+        const { img, to } = lb;
+        hideChrome();
+        function done(){
+          if (!lb) return;
+          const L = lb; lb = null; cur = -1; closing = false;
+          t.style.visibility = '';
+          L.backdrop.remove(); L.img.remove(); L.cap.remove();
+          L.btns.forEach(b => b.remove());
+          document.body.classList.remove('lb-open');
+          document.removeEventListener('keydown', onKey);
+        }
+        if (reduceMotion){
+          img.classList.add('animating');
+          img.style.opacity = '0';
+          setTimeout(done, 240);
+        } else {
+          const from = t.getBoundingClientRect();
+          img.classList.add('animating');
+          img.style.transform = flipTransform(from, to);
+          img.addEventListener('transitionend', done, { once: true });
+          setTimeout(done, 600);
+        }
+      }
+
+      function step(dir){
+        if (!lb || closing) return;
+        const n = (cur + dir + items.length) % items.length;
+        if (n === cur) return;
+        thumbImg(cur).style.visibility = '';
+        const nt = thumbImg(n);
+        nt.style.visibility = 'hidden';
+        const to = finalRect(nt.naturalWidth || 3, nt.naturalHeight || 2);
+        const oldImg = lb.img;
+        const img = mkImg(n, to);
+        if (!reduceMotion){
+          img.style.opacity = '0';
+          img.style.transform = 'translateX(' + (dir * 48) + 'px)';
+        } else {
+          img.style.opacity = '0';
+        }
+        document.body.insertBefore(img, lb.cap);
+        lb.img = img; lb.to = to; cur = n;
+        lb.cap.innerHTML = capHTML(n);
+        requestAnimationFrame(function(){ requestAnimationFrame(function(){
+          img.classList.add('animating');
+          img.style.opacity = '1';
+          img.style.transform = 'none';
+          oldImg.classList.add('animating');
+          oldImg.style.opacity = '0';
+          if (!reduceMotion){
+            oldImg.style.transform = 'translateX(' + (-dir * 48) + 'px)';
+          }
+          setTimeout(function(){ oldImg.remove(); }, 350);
+        });});
+      }
+
+      function onKey(e){
+        if (e.key === 'Escape') close();
+        else if (e.key === 'ArrowLeft') step(-1);
+        else if (e.key === 'ArrowRight') step(1);
+      }
+
+      function attachDrag(img){
+        let pid = null, sx = 0, sy = 0, dx = 0, dy = 0, moved = false, hist = [];
+        img.addEventListener('pointerdown', function(e){
+          if (!lb || closing) return;
+          pid = e.pointerId;
+          img.setPointerCapture(pid);
+          sx = e.clientX; sy = e.clientY; dx = dy = 0; moved = false; hist = [];
+          img.classList.remove('animating');
+          e.preventDefault();
+        });
+        img.addEventListener('pointermove', function(e){
+          if (pid === null || e.pointerId !== pid || !lb) return;
+          dx = e.clientX - sx; dy = e.clientY - sy;
+          if (!moved && Math.hypot(dx, dy) > 8) moved = true;
+          if (!moved) return;
+          hist.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+          if (hist.length > 6) hist.shift();
+          const shrink = 1 - Math.min(Math.abs(dy) / (window.innerHeight * 1.4), .25);
+          img.style.transform = 'translate(' + (dx * .9) + 'px,' + dy + 'px) scale(' + shrink + ')';
+          lb.backdrop.style.opacity = String(Math.max(1 - Math.abs(dy) / (window.innerHeight * .55), .25));
+        });
+        function endDrag(e){
+          if (pid === null || e.pointerId !== pid) return;
+          pid = null;
+          if (!lb || closing) return;
+          lb.backdrop.style.opacity = '';
+          if (!moved){ close(); return; }
+
+          let vx = 0, vy = 0;
+          if (hist.length >= 2){
+            const a = hist[0], b = hist[hist.length - 1];
+            const dt = Math.max(b.t - a.t, 1);
+            vx = (b.x - a.x) / dt; vy = (b.y - a.y) / dt;
+          }
+          const horizontal = Math.abs(dx) > Math.abs(dy);
+          if (horizontal && (Math.abs(dx) > 90 || Math.abs(vx) > .5)){
+            step(dx < 0 ? 1 : -1);
+            return;
+          }
+          if (!horizontal && (Math.abs(dy) > 130 || Math.abs(vy) > .55)){
+            close();
+            return;
+          }
+          img.classList.add('animating');
+          img.style.transform = 'none';
+        }
+        img.addEventListener('pointerup', endDrag);
+        img.addEventListener('pointercancel', endDrag);
+      }
+
+      items.forEach(function(el, i){
+        el.addEventListener('click', function(){ open(i); });
+      });
+    })();
+</script>
+
+  <script>
     document.addEventListener('DOMContentLoaded', function () {
-      // Remove greeting after animation
       setTimeout(function () {
         var ov = document.getElementById('greetOverlay');
         if (ov) ov.remove();
       }, 3300);
-
-      // Initial confetti
-      fireConfetti();
-
-      // Re-trigger on emoji click
-      var btn = document.getElementById('confettiBtn');
-      if (btn) btn.addEventListener('click', fireConfetti);
     });
-  </script>
+</script>
+
+  <script>
+    (function(){
+      const launcher = document.getElementById('mgLauncher');
+      const flash = document.getElementById('flash');
+      if (!launcher) return;
+
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const A = 'assets/mascot/';
+      const POSE = {
+        stand: [A+'Stand1.webp', A+'Stand2.webp', A+'Stand3.webp'],
+        run:   [A+'Run1.webp',   A+'Run2.webp',   A+'Run3.webp'],
+        nice:  [A+'NiceShot1.webp', A+'NiceShot2.webp', A+'NiceShot3.webp'],
+        fail:  [A+'FailShot1.webp', A+'FailShot2.webp', A+'FailShot3.webp']
+      };
+      const pick = arr => arr[(Math.random() * arr.length) | 0];
+      const rand = (a, b) => a + Math.random() * (b - a);
+      const QR_SRC = A + 'qr_site.png';
+
+      const CAP_NICE = ['Nice Shot', 'Perfect Shot'];
+      const CAP_FAIL = ['Blurry Shot', 'Missed Shot'];
+
+      let G = null;
+      let preloaded = false;
+
+      let TOUCH_MODE = !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      function useMode(touch){
+        if (TOUCH_MODE === touch) return;
+        TOUCH_MODE = touch;
+        if (!G) return;
+        G.mode = 'idle'; G.waypoint = null; G.fleeStart = 0;
+        if (touch){
+          G.pointer = null;
+          G.phase = 'stand'; G.phaseUntil = performance.now() + 300; G.respeedAt = 0;
+        } else {
+          G.pauseUntil = 0;
+        }
+      }
+      function notePointer(e){
+        if (e.pointerType === 'touch' || e.pointerType === 'pen') useMode(true);
+        else if (e.pointerType === 'mouse') useMode(false);
+      }
+
+      function preload(){
+        if (preloaded) return;
+        preloaded = true;
+        [].concat(POSE.stand, POSE.run, POSE.nice, POSE.fail, [QR_SRC])
+          .forEach(src => { const i = new Image(); i.src = src; });
+      }
+
+      function shutterSound(){
+        try{
+          const ctx = shutterSound.ctx ||
+            (shutterSound.ctx = new (window.AudioContext || window.webkitAudioContext)());
+          const t = ctx.currentTime;
+          [0, .06].forEach(function(off, k){
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'square';
+            o.frequency.value = k ? 2200 : 3400;
+            g.gain.setValueAtTime(.1, t + off);
+            g.gain.exponentialRampToValueAtTime(.0001, t + off + .045);
+            o.connect(g); g.connect(ctx.destination);
+            o.start(t + off); o.stop(t + off + .05);
+          });
+        }catch(e){}
+      }
+      function fireFlash(){
+        flash.classList.remove('fire');
+        void flash.offsetWidth;
+        flash.classList.add('fire');
+      }
+
+      function buildUI(){
+        const backdrop = document.createElement('div');
+        backdrop.className = 'mg-backdrop';
+
+        const panel = document.createElement('div');
+        panel.className = 'mg-panel';
+        panel.innerHTML =
+          '<div class="mg-field">' +
+            '<img class="mg-bg" alt="">' +
+            '<div id="mgMascot"><img alt="mascot"></div>' +
+            '<div class="mg-hud">' +
+              '<div class="mg-score">' +
+                '<span>📸 <strong class="mg-nice">0</strong></span>' +
+                '<span class="divider">|</span>' +
+                '<span>😵 <strong class="mg-fail">0</strong></span>' +
+              '</div>' +
+              '<div style="display:flex;gap:.4rem">' +
+                '<button class="mg-iconbtn mg-shuffle" type="button" aria-label="換場景"><i class="bi bi-shuffle"></i></button>' +
+                '<button class="mg-iconbtn mg-close" type="button" aria-label="關閉"><i class="bi bi-x-lg"></i></button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+        document.body.append(backdrop, panel);
+        return { backdrop, panel };
+      }
+
+      function pickScene(){
+        const all = Array.from(document.querySelectorAll('.g-item img'))
+          .filter(i => i.complete && i.naturalWidth);
+        const portrait = all.filter(i => i.naturalHeight > i.naturalWidth);
+        const pool = portrait.length ? portrait : all;
+        return pool.length ? pick(pool) : null;
+      }
+
+      function open(){
+        if (G) return;
+        preload();
+        const { backdrop, panel } = buildUI();
+        const field = panel.querySelector('.mg-field');
+        const bg = panel.querySelector('.mg-bg');
+        const mascot = panel.querySelector('#mgMascot');
+        const mImg = mascot.querySelector('img');
+
+        G = {
+          backdrop, panel, field, bg, mascot, mImg,
+          scene: null,
+          size: 110,
+          pos: { x: 0, y: 0 },
+          vel: { x: 0, y: 0 },
+          dir: 1,
+          pose: 'stand', poseFlip: 1,
+          mode: 'idle',
+          phase: 'stand',
+          phaseUntil: 0, respeedAt: 0,
+          wanderSpd: 280,
+          waypoint: null,
+          pauseUntil: 0,
+          dashUntil: 0,
+          nextJuke: 0,
+          fleeStart: 0,
+          pointer: null,
+          lastShot: 0,
+          raf: 0,
+          score: { nice: 0, fail: 0 }
+        };
+
+        setScene();
+        layout();
+        setPose('stand');
+
+        const r = field.getBoundingClientRect();
+        G.pos.x = rand(r.width * .3, r.width * .7);
+        G.pos.y = rand(r.height * .4, r.height * .75);
+        render();
+
+        field.addEventListener('pointermove', onPointerMove);
+        field.addEventListener('pointerleave', onPointerLeave);
+        field.addEventListener('pointerdown', onShoot);
+        panel.querySelector('.mg-close').addEventListener('click', close);
+        panel.querySelector('.mg-shuffle').addEventListener('click', function(e){
+          e.stopPropagation(); setScene();
+        });
+        backdrop.addEventListener('click', close);
+        document.addEventListener('keydown', onKey);
+        window.addEventListener('resize', layout);
+
+        document.body.classList.add('mg-open');
+        requestAnimationFrame(function(){ requestAnimationFrame(function(){
+          backdrop.classList.add('show');
+          panel.classList.add('show');
+        });});
+        setTimeout(layout, 500);
+
+        G.last = performance.now();
+        G.raf = requestAnimationFrame(loop);
+      }
+
+      function close(){
+        if (!G) return;
+        const { backdrop, panel, field } = G;
+        cancelAnimationFrame(G.raf);
+        field.removeEventListener('pointermove', onPointerMove);
+        field.removeEventListener('pointerleave', onPointerLeave);
+        field.removeEventListener('pointerdown', onShoot);
+        document.removeEventListener('keydown', onKey);
+        window.removeEventListener('resize', layout);
+        backdrop.classList.remove('show');
+        panel.classList.remove('show');
+        G = null;
+        document.body.classList.remove('mg-open');
+        setTimeout(function(){ backdrop.remove(); panel.remove(); }, 420);
+      }
+      function onKey(e){
+        if (e.key === 'Escape' && !document.querySelector('.shot-backdrop')) close();
+      }
+
+      function setScene(){
+        const src = pickScene();
+        G.scene = src;
+        G.bg.src = src ? src.src : '';
+
+        if (src && src.naturalWidth){
+          G.field.style.aspectRatio = src.naturalWidth + ' / ' + src.naturalHeight;
+        }
+        layout();
+      }
+      function layout(){
+        if (!G) return;
+
+        const w = G.field.offsetWidth, h = G.field.offsetHeight;
+        if (!w) return;
+
+        const ratio = w < 480 ? 0.224 : 0.20;
+        G.size = Math.max(77, Math.min(150, w * ratio));
+        G.mascot.style.width = G.size + 'px';
+        G.pos.x = Math.min(Math.max(G.pos.x, G.size * .5), Math.max(w - G.size * .5, G.size));
+        G.pos.y = Math.min(Math.max(G.pos.y, G.size), Math.max(h - G.size * .12, G.size));
+      }
+
+      function setPose(kind){
+        G.pose = kind;
+        G.poseFlip = (kind === 'run') ? -1 : 1;
+        G.mImg.src = pick(POSE[kind]);
+      }
+      function render(){
+        G.mascot.style.transform =
+          'translate(' + (G.pos.x - G.size / 2) + 'px,' + (G.pos.y - G.size * .92) + 'px)' +
+          ' scaleX(' + (G.dir * (G.poseFlip || 1)) + ')';
+      }
+
+      function onPointerMove(e){
+        if (!G) return;
+        notePointer(e);
+        if (TOUCH_MODE){ G.pointer = null; return; }
+        const r = G.field.getBoundingClientRect();
+        G.pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
+      }
+      function onPointerLeave(){ if (G) G.pointer = null; }
+
+      const FLEE_DIST = 200;
+      const MAX_SPEED = 900;
+
+      const WARMUP_MS = 3000, SPD_FROM = .8, SPD_TO = 1.1;
+      function fleeScale(now){
+        if (!G.fleeStart) return SPD_FROM;
+        const t = Math.min((now - G.fleeStart) / WARMUP_MS, 1);
+        return SPD_FROM + (SPD_TO - SPD_FROM) * t;
+      }
+
+      function startDash(now, W, H, toward){
+        const cx = W / 2, cy = H / 2;
+        let ang = toward != null ? toward : Math.atan2(cy - G.pos.y, cx - G.pos.x);
+        ang += rand(-.5, .5);
+        const spd = rand(620, 880) * fleeScale(now);
+        G.vel.x = Math.cos(ang) * spd;
+        G.vel.y = Math.sin(ang) * spd;
+        G.dashUntil = now + rand(380, 620);
+      }
+
+      function loop(now){
+        if (!G) return;
+        const dt = Math.min((now - G.last) / 1000, .05);
+        G.last = now;
+        const r = G.field.getBoundingClientRect();
+        const W = r.width, H = r.height;
+        const half = G.size * .5;
+        const dashing = now < G.dashUntil;
+
+        if (!TOUCH_MODE && G.pointer && !dashing){
+          const dx = G.pos.x - G.pointer.x, dy = (G.pos.y - G.size * .45) - G.pointer.y;
+          const d = Math.hypot(dx, dy);
+          if (d < FLEE_DIST){
+            if (G.mode !== 'flee'){
+              G.mode = 'flee'; setPose('run');
+              G.nextJuke = now + rand(280, 700);
+              G.fleeStart = now;
+            }
+            const warm = fleeScale(now);
+
+            const margin = G.size * 1.1;
+            const nearX = G.pos.x < margin || G.pos.x > W - margin;
+            const nearY = G.pos.y < margin * 1.3 || G.pos.y > H - margin * .5;
+            if ((nearX && nearY) || (d < FLEE_DIST * .42 && (nearX || nearY))){
+
+              const past = Math.atan2(G.pointer.y - G.pos.y, G.pointer.x - G.pos.x);
+              startDash(now, W, H, Math.random() < .65 ? past : null);
+            } else {
+
+              const urge = 1 - d / FLEE_DIST;
+              const ang = Math.atan2(dy, dx) + rand(-.75, .75);
+              const spd = (200 + urge * rand(280, 520)) * warm;
+              G.vel.x += Math.cos(ang) * spd * dt * 6;
+              G.vel.y += Math.sin(ang) * spd * dt * 6;
+
+              if (now > G.nextJuke){
+                G.nextJuke = now + rand(300, 800);
+                const perp = Math.atan2(dy, dx) + (Math.random() < .5 ? 1.57 : -1.57);
+                const kick = rand(120, 300) * warm;
+                G.vel.x += Math.cos(perp) * kick;
+                G.vel.y += Math.sin(perp) * kick;
+              }
+            }
+          } else if (G.mode === 'flee' && Math.hypot(G.vel.x, G.vel.y) < 45){
+            G.mode = 'idle'; G.waypoint = null; G.fleeStart = 0; setPose('stand');
+
+            G.phase = 'stand'; G.phaseUntil = now + rand(700, 1300); G.respeedAt = 0;
+          }
+        } else if (!dashing && G.mode === 'flee' && Math.hypot(G.vel.x, G.vel.y) < 45){
+          G.mode = 'idle'; G.waypoint = null; setPose('stand');
+        }
+
+        const pad = G.size * 1.15;
+        const wallK = G.mode === 'flee' ? 1500 : 500;
+        if (G.pos.x < pad)        G.vel.x += (1 - G.pos.x / pad) * wallK * dt;
+        if (G.pos.x > W - pad)    G.vel.x -= (1 - (W - G.pos.x) / pad) * wallK * dt;
+        if (G.pos.y < pad * 1.25) G.vel.y += (1 - G.pos.y / (pad * 1.25)) * wallK * dt;
+        if (G.pos.y > H - pad * .6) G.vel.y -= (1 - (H - G.pos.y) / (pad * .6)) * wallK * dt;
+
+        if (TOUCH_MODE && G.mode === 'idle'){
+          const UNIT = 40;
+          const STAND_MS_MIN = 2000, STAND_MS_MAX = 3000;
+          const RUN_MS_MIN = 7500, RUN_MS_MAX = 8500;
+          const RESPEED_MS_MIN = 1400, RESPEED_MS_MAX = 2600;
+
+          if (G.phase === 'stand'){
+            if (G.pose !== 'stand') setPose('stand');
+            if (now > G.phaseUntil){
+              G.phase = 'run';
+              G.phaseUntil = now + rand(RUN_MS_MIN, RUN_MS_MAX);
+              G.respeedAt = 0;
+              setPose('run');
+            }
+          } else {
+            if (G.pose !== 'run') setPose('run');
+            if (now > G.phaseUntil){
+              G.phase = 'stand';
+              G.phaseUntil = now + rand(STAND_MS_MIN, STAND_MS_MAX);
+              G.respeedAt = 0;
+            }
+          }
+
+          if (now > G.respeedAt){
+            G.respeedAt = now + rand(RESPEED_MS_MIN, RESPEED_MS_MAX);
+            G.wanderSpd = (G.phase === 'run' ? rand(7, 15) : rand(3, 7)) * UNIT;
+          }
+
+          if (!G.waypoint ||
+              Math.hypot(G.waypoint.x - G.pos.x, G.waypoint.y - G.pos.y) < 14){
+            G.waypoint = { x: rand(pad, W - pad), y: rand(H * .3, H - pad * .5) };
+          }
+          const target = G.wanderSpd || 280;
+          const dx = G.waypoint.x - G.pos.x, dy = G.waypoint.y - G.pos.y;
+          const d = Math.hypot(dx, dy) || 1;
+          G.vel.x += (dx / d * target - G.vel.x) * Math.min(dt * 2.4, 1);
+          G.vel.y += (dy / d * target - G.vel.y) * Math.min(dt * 2.4, 1);
+        } else if (G.mode === 'idle' && now > G.pauseUntil){
+
+          if (!G.waypoint ||
+              Math.hypot(G.waypoint.x - G.pos.x, G.waypoint.y - G.pos.y) < 12){
+            if (G.waypoint && Math.random() < .5){
+              G.pauseUntil = now + rand(700, 2200);
+              G.waypoint = null;
+              G.vel.x = G.vel.y = 0;
+              setPose('stand');
+            } else {
+              G.waypoint = { x: rand(pad, W - pad), y: rand(H * .3, H - pad * .5) };
+              G.wanderSpd = rand(45, 140);
+            }
+          }
+          if (G.waypoint){
+            const dx = G.waypoint.x - G.pos.x, dy = G.waypoint.y - G.pos.y;
+            const d = Math.hypot(dx, dy) || 1;
+            G.vel.x += (dx / d * G.wanderSpd - G.vel.x) * Math.min(dt * 3, 1);
+            G.vel.y += (dy / d * G.wanderSpd - G.vel.y) * Math.min(dt * 3, 1);
+          }
+        }
+
+        const sp = Math.hypot(G.vel.x, G.vel.y);
+        if (sp > MAX_SPEED){ G.vel.x *= MAX_SPEED / sp; G.vel.y *= MAX_SPEED / sp; }
+
+        G.pos.x += G.vel.x * dt;
+        G.pos.y += G.vel.y * dt;
+
+        const touchMoving = TOUCH_MODE && G.mode === 'idle';
+        const damp = dashing ? .4
+                   : (G.mode === 'flee' ? 1.5 : (touchMoving ? 1.0 : 2.6));
+        G.vel.x -= G.vel.x * Math.min(dt * damp, 1);
+        G.vel.y -= G.vel.y * Math.min(dt * damp, 1);
+
+        const topLimit = G.size * .95, botLimit = H - G.size * .12;
+        let bounced = false;
+        if (G.pos.x < half){ G.pos.x = half; G.vel.x = Math.abs(G.vel.x) * .92 + 120; bounced = true; }
+        else if (G.pos.x > W - half){ G.pos.x = W - half; G.vel.x = -Math.abs(G.vel.x) * .92 - 120; bounced = true; }
+        if (G.pos.y < topLimit){ G.pos.y = topLimit; G.vel.y = Math.abs(G.vel.y) * .92 + 90; bounced = true; }
+        else if (G.pos.y > botLimit){ G.pos.y = botLimit; G.vel.y = -Math.abs(G.vel.y) * .92 - 90; bounced = true; }
+        if (bounced){
+          G.vel.x += rand(-140, 140);
+          G.vel.y += rand(-140, 140);
+          if (G.mode === 'flee' && !dashing && Math.random() < .5) startDash(now, W, H);
+        }
+
+        if (!TOUCH_MODE){
+          const spd = Math.hypot(G.vel.x, G.vel.y);
+          if (spd > 190 && G.pose !== 'run') setPose('run');
+          else if (spd < 110 && G.pose !== 'stand') setPose('stand');
+        }
+
+        if (Math.abs(G.vel.x) > 12) G.dir = G.vel.x > 0 ? 1 : -1;
+        render();
+        G.raf = requestAnimationFrame(loop);
+      }
+
+      function onShoot(e){
+        if (!G) return;
+        notePointer(e);
+
+        if (e.target.closest && e.target.closest('.mg-hud')) return;
+        const now = performance.now();
+        if (now - G.lastShot < 450) return;
+        G.lastShot = now;
+
+        const r = G.field.getBoundingClientRect();
+        const at = { x: e.clientX - r.left, y: e.clientY - r.top };
+        const mid = { x: G.pos.x, y: G.pos.y - G.size * .45 };
+        const d = Math.hypot(at.x - mid.x, at.y - mid.y);
+        const hitR = G.size * .62;
+        const nice = d <= hitR;
+
+        fireFlash(); shutterSound();
+        G.score[nice ? 'nice' : 'fail']++;
+        G.panel.querySelector('.mg-nice').textContent = G.score.nice;
+        G.panel.querySelector('.mg-fail').textContent = G.score.fail;
+
+        G.mode = 'flee'; setPose('run');
+        startDash(now, r.width, r.height, Math.atan2(mid.y - at.y, mid.x - at.x));
+
+        composeShot(nice, mid, r).then(function(res){
+          showPolaroid(res.canvas, res.caption);
+        });
+      }
+
+      function composeShot(nice, mid, fieldRect){
+        const img = G.scene;
+        const ar = (img && img.naturalWidth) ? img.naturalHeight / img.naturalWidth : 1.5;
+        const W = 700, H = Math.round(W * ar);
+        const cv = document.createElement('canvas');
+        cv.width = W; cv.height = H;
+        const ctx = cv.getContext('2d');
+        const k = W / fieldRect.width;
+
+        if (img && img.naturalWidth){
+          try{
+
+            if (!nice) ctx.filter = 'blur(2.2px)';
+            ctx.drawImage(img, 0, 0, W, H);
+            ctx.filter = 'none';
+          }catch(err){
+            ctx.filter = 'none';
+            ctx.fillStyle = '#8fa3ae'; ctx.fillRect(0, 0, W, H);
+          }
+        } else {
+          ctx.fillStyle = '#8fa3ae'; ctx.fillRect(0, 0, W, H);
+        }
+
+        const drawW = G.size * k * (nice ? 1.85 : 1.7);
+        const px = mid.x * k;
+        const py = mid.y * k;
+
+        const flip = G.dir * (nice ? 1 : -1);
+
+        const sp = new Image();
+        const src = nice ? pick(POSE.nice) : pick(POSE.fail);
+        return new Promise(function(resolve){
+          function finish(){
+            const vg = ctx.createRadialGradient(W/2, H/2, H*.42, W/2, H/2, H*.92);
+            vg.addColorStop(0, 'rgba(0,0,0,0)');
+            vg.addColorStop(1, 'rgba(0,0,0,.28)');
+            ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+            resolve({
+              canvas: cv,
+              caption: (nice ? '✌️ ' : '😵‍💫 ') + pick(nice ? CAP_NICE : CAP_FAIL)
+            });
+          }
+          sp.onload = function(){
+            const drawH = drawW * (sp.naturalHeight / sp.naturalWidth);
+            ctx.save();
+            ctx.translate(px, py);
+            if (flip < 0) ctx.scale(-1, 1);
+            ctx.drawImage(sp, -drawW / 2, -drawH * .55, drawW, drawH);
+            ctx.restore();
+            finish();
+          };
+          sp.onerror = finish;
+          sp.src = src;
+        });
+      }
+
+      function today(){
+        const d = new Date();
+        const p = n => String(n).padStart(2, '0');
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+      }
+
+      function renderCardImage(photo, caption, dateStr){
+        const PAD = 44, FOOT = 190;
+        const W = photo.width + PAD * 2;
+        const H = photo.height + PAD + FOOT;
+        const cv = document.createElement('canvas');
+        cv.width = W; cv.height = H;
+        const ctx = cv.getContext('2d');
+
+        ctx.fillStyle = '#fdfdf8'; ctx.fillRect(0, 0, W, H);
+        ctx.drawImage(photo, PAD, PAD);
+
+        const cy = PAD + photo.height + FOOT / 2;
+        const QR = 104;
+
+        return new Promise(function(resolve){
+          function draw(qr){
+
+            if (qr) ctx.drawImage(qr, PAD, cy - QR / 2, QR, QR);
+
+            const left = PAD + (qr ? QR + 20 : 0);
+            const right = W - PAD - 170;
+            ctx.fillStyle = '#2c2c2c';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            let size = 46;
+            do {
+              ctx.font = '700 ' + size + 'px "Segoe Print","Comic Sans MS",cursive,sans-serif';
+              if (ctx.measureText(caption).width <= right - left) break;
+              size -= 3;
+            } while (size > 24);
+            ctx.fillText(caption, (left + right) / 2, cy - 8);
+
+            ctx.fillStyle = '#b4b4b4';
+            ctx.font = '400 20px system-ui, sans-serif';
+            ctx.fillText('brianchen1120.github.io', (left + right) / 2, cy + 34);
+
+            ctx.fillStyle = '#9a9a9a';
+            ctx.font = '400 26px system-ui, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(dateStr, W - PAD, cy);
+            resolve(cv);
+          }
+          const qr = new Image();
+          qr.onload = function(){ draw(qr); };
+          qr.onerror = function(){ draw(null); };
+          qr.src = QR_SRC;
+        });
+      }
+
+      function showPolaroid(canvas, caption){
+        const dateStr = today();
+        const backdrop = document.createElement('div');
+        backdrop.className = 'shot-backdrop';
+        const card = document.createElement('div');
+        card.className = 'polaroid';
+        card.appendChild(canvas);
+
+        const foot = document.createElement('div');
+        foot.className = 'shot-foot';
+        foot.innerHTML =
+          '<img class="shot-qr" src="' + QR_SRC + '" alt="QR code to brianchen1120.github.io">' +
+          '<div class="shot-caption"></div>' +
+          '<div class="shot-meta">' +
+            '<button class="shot-dl" type="button" aria-label="下載這張拍立得"><i class="bi bi-download"></i></button>' +
+            '<span class="shot-date">' + dateStr + '</span>' +
+          '</div>';
+        foot.querySelector('.shot-caption').textContent = caption;
+        card.appendChild(foot);
+
+        foot.querySelector('.shot-dl').addEventListener('click', function(e){
+          e.stopPropagation();
+          renderCardImage(canvas, caption, dateStr).then(function(full){
+            const a = document.createElement('a');
+            a.download = 'photo-hunt-' + dateStr + '.png';
+            a.href = full.toDataURL('image/png');
+            a.click();
+          });
+        });
+
+        const bornAt = performance.now();
+        const GUARD = 500;
+        function swallow(e){
+          if (performance.now() - bornAt < GUARD){
+            e.stopPropagation(); e.preventDefault();
+          }
+        }
+        document.addEventListener('click', swallow, true);
+        setTimeout(function(){ document.removeEventListener('click', swallow, true); }, GUARD);
+
+        function dismiss(){
+          if (performance.now() - bornAt < GUARD) return;
+          backdrop.classList.remove('show');
+          card.classList.remove('show');
+          setTimeout(function(){ backdrop.remove(); card.remove(); }, 400);
+          document.removeEventListener('keydown', esc);
+          document.removeEventListener('click', swallow, true);
+        }
+        function esc(e){ if (e.key === 'Escape'){ e.stopPropagation(); dismiss(); } }
+        backdrop.addEventListener('click', dismiss);
+        card.addEventListener('click', dismiss);
+        document.addEventListener('keydown', esc);
+        document.body.append(backdrop, card);
+        requestAnimationFrame(function(){ requestAnimationFrame(function(){
+          backdrop.classList.add('show');
+          card.classList.add('show');
+        });});
+      }
+
+      launcher.addEventListener('click', open);
+
+      if (!reduceMotion && 'IntersectionObserver' in window){
+        const io = new IntersectionObserver(function(en){
+          en.forEach(function(e){
+            if (e.isIntersecting){
+              launcher.classList.add('wave');
+              io.disconnect();
+            }
+          });
+        });
+        io.observe(launcher);
+      }
+
+    })();
+</script>
 </body>
 </html>

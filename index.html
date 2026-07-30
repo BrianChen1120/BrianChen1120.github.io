@@ -23,30 +23,132 @@
 
 
     <style>
+      /* === Motion tokens（與 gallery.html 共用同一套） === */
+      :root{
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+        --dur-press: 160ms;
+        --dur-reveal: 0.7s;
+      }
+
       html { scroll-behavior: smooth; }
+      body { font-optical-sizing: auto; }
       .nav-link { font-weight: 600; }
-      .hero-name { font-size: clamp(2.2rem, 4vw, 3rem); font-weight: 800; }
+      .hero-name {
+        font-size: clamp(2.2rem, 4vw, 3rem); font-weight: 800;
+        letter-spacing: -0.02em; line-height: 1.08;
+      }
       .hero-tagline { font-size: 1.1rem; opacity: .9; }
       .quick-links a { text-decoration: none; }
-      .section-title { font-weight: 800; letter-spacing: .2px; }
+      .section-title { font-weight: 800; letter-spacing: -0.01em; }
       .news-date { width: 7.5rem; flex: 0 0 auto; opacity: .7; }
       .card-title a { text-decoration: none; }
       .footer { opacity: .7; }
+
+      /* === Glass chrome（半透明毛玻璃導覽列，內容從底下滑過） === */
+      .glass-nav{
+        background: rgba(255, 255, 255, .65);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        box-shadow: 0 1px 0 rgba(0, 0, 0, .04);
+        transition: box-shadow .3s ease, background-color .3s ease;
+      }
+      [data-bs-theme="dark"] .glass-nav{
+        background: rgba(18, 18, 20, .6);
+        box-shadow: 0 1px 0 rgba(255, 255, 255, .06);
+      }
+      /* scroll edge effect：捲動後才浮出陰影，取代硬分隔線 */
+      .glass-nav.scrolled{ box-shadow: 0 2px 16px rgba(0, 0, 0, .08); }
+      [data-bs-theme="dark"] .glass-nav.scrolled{ box-shadow: 0 2px 18px rgba(0, 0, 0, .45); }
+      @media (prefers-reduced-transparency: reduce){
+        .glass-nav{
+          background: var(--bs-body-bg);
+          backdrop-filter: none; -webkit-backdrop-filter: none;
+          border-bottom: 1px solid var(--bs-border-color);
+        }
+      }
+
+      /* === Press feedback：按下瞬間回饋（pointer-down，不等 release） === */
+      .btn, .link-chip, .icon-btn{
+        transition: transform var(--dur-press) ease-out,
+                    background-color .2s ease, border-color .2s ease,
+                    color .2s ease, opacity .2s ease;
+      }
+      .btn:active, .link-chip:active, .icon-btn:active{ transform: scale(.96); }
+
       /* === Scroll-reveal (bidirectional) === */
       .reveal {
         opacity: 0;
         transform: translateY(32px);
-        transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-                    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        transition: opacity var(--dur-reveal) var(--ease-out),
+                    transform var(--dur-reveal) var(--ease-out);
       }
       .reveal.visible { opacity: 1; transform: translateY(0); }
       .reveal.above   { opacity: 0; transform: translateY(-24px); }
       .reveal-card {
         opacity: 0; transform: translateY(16px);
-        transition: opacity 0.4s ease, transform 0.4s ease;
+        transition: opacity 0.45s var(--ease-out), transform 0.45s var(--ease-out);
       }
       .reveal-card.visible { opacity: 1; transform: translateY(0); }
       .reveal-card.above   { opacity: 0; transform: translateY(-12px); }
+
+      /* === Theme cross-fade（切換主題時短暫柔化，避免瞬間跳變） === */
+      html.theme-transition, html.theme-transition *{
+        transition: background-color .35s ease, color .35s ease,
+                    border-color .35s ease, box-shadow .35s ease !important;
+      }
+
+      /* === Research 縮圖 lightbox（與 gallery 同一套 shared-element 縮放） === */
+      .thumb-img{ cursor: zoom-in; }
+      body.lb-open{ overflow:hidden; }
+      .lb-backdrop{
+        position:fixed; inset:0; z-index:3000;
+        background:rgba(8,8,10,.72);
+        backdrop-filter:blur(18px) saturate(140%);
+        -webkit-backdrop-filter:blur(18px) saturate(140%);
+        opacity:0; transition:opacity .4s var(--ease-out);
+        cursor:zoom-out;
+      }
+      .lb-backdrop.show{ opacity:1; }
+      .lb-img{
+        position:fixed; z-index:3001; margin:0;
+        transform-origin:top left;
+        border-radius:.75rem;
+        background:#fff; /* 圖表類縮圖多為白底，透明 SVG 也能正常顯示 */
+        box-shadow:0 24px 80px rgba(0,0,0,.5);
+        will-change:transform;
+        cursor:zoom-out;
+        user-select:none; -webkit-user-drag:none;
+      }
+      .lb-img.animating{ transition:transform .45s var(--ease-out), opacity .3s ease; }
+      .lb-btn{
+        position:fixed; z-index:3003;
+        width:44px; height:44px; border-radius:50%;
+        display:flex; align-items:center; justify-content:center;
+        border:0; color:#fff; font-size:1.25rem;
+        background:rgba(30,30,34,.5);
+        backdrop-filter:blur(12px) saturate(160%);
+        -webkit-backdrop-filter:blur(12px) saturate(160%);
+        opacity:0;
+        transition:opacity .3s ease .15s, transform var(--dur-press) ease-out, background-color .2s ease;
+        cursor:pointer;
+      }
+      .lb-btn.show{ opacity:1; }
+      .lb-btn:hover{ background:rgba(60,60,68,.65); }
+      .lb-btn:active{ transform:scale(.92); }
+      .lb-close{ top:1rem; right:1rem; }
+
+      /* === Reduced motion：改用溫和的淡入，去掉位移/縮放 === */
+      @media (prefers-reduced-motion: reduce){
+        html{ scroll-behavior: auto; }
+        .reveal, .reveal-card{
+          transform: none !important;
+          transition: opacity .25s ease !important;
+        }
+        .reveal.above, .reveal-card.above{ opacity: 1; }
+        .btn:active, .link-chip:active, .icon-btn:active{ transform: none; }
+        html.theme-transition, html.theme-transition *{ transition: none !important; }
+      }
 
       .tooltip-photo .tooltip-inner{
         max-width: 260px;
@@ -57,7 +159,7 @@
   </head>
   <body>
     <!-- Mobile top nav (only on small screens) -->
-    <nav class="navbar navbar-expand-md bg-body border-bottom sticky-top d-lg-none">
+    <nav class="navbar navbar-expand-md glass-nav sticky-top d-lg-none">
       <div class="container">
         <div class="navbar-brand fw-bold">
           <img src="assets/favicon.png" alt="" width="22" height="22" class="rounded-2">
@@ -103,7 +205,7 @@
     </nav>
 
     <!-- Desktop top utility bar (shows on lg+ only) -->
-    <nav class="navbar bg-body border-bottom d-none d-lg-block" id="topbar">
+    <nav class="navbar glass-nav sticky-top d-none d-lg-block" id="topbar">
       <div class="container-xxl d-flex align-items-center justify-content-between" style="min-height:52px;">
         <!-- Brand -->
         <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-decoration-none" href="#top" aria-label="Go to top">
@@ -138,7 +240,7 @@
       <div class="row gx-4">
         <!-- Left sidebar (desktop) -->
         <aside class="d-none d-lg-block col-lg-2 border-end">
-          <div class="sticky-top py-4" style="top: 16px;">
+          <div class="sticky-top py-4" style="top: 68px;">
             <div class="text-center mb-3">
               <img
                 src="assets/myprofile.jpg"
@@ -353,6 +455,11 @@
                   </div>
                 </div>
 
+              </div>
+              <!-- 要隱藏的東東，News 只保留最近 5 筆，其餘收在這裡 -->
+              <div id="news-older" class="collapse">
+              <div class="mt-3 d-flex flex-column gap-3">
+                <!-- 這邊是更舊的動態消息 -->
                 <div class="d-flex gap-3">
                   <div class="news-date">2025-10</div>
                   <div>
@@ -407,12 +514,6 @@
                     <strong><a href="http://2025.icaiic.org/" target="_blank" rel="noopener" class="text-decoration-none">ICAIIC 2025</a></strong>.
                   </div>
                 </div>
-
-              </div>
-              <!-- 要隱藏的東東，可以把去年度的內容都暫時隱藏掉 -->
-              <div id="news-older" class="collapse">
-              <div class="mt-3 d-flex flex-column gap-3">
-                <!-- 這邊是更舊的動態消息 -->
                 <div class="d-flex gap-3">
                   <div class="news-date">2024-12</div>
                   <div>
@@ -633,7 +734,6 @@
                   width:100%; height:100%;
                   object-fit:contain;
                   border-radius:inherit; display:block;
-                  transition:transform .2s ease, box-shadow .2s ease; will-change:transform;
                 }
                 @media (hover:hover){
                   .pub-card:hover{
@@ -644,15 +744,6 @@
                   }
                   [data-bs-theme="dark"] .pub-card:hover{
                     box-shadow: 0 12px 32px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.2);
-                  }
-                  .thumb-wrap:hover{ z-index: 9999; }
-                  .thumb-wrap:hover .thumb-img{
-                    transform: scale(3);
-                    transform-origin: center;
-                    box-shadow: 0 6px 18px rgba(0,0,0,.15);
-                  }
-                  @media (min-width:768px){
-                    .thumb-wrap:hover .thumb-img{ transform-origin: left center; }
                   }
                 }
                 @media (min-width:768px){
@@ -1095,11 +1186,25 @@
 
       function toggleTheme(){
         userSet = true;
+        root.classList.add('theme-transition');
+        setTimeout(()=> root.classList.remove('theme-transition'), 400);
         const curr = root.getAttribute('data-bs-theme') || 'light';
         applyTheme(curr === 'dark' ? 'light' : 'dark');
       }
       btnMobile?.addEventListener('click', toggleTheme);
       btnDesktop?.addEventListener('click', toggleTheme);
+
+      // ---------- Glass nav: scroll edge effect ----------
+      (function(){
+        const navs = document.querySelectorAll('.glass-nav');
+        if (!navs.length) return;
+        const onScroll = () => {
+          const s = window.scrollY > 8;
+          navs.forEach(n => n.classList.toggle('scrolled', s));
+        };
+        document.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+      })();
 
       // ---------- News: toggle older items button label ----------
       (function () {
@@ -1134,19 +1239,138 @@
         document.querySelectorAll('.reveal').forEach(function (el) { sectionObs.observe(el); });
 
         var cardObs = new IntersectionObserver(function (entries) {
+          // 同一批進入視窗的卡片做 stagger（每張 +70ms），離開時歸零
+          var enterIdx = 0;
           entries.forEach(function (entry) {
             if (entry.isIntersecting) {
+              entry.target.style.transitionDelay = (enterIdx * 70) + 'ms';
+              enterIdx++;
               entry.target.classList.add('visible');
               entry.target.classList.remove('above');
             } else if (entry.boundingClientRect.top < 0) {
+              entry.target.style.transitionDelay = '0ms';
               entry.target.classList.remove('visible');
               entry.target.classList.add('above');
             } else {
+              entry.target.style.transitionDelay = '0ms';
               entry.target.classList.remove('visible', 'above');
             }
           });
         }, { threshold: 0.1 });
         document.querySelectorAll('.reveal-card').forEach(function (el) { cardObs.observe(el); });
+      })();
+    </script>
+
+    <!-- === Research 縮圖 lightbox（FLIP shared-element 縮放） === -->
+    <script>
+      (function(){
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const thumbs = Array.from(document.querySelectorAll('.pub-card .thumb-img'));
+        if (!thumbs.length) return;
+        let lb = null, closing = false;
+
+        // 縮圖用 object-fit:contain，取實際渲染出的圖面矩形（去掉 letterbox）
+        function contentRect(img){
+          const box = img.getBoundingClientRect();
+          const nw = img.naturalWidth || 16, nh = img.naturalHeight || 10;
+          const s = Math.min(box.width / nw, box.height / nh);
+          const w = nw * s, h = nh * s;
+          return {
+            left: box.left + (box.width - w) / 2,
+            top:  box.top  + (box.height - h) / 2,
+            width: w, height: h
+          };
+        }
+        function finalRect(nw, nh){
+          const vw = window.innerWidth, vh = window.innerHeight;
+          const maxW = Math.min(vw * .92, 1400), maxH = vh * .86;
+          const r = Math.min(maxW / nw, maxH / nh);
+          const w = Math.round(nw * r), h = Math.round(nh * r);
+          return { x: Math.round((vw - w) / 2), y: Math.round((vh - h) / 2), w, h };
+        }
+        function flipTransform(from, to){
+          return 'translate(' + (from.left - to.x) + 'px,' + (from.top - to.y) + 'px) ' +
+                 'scale(' + (from.width / to.w) + ',' + (from.height / to.h) + ')';
+        }
+
+        function open(t){
+          if (lb) return;
+          closing = false;
+          const nw = t.naturalWidth || 16, nh = t.naturalHeight || 10;
+          const to = finalRect(nw, nh);
+          const from = contentRect(t);
+
+          const backdrop = document.createElement('div');
+          backdrop.className = 'lb-backdrop';
+          backdrop.addEventListener('click', close);
+          const img = document.createElement('img');
+          img.className = 'lb-img';
+          img.src = t.src; img.alt = t.alt || '';
+          img.style.left = to.x + 'px'; img.style.top = to.y + 'px';
+          img.style.width = to.w + 'px'; img.style.height = to.h + 'px';
+          img.addEventListener('click', close);
+          const btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'lb-btn lb-close';
+          btn.innerHTML = '<i class="bi bi-x-lg"></i>';
+          btn.addEventListener('click', close);
+
+          document.body.append(backdrop, img, btn);
+          document.body.classList.add('lb-open');
+          lb = { backdrop, img, btn, t, to };
+
+          if (reduceMotion){
+            img.style.opacity = '0';
+            requestAnimationFrame(function(){
+              img.classList.add('animating');
+              img.style.opacity = '1';
+              showChrome();
+            });
+          } else {
+            img.style.transform = flipTransform(from, to);
+            requestAnimationFrame(function(){ requestAnimationFrame(function(){
+              img.classList.add('animating');
+              img.style.transform = 'none';
+              showChrome();
+            });});
+          }
+          document.addEventListener('keydown', onKey);
+        }
+        function showChrome(){
+          if (!lb) return;
+          lb.backdrop.classList.add('show');
+          lb.btn.classList.add('show');
+        }
+        function close(){
+          if (!lb || closing) return;
+          closing = true;
+          const { img, t, to } = lb;
+          lb.backdrop.classList.remove('show');
+          lb.btn.classList.remove('show');
+          function done(){
+            if (!lb) return;
+            const L = lb; lb = null; closing = false;
+            L.backdrop.remove(); L.img.remove(); L.btn.remove();
+            document.body.classList.remove('lb-open');
+            document.removeEventListener('keydown', onKey);
+          }
+          if (reduceMotion){
+            img.style.opacity = '0';
+            setTimeout(done, 240);
+          } else {
+            img.classList.add('animating');
+            img.style.transform = flipTransform(contentRect(t), to);
+            img.addEventListener('transitionend', done, { once: true });
+            setTimeout(done, 600); // 保險
+          }
+        }
+        function onKey(e){ if (e.key === 'Escape') close(); }
+
+        thumbs.forEach(function(t){
+          t.addEventListener('click', function(e){
+            e.preventDefault();
+            open(t);
+          });
+        });
       })();
     </script>
   </body>
