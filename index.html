@@ -730,6 +730,31 @@
                 @media (min-width:576px) and (max-width:767.98px){
                   .thumb-wrap{ max-width:200px; }
                 }
+                .thumb-video{
+                  width:100%; height:100%;
+                  object-fit:contain;
+                  border-radius:inherit; display:block;
+                  cursor: zoom-in;
+                }
+                .thumb-loading{
+                  position:absolute; inset:0;
+                  display:flex; align-items:center; justify-content:center; gap:.4rem;
+                  border-radius:inherit;
+                  background:var(--bs-tertiary-bg, #f2f4f7);
+                  color:var(--bs-secondary-color, #6c757d);
+                  font-size:.78rem; letter-spacing:.01em;
+                  transition:opacity .35s ease;
+                }
+                .thumb-loading .vspin{
+                  width:12px; height:12px; border-radius:50%;
+                  border:2px solid currentColor; border-right-color:transparent;
+                  animation:vspin .8s linear infinite;
+                }
+                @keyframes vspin{ to{ transform:rotate(360deg); } }
+                .thumb-wrap.video-ready .thumb-loading{ opacity:0; pointer-events:none; }
+                @media (prefers-reduced-motion: reduce){
+                  .thumb-loading .vspin{ animation:none; }
+                }
                 .thumb-img{
                   width:100%; height:100%;
                   object-fit:contain;
@@ -756,8 +781,10 @@
 
               <!-- Item -->
               <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
-                <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/BOCCHI.svg" alt="BOCCHI: A More Realistic and Challenging Benchmark for Local Motion Blur Detection with MSDCT-UNet">
+                <div class="thumb-wrap is-video mb-2 mb-md-0">
+                  <video class="thumb-video" data-src="assets/works/BOCCHI.mp4"
+                         muted loop playsinline preload="none" aria-label="BOCCHI: A More Realistic and Challenging Benchmark for Local Motion Blur Detection with MSDCT-UNet"></video>
+                  <div class="thumb-loading"><span class="vspin"></span>Loading video…</div>
                 </div>
                 <div>
                   <h3 class="h5 mb-1">BOCCHI: A More Realistic and Challenging Benchmark for Local Motion Blur Detection with MSDCT-UNet</h3>
@@ -774,8 +801,10 @@
 
               <!-- Item -->
               <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
-                <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/RL_AWB.png" alt="RL-AWB: Deep Reinforcement Learning for Auto White Balance Correction in Low-Light Night-time Scenes" >
+                <div class="thumb-wrap is-video mb-2 mb-md-0">
+                  <video class="thumb-video" data-src="assets/works/RL_AWB.mp4"
+                         muted loop playsinline preload="none" aria-label="RL-AWB: Deep Reinforcement Learning for Auto White Balance Correction in Low-Light Night-time Scenes"></video>
+                  <div class="thumb-loading"><span class="vspin"></span>Loading video…</div>
                 </div>
                 <div>
                   <h3 class="h5 mb-1">RL-AWB: Deep Reinforcement Learning for Auto White Balance Correction in Low-Light Night-time Scenes</h3>
@@ -817,7 +846,7 @@
                 </div>
                 <div>
                   <h3 class="h5 mb-1">Guitar Tone Morphing by Diffusion-based Model</h3>
-                  <div class="text-muted small mb-1"><a href="https://scholar.google.com.tw/citations?user=jlBWeQEAAAAJ&hl=zh-TW" target="_blank" rel="noopener" class="text-decoration-none">Kuan-Yu Chen</a>, <strong>Kuan-Lin Chen</strong>, Yu-Chieh Yu, <a href="https://djj.ee.ntu.edu.tw/index.htm" target="_blank" rel="noopener" class="text-decoration-none">Jian-Jiun Ding</a></div>
+                  <div class="text-muted small mb-1"><a href="https://danielchen1128.github.io/" target="_blank" rel="noopener" class="text-decoration-none">Kuan-Yu Chen</a>, <strong>Kuan-Lin Chen</strong>, Yu-Chieh Yu, <a href="https://djj.ee.ntu.edu.tw/index.htm" target="_blank" rel="noopener" class="text-decoration-none">Jian-Jiun Ding</a></div>
                   <div class="small mb-2"><em>APSIPA ASC</em>, 2025</div>
                   <div class="text-muted small mb-1">We compare three latent-diffusion approaches (with single- and dual-sided LoRA) against a non-diffusion baseline that performs spherical interpolation in Music2Latent.
                     Experiments show that Music2Latent achieves the best perceptual quality (MOS 4.3 / 5.0) and produces smoother, more natural tone transitions.</div>
@@ -933,8 +962,10 @@
               </article>
 
               <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
-                <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/2stage_PPO.jpg" alt="Two-stage fuzzy object grasping controller for a humanoid robot with proximal policy optimization">
+                <div class="thumb-wrap is-video mb-2 mb-md-0">
+                  <video class="thumb-video" data-src="assets/works/2stage_PPO.mp4"
+                         muted loop playsinline preload="none" aria-label="Two-stage fuzzy object grasping controller for a humanoid robot with proximal policy optimization"></video>
+                  <div class="thumb-loading"><span class="vspin"></span>Loading video…</div>
                 </div>
                 <div>
                   <h3 class="h5 mb-1">Two-stage fuzzy object grasping controller for a humanoid robot with proximal policy optimization</h3>
@@ -950,8 +981,10 @@
               </article>
 
               <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
-                <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/DDPG_walk.jpg" alt="Sequential sensor fusion-based W-DDPG gait controller of bipedal robots for adaptive slope walking">
+                <div class="thumb-wrap is-video mb-2 mb-md-0">
+                  <video class="thumb-video" data-src="assets/works/DDPG_walk.mp4"
+                         muted loop playsinline preload="none" aria-label="Sequential sensor fusion-based W-DDPG gait controller of bipedal robots for adaptive slope walking"></video>
+                  <div class="thumb-loading"><span class="vspin"></span>Loading video…</div>
                 </div>
                 <div>
                   <h3 class="h5 mb-1">Sequential sensor fusion-based W-DDPG gait controller of bipedal robots for adaptive slope walking</h3>
@@ -968,8 +1001,10 @@
               </article>
 
               <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
-                <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/PPO_decision-making.jpg" alt="Intelligent proximal-policy-optimization-based decision-making system for humanoid robots">
+                <div class="thumb-wrap is-video mb-2 mb-md-0">
+                  <video class="thumb-video" data-src="assets/works/PPO_decision-making.mp4"
+                         muted loop playsinline preload="none" aria-label="Intelligent proximal-policy-optimization-based decision-making system for humanoid robots"></video>
+                  <div class="thumb-loading"><span class="vspin"></span>Loading video…</div>
                 </div>
                 <div>
                   <h3 class="h5 mb-1">Intelligent proximal-policy-optimization-based decision-making system for humanoid robots</h3>
@@ -1261,18 +1296,58 @@
       })();
     </script>
 
+    <!-- === Research 影片縮圖：進入視窗才載入，離開就暫停 === -->
+    <script>
+      (function(){
+        const vids = Array.from(document.querySelectorAll('.thumb-wrap.is-video video[data-src]'));
+        if (!vids.length) return;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function ready(v){
+          v.closest('.thumb-wrap').classList.add('video-ready');
+        }
+        vids.forEach(function(v){
+          v.addEventListener('loadeddata', function(){ ready(v); }, { once: true });
+          v.addEventListener('error', function(){
+            const box = v.closest('.thumb-wrap');
+            const tip = box && box.querySelector('.thumb-loading');
+            if (tip) tip.textContent = 'Video unavailable';
+          }, { once: true });
+        });
+
+        const io = new IntersectionObserver(function(entries){
+          entries.forEach(function(e){
+            const v = e.target;
+            if (e.isIntersecting){
+              if (!v.src){ v.src = v.dataset.src; v.load(); }
+              if (reduceMotion){ v.controls = true; }
+              else { const pr = v.play(); if (pr && pr.catch) pr.catch(function(){}); }
+            } else if (!v.paused){
+              v.pause();
+            }
+          });
+        }, { rootMargin: '200px 0px', threshold: 0.15 });
+        vids.forEach(function(v){ io.observe(v); });
+      })();
+    </script>
+
     <!-- === Research 縮圖 lightbox（FLIP shared-element 縮放） === -->
     <script>
       (function(){
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const thumbs = Array.from(document.querySelectorAll('.pub-card .thumb-img'));
+        const thumbs = Array.from(document.querySelectorAll('.pub-card .thumb-img, .pub-card .thumb-video'));
         if (!thumbs.length) return;
         let lb = null, closing = false;
 
         // 縮圖用 object-fit:contain，取實際渲染出的圖面矩形（去掉 letterbox）
+        function natural(el){
+          return el.tagName === 'VIDEO'
+            ? [el.videoWidth || 16, el.videoHeight || 10]
+            : [el.naturalWidth || 16, el.naturalHeight || 10];
+        }
         function contentRect(img){
           const box = img.getBoundingClientRect();
-          const nw = img.naturalWidth || 16, nh = img.naturalHeight || 10;
+          const nat = natural(img), nw = nat[0], nh = nat[1];
           const s = Math.min(box.width / nw, box.height / nh);
           const w = nw * s, h = nh * s;
           return {
@@ -1296,16 +1371,24 @@
         function open(t){
           if (lb) return;
           closing = false;
-          const nw = t.naturalWidth || 16, nh = t.naturalHeight || 10;
-          const to = finalRect(nw, nh);
+          const nat = natural(t);
+          const to = finalRect(nat[0], nat[1]);
           const from = contentRect(t);
 
           const backdrop = document.createElement('div');
           backdrop.className = 'lb-backdrop';
           backdrop.addEventListener('click', close);
-          const img = document.createElement('img');
+          const isVid = t.tagName === 'VIDEO';
+          const img = document.createElement(isVid ? 'video' : 'img');
           img.className = 'lb-img';
-          img.src = t.src; img.alt = t.alt || '';
+          img.src = t.currentSrc || t.src || t.dataset.src;
+          if (isVid){
+            img.muted = true; img.loop = true; img.playsInline = true; img.controls = true;
+            img.currentTime = t.currentTime || 0;
+            const pr = img.play(); if (pr && pr.catch) pr.catch(function(){});
+          } else {
+            img.alt = t.alt || '';
+          }
           img.style.left = to.x + 'px'; img.style.top = to.y + 'px';
           img.style.width = to.w + 'px'; img.style.height = to.h + 'px';
           img.addEventListener('click', close);
