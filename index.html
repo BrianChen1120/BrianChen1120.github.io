@@ -150,6 +150,81 @@
         html.theme-transition, html.theme-transition *{ transition: none !important; }
       }
 
+      /* === 單欄版面：正文收窄以維持可讀行長 === */
+      main > section > .container.px-0,
+      main > footer > .container.px-0 { max-width: 960px; margin-inline: auto; }
+      main > section#works > .container.px-0 { max-width: 1120px; }
+
+      /* === Hero + About（照片在文字旁） === */
+      .hero-grid{ display:grid; grid-template-columns:1fr; gap:1.5rem; align-items:start; }
+      .hero-photo{ order:-1; }                 /* 照片在左（手機則在上方） */
+      @media (min-width:768px){
+        .hero-grid{ grid-template-columns:170px minmax(0,1fr); gap:2rem; }
+      }
+      .hero-photo img{
+        width:100%; max-width:170px; height:auto;
+        border-radius:1rem; display:block;
+      }
+      @media (max-width:767.98px){
+        .hero-photo img{ max-width:132px; margin-inline:auto; }
+      }
+
+      /* === Hero tagline 打字效果 === */
+      .hero-tagline{ min-height:1.7em; }
+      .type-hash{ opacity:.55; margin-right:.15em; }
+      .type-caret{
+        display:inline-block; width:.09em; height:1.05em;
+        background:currentColor; vertical-align:-.15em; margin-left:.1em;
+        animation:caretBlink 1.05s steps(1,end) infinite;
+      }
+      @keyframes caretBlink{ 0%,49%{opacity:1} 50%,100%{opacity:0} }
+      @media (prefers-reduced-motion: reduce){
+        .type-caret{ animation:none; opacity:.55; }
+      }
+
+      /* === 上方欄位的名字：捲過 Hero 後才淡入（保留寬度，避免版面位移） === */
+      .topbar-name{
+        display:inline-block; white-space:nowrap; overflow:hidden;
+        max-width:0; opacity:0;
+        transition:max-width .45s var(--ease-out), opacity .3s var(--ease-out);
+      }
+      .topbar-name.show{ max-width:18rem; opacity:1; }
+      @media (prefers-reduced-motion: reduce){
+        .topbar-name{ transition:opacity .2s ease; }
+      }
+
+      /* === News 捲動框 === */
+      .news-fade{ position:relative; }
+      .news-fade::after{
+        content:''; position:absolute; left:0; right:0; bottom:0; height:3rem;
+        background:linear-gradient(to top, var(--bs-tertiary-bg), transparent);
+        pointer-events:none; opacity:1; transition:opacity .25s ease;
+      }
+      .news-fade.at-end::after{ opacity:0; }
+      .news-scroll{
+        max-height:19rem;            /* 桌機約顯示 5 則 */
+        overflow-y:auto; overflow-x:hidden;
+        padding-right:.6rem;
+        scrollbar-gutter:stable;
+        overscroll-behavior:contain;
+        -webkit-overflow-scrolling:touch;
+      }
+      .news-scroll:focus-visible{ outline:2px solid var(--thumb-blue,#A6D3FF); outline-offset:4px; border-radius:.4rem; }
+      .news-scroll::-webkit-scrollbar{ width:6px; }
+      .news-scroll::-webkit-scrollbar-track{ background:transparent; }
+      .news-scroll::-webkit-scrollbar-thumb{ background:rgba(0,0,0,.18); border-radius:3px; }
+      .news-scroll::-webkit-scrollbar-thumb:hover{ background:rgba(0,0,0,.4); }
+      [data-bs-theme="dark"] .news-scroll::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.2); }
+      [data-bs-theme="dark"] .news-scroll::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,.4); }
+      /* 手機：日期欄收窄以減少換行，捲動框不吃掉整個螢幕 */
+      @media (max-width:575.98px){
+        .news-date{ width:5.5rem; font-size:.85rem; }
+        .news-scroll{ max-height:60vh; }
+      }
+
+      /* 上方欄位的社群按鈕 */
+      .topbar-social .btn{ --bs-btn-padding-y:.2rem; --bs-btn-padding-x:.5rem; }
+
       .tooltip-photo .tooltip-inner{
         max-width: 260px;
         white-space: normal;
@@ -161,11 +236,11 @@
     <!-- Mobile top nav (only on small screens) -->
     <nav class="navbar navbar-expand-md glass-nav sticky-top d-lg-none">
       <div class="container">
-        <div class="navbar-brand fw-bold">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2 m-0 text-decoration-none" href="#top" aria-label="Go to top">
           <img src="assets/favicon.png" alt="" width="22" height="22" class="rounded-2">
-          <span>Kuan-Lin (Brian) Chen</span>
-        </div>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+          <span class="topbar-name">Kuan-Lin (Brian) Chen</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-label="Menu">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navMain">
@@ -180,22 +255,43 @@
             <li class="nav-item"><a class="nav-link" href="#misc">Miscellanea</a></li>
             <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
             <li class="w-100 my-2 border-top"></li>
-            <li class="nav-item w-100">
-              <span class="nav-section text-muted small text-uppercase px-2">Other Links</span>
-            </li>
-            <li class="nav-item">
-              <div class="nav-link d-flex align-items-center gap-1" href="https://brianchen1120.github.io/" aria-label="Home (site root)">
-                <i class="bi bi-house"></i><span><strong>Home</strong></span>
+            <li class="nav-item w-100 px-2 py-1">
+              <div class="d-flex flex-wrap gap-2 topbar-social">
+                <a class="btn btn-sm btn-outline-primary" href="mailto:klchen901120@gmail.com"
+                   target="_blank" rel="noopener" aria-label="Email"
+                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="Email">
+                  <i class="bi bi-envelope"></i>
+                </a>
+                <a class="btn btn-sm btn-outline-primary" href="files/Kuan-Lin (Brian) Chen Resume.pdf"
+                   target="_blank" rel="noopener" aria-label="Resume"
+                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="Resume">
+                  <i class="bi bi-file-earmark-text"></i>
+                </a>
+                <a class="btn btn-sm btn-outline-primary" href="https://scholar.google.com/citations?user=56m2uDUAAAAJ"
+                   target="_blank" rel="noopener" aria-label="Google Scholar"
+                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="Google Scholar">
+                  <i class="bi bi-mortarboard"></i>
+                </a>
+                <a class="btn btn-sm btn-outline-primary" href="https://github.com/BrianChen1120"
+                   target="_blank" rel="noopener" aria-label="GitHub"
+                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="GitHub">
+                  <i class="bi bi-github"></i>
+                </a>
+                <a class="btn btn-sm btn-outline-primary" href="https://www.linkedin.com/in/kuanlinchen1"
+                   target="_blank" rel="noopener" aria-label="LinkedIn"
+                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="LinkedIn">
+                  <i class="bi bi-linkedin"></i>
+                </a>
               </div>
             </li>
+            <li class="w-100 my-2 border-top"></li>
             <li class="nav-item">
               <a class="nav-link d-flex align-items-center gap-1" href="gallery.html" rel="noopener" aria-label="Gallery">
                 <i class="bi bi-camera"></i><span>Gallery</span>
               </a>
             </li>
-            <li class="w-100 my-2 border-top"></li>
             <li class="nav-item ms-md-2">
-              <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle theme" data-bs-toggle="tooltip" data-bs-placement="top">
+              <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle theme">
                 <i class="bi bi-moon-stars"></i>
               </button>
             </li>
@@ -206,455 +302,367 @@
 
     <!-- Desktop top utility bar (shows on lg+ only) -->
     <nav class="navbar glass-nav sticky-top d-none d-lg-block" id="topbar">
-      <div class="container-xxl d-flex align-items-center justify-content-between" style="min-height:52px;">
-        <!-- Brand -->
-        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-decoration-none" href="#top" aria-label="Go to top">
-          <img src="assets/favicon.png" alt="" width="22" height="22" class="rounded-2">
-          <span>Kuan-Lin (Brian) Chen</span>
-        </a>
+      <div class="container-xxl d-flex align-items-center justify-content-between gap-3" style="min-height:52px;">
+        <div class="d-flex align-items-center gap-2">
+          <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-decoration-none m-0" href="#top" aria-label="Go to top">
+            <img src="assets/favicon.png" alt="" width="22" height="22" class="rounded-2">
+            <span class="topbar-name">Kuan-Lin (Brian) Chen</span>
+          </a>
+          <ul class="navbar-nav flex-row align-items-center gap-3">
+            <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+            <li class="nav-item"><a class="nav-link" href="#news">News</a></li>
+            <li class="nav-item"><a class="nav-link" href="#works">Research</a></li>
+            <li class="nav-item"><a class="nav-link" href="#misc">Miscellanea</a></li>
+            <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+          </ul>
+        </div>
 
-        <!-- Right links -->
-        <ul class="navbar-nav flex-row align-items-center gap-4">
-          <li class="nav-item">
-            <div class="nav-link d-flex align-items-center gap-1" href="https://brianchen1120.github.io/" aria-label="Home (site root)">
-              <i class="bi bi-house"></i><span class="d-none d-xl-inline"><strong>Home</strong></span>
-            </div>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link d-flex align-items-center gap-1" href="gallery.html" rel="noopener" aria-label="Gallery">
-              <i class="bi bi-camera"></i><span class="d-none d-xl-inline">Gallery</span>
+        <div class="d-flex align-items-center gap-4">
+          <div class="d-flex align-items-center gap-3 topbar-social">
+            <a class="btn btn-sm btn-outline-primary" href="mailto:klchen901120@gmail.com"
+               target="_blank" rel="noopener" aria-label="Email"
+               data-bs-toggle="tooltip" data-bs-placement="bottom" title="Email">
+              <i class="bi bi-envelope"></i>
             </a>
-          </li>
-          <li class="nav-item">
-            <button id="themeToggleDesktop"
-              class="icon-btn" type="button"
-              aria-label="Toggle theme" data-bs-toggle="tooltip" data-bs-placement="top">
-              <i class="bi bi-moon-stars"></i>
-            </button>
-          </li>
-        </ul>
+            <a class="btn btn-sm btn-outline-primary" href="files/Kuan-Lin (Brian) Chen Resume.pdf"
+               target="_blank" rel="noopener" aria-label="Resume"
+               data-bs-toggle="tooltip" data-bs-placement="bottom" title="Resume">
+              <i class="bi bi-file-earmark-text"></i>
+            </a>
+            <a class="btn btn-sm btn-outline-primary" href="https://scholar.google.com/citations?user=56m2uDUAAAAJ"
+               target="_blank" rel="noopener" aria-label="Google Scholar"
+               data-bs-toggle="tooltip" data-bs-placement="bottom" title="Google Scholar">
+              <i class="bi bi-mortarboard"></i>
+            </a>
+            <a class="btn btn-sm btn-outline-primary" href="https://github.com/BrianChen1120"
+               target="_blank" rel="noopener" aria-label="GitHub"
+               data-bs-toggle="tooltip" data-bs-placement="bottom" title="GitHub">
+              <i class="bi bi-github"></i>
+            </a>
+            <a class="btn btn-sm btn-outline-primary" href="https://www.linkedin.com/in/kuanlinchen1"
+               target="_blank" rel="noopener" aria-label="LinkedIn"
+               data-bs-toggle="tooltip" data-bs-placement="bottom" title="LinkedIn">
+              <i class="bi bi-linkedin"></i>
+            </a>
+          </div>
+          <a class="nav-link d-flex align-items-center gap-1" href="gallery.html" rel="noopener" aria-label="Gallery">
+            <i class="bi bi-camera"></i><span class="d-none d-xxl-inline">Gallery</span>
+          </a>
+          <button id="themeToggleDesktop" class="icon-btn" type="button"
+                  aria-label="Toggle theme" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle theme">
+            <i class="bi bi-moon-stars"></i>
+          </button>
+        </div>
       </div>
     </nav>
 
     <div class="container-xxl">
-      <div class="row gx-4">
-        <!-- Left sidebar (desktop) -->
-        <aside class="d-none d-lg-block col-lg-2 border-end">
-          <div class="sticky-top py-4" style="top: 68px;">
-            <div class="text-center mb-3">
-              <img
-                src="assets/myprofile.jpg"
-                alt="Portrait of Kuan-Lin (Brian) Chen"
-                class="rounded-4 img-fluid shadow"
-                style="max-width: 150px;"
-                loading="lazy"
-                width="150" height="150"
-                data-bs-toggle="tooltip"
-                data-bs-placement="right"
-                data-bs-custom-class="tooltip-photo"
-                data-bs-html="true"
-                data-bs-title="This photo was taken in Mameda-machi, Hita, Oita Prefecture, Japan<br>
-                               2025-10-11<br>
-                               ======================<br>
-                               Photo by Fujifilm X-T30 II<br>
-                               Lens: Tamron 17–70mm f/2.8 Di III-A VC RXD (B070X)<br>
-                               Exposure: 105 mm · f/5 · 1/320 s · ISO 320<br>"
-              />
-            </div>
-            <h1 class="h4 fw-bold mb-1">Kuan‑Lin (Brian) Chen (陳冠霖)</h1>
-            <p class="small mb-2">M.S. student @ NTU GICE</p>
-            <div class="d-flex flex-wrap gap-2 mb-3">
-              <a class="btn btn-sm btn-outline-primary"
-                 href="mailto:klchen901120@gmail.com"
-                 target="_blank" rel="noopener"
-                 aria-label="Email" data-bs-toggle="tooltip" data-bs-placement="top" title="Email">
-                <i class="bi bi-envelope"></i>
-              </a>
-              <a class="btn btn-sm btn-outline-primary"
-                 href="files/Kuan-Lin (Brian) Chen Resume.pdf"
-                 target="_blank" rel="noopener"
-                 aria-label="CV" data-bs-toggle="tooltip" data-bs-placement="top" title="Resume">
-                <i class="bi bi-file-earmark-text"></i>
-              </a>
-              <a class="btn btn-sm btn-outline-primary"
-                 href="https://scholar.google.com/citations?user=56m2uDUAAAAJ"
-                 target="_blank" rel="noopener"
-                 aria-label="Scholar" data-bs-toggle="tooltip" data-bs-placement="top" title="Google Scholar">
-                <i class="bi bi-mortarboard"></i>
-              </a>
-              <a class="btn btn-sm btn-outline-primary"
-                 href="https://github.com/BrianChen1120"
-                 target="_blank" rel="noopener"
-                 aria-label="GitHub" data-bs-toggle="tooltip" data-bs-placement="top" title="GitHub">
-                <i class="bi bi-github"></i>
-              </a>
-              <a class="btn btn-sm btn-outline-primary"
-                 href="https://www.linkedin.com/in/kuanlinchen1"
-                 target="_blank" rel="noopener"
-                 aria-label="LinkedIn" data-bs-toggle="tooltip" data-bs-placement="top" title="LinkedIn">
-                <i class="bi bi-linkedin"></i>
-              </a>
-            </div>
+      <main id="top">
+        <!-- Hero + About -->
+        <section id="about" class="py-4 py-md-5 bg-body-tertiary border-bottom reveal">
+          <div class="container px-0">
+            <div class="hero-grid">
+              <div class="hero-text">
+                <h1 class="hero-name mb-1">Kuan&#8209;Lin (Brian) Chen (陳冠霖)</h1>
+                <p class="hero-tagline mb-3" aria-label="Research interests: Computer Vision, Image Processing, Image Signal Processing, Computational Photography"><span class="type-hash" aria-hidden="true">#</span><span id="typeText" aria-hidden="true"></span><span class="type-caret" aria-hidden="true"></span></p>
+                <p>
+                  I will join the
+                  <a href="https://www.itri.org.tw/english/" target="_blank" rel="noopener" class="text-decoration-none">Industrial Technology Research Institute (ITRI)</a>
+                  in October 2026. I received my M.S. degree from the
+                  <a href="https://gice.ntu.edu.tw/en/" target="_blank" rel="noopener" class="text-decoration-none">Graduate Institute of Communication Engineering</a>,
+                  <a href="https://www.ntu.edu.tw/english/" target="_blank" rel="noopener" class="text-decoration-none">National Taiwan University</a>,
+                  advised by Professor
+                  <a href="https://djj.ee.ntu.edu.tw/index.htm" target="_blank" rel="noopener" class="text-decoration-none">Jian-Jiun Ding (丁建均)</a>.
+                </p>
+                <p>
+                  My research focuses on computational photography and computer vision.
+                  Before that, I was an AI Intern at
+                  <a href="https://www.gigabyte.com/us" target="_blank" rel="noopener" class="text-decoration-none">Gigabyte AI Lab</a>
+                  and a Research Assistant at
+                  <a href="https://www.iis.sinica.edu.tw/en/index.html" target="_blank" rel="noopener" class="text-decoration-none">Academia Sinica</a>.
+                </p>
+                <p class="mb-0">
+                  Outside of research, I have authored two technical books with
+                  <a href="https://www.drmaster.com.tw/index.asp" target="_blank" rel="noopener" class="text-decoration-none">DrMaster Press</a>
+                  and I am into photography — some of my favorite shots are in the
+                  <a href="gallery.html" class="text-decoration-none">Gallery</a>.
+                </p>
+              </div>
 
-            <nav class="nav flex-column small">
-              <h3 class="h6 fw-bold mb-1">Quick Links</h3>
-              <a class="nav-link px-0" href="#about">About</a>
-              <a class="nav-link px-0" href="#news">News</a>
-              <a class="nav-link px-0" href="#works">Research</a>
-              <a class="nav-link px-0" href="#misc">Miscellanea</a>
-              <a class="nav-link px-0" href="#contact">Contact</a>
-            </nav>
-          </div>
-        </aside>
-
-        <!-- Main content column -->
-        <main class="col-12 col-lg-10" id="top">
-          <!-- Hero (only mobile, desktop uses sidebar heading) -->
-          <header class="py-4 d-lg-none">
-            <div class="container px-0">
-              <div class="row g-3 align-items-center">
-                <div class="col-12 col-sm-8">
-                  <h1 class="hero-name mb-2">Kuan‑Lin (Brian) Chen (陳冠霖)</h1>
-                  <p class="hero-tagline mb-3">M.S. student @ NTU GICE</p>
-                  <div class="d-flex flex-wrap gap-2 mb-3">
-                      <a class="btn btn-sm btn-outline-primary"
-                         href="mailto:klchen901120@gmail.com"
-                         target="_blank" rel="noopener"
-                         aria-label="Email" data-bs-toggle="tooltip" data-bs-placement="top" title="Email">
-                        <i class="bi bi-envelope"></i>
-                      </a>
-                      <a class="btn btn-sm btn-outline-primary"
-                         href="files/Kuan-Lin (Brian) Chen Resume.pdf"
-                         target="_blank" rel="noopener"
-                         aria-label="CV" data-bs-toggle="tooltip" data-bs-placement="top" title="Resume">
-                        <i class="bi bi-file-earmark-text"></i>
-                      </a>
-                      <a class="btn btn-sm btn-outline-primary"
-                         href="https://scholar.google.com/citations?user=56m2uDUAAAAJ"
-                         target="_blank" rel="noopener"
-                         aria-label="Scholar" data-bs-toggle="tooltip" data-bs-placement="top" title="Google Scholar">
-                        <i class="bi bi-mortarboard"></i>
-                      </a>
-                      <a class="btn btn-sm btn-outline-primary"
-                         href="https://github.com/BrianChen1120"
-                         target="_blank" rel="noopener"
-                         aria-label="GitHub" data-bs-toggle="tooltip" data-bs-placement="top" title="GitHub">
-                        <i class="bi bi-github"></i>
-                      </a>
-                      <a class="btn btn-sm btn-outline-primary"
-                         href="https://www.linkedin.com/in/kuanlinchen1"
-                         target="_blank" rel="noopener"
-                         aria-label="LinkedIn" data-bs-toggle="tooltip" data-bs-placement="top" title="LinkedIn">
-                        <i class="bi bi-linkedin"></i>
-                      </a>
-                  </div>
-                </div>
-                <div class="col-12 col-sm-4 text-center text-sm-end">
-                  <img
-                    src="assets/myprofile.jpg"
-                    alt="Portrait of Kuan-Lin (Brian) Chen"
-                    class="rounded-4 img-fluid shadow"
-                    style="max-width: 150px;"
-                    loading="lazy"
-                    width="150" height="150"
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="right"
-                    data-bs-custom-class="tooltip-photo"
-                    data-bs-html="true"
-                    data-bs-title="This photo was taken in Mameda-machi, Hita, Oita Prefecture, Japan<br>
-                                   2025-10-11<br>
-                                   ======================<br>
-                                   Camera: Fujifilm X-T30 II<br>
-                                   Lens: Tamron 17–70mm f/2.8 Di III-A VC RXD (B070X)<br>
-                                   Exposure: 105 mm · f/5 · 1/320 s · ISO 320<br>"
-                  />
-                </div>
+              <div class="hero-photo text-center text-md-start">
+                <img
+                  src="assets/myprofile.jpg"
+                  alt="Portrait of Kuan-Lin (Brian) Chen"
+                  class="rounded-4 img-fluid shadow"
+                  loading="lazy"
+                  width="170" height="170"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="left"
+                  data-bs-custom-class="tooltip-photo"
+                  data-bs-html="true"
+                  data-bs-title="This photo was taken in Mameda-machi, Hita, Oita Prefecture, Japan<br>
+                                 2025-10-11<br>
+                                 ======================<br>
+                                 Camera: Fujifilm X-T30 II<br>
+                                 Lens: Tamron 17–70mm f/2.8 Di III-A VC RXD (B070X)<br>
+                                 Exposure: 105 mm · f/5 · 1/320 s · ISO 320<br>"
+                />
               </div>
             </div>
-          </header>
-
-          <!-- About -->
-          <section id="about" class="py-4 py-md-5 bg-body-tertiary border-top border-bottom reveal">
-            <div class="container px-0">
-              <h2 class="section-title h3 mb-3">About</h2>
-              <p>
-                I am currently a master's student at the <a href="https://gice.ntu.edu.tw/en/" target="_blank" rel="noopener" class="text-decoration-none">Graduate Institute of Communication Engineering, National Taiwan University (NTU)</a>,
-                advised by Professor <a href="https://djj.ee.ntu.edu.tw/index.htm" target="_blank" rel="noopener" class="text-decoration-none">Jian-Jiun Ding (丁建均)</a>.<br>
-                My research interests span computer vision, image processing, and deep learning.
-                Previously I explored semantic segmentation for motion-blur detection, camera ISP topics such as automatic white balance (AWB) and image quality assessment (IQA),
-                and generative modeling with latent diffusion, large language model.
-              </p>
-            </div>
-          </section>
+          </div>
+        </section>
 
           <!-- News -->
           <section id="news" class="py-4 py-md-5 bg-body-tertiary border-top border-bottom reveal">
             <div class="container px-0">
-              <h2 class="section-title h3 mb-3 d-flex align-items-center justify-content-between">
-                News
-                <button id="toggleOlder" class="btn btn-sm btn-outline-secondary"
-                        data-bs-toggle="collapse" data-bs-target="#news-older"
-                        aria-expanded="false" aria-controls="news-older">
-                  <i class="bi bi-chevron-down me-1"></i> Show earlier
-                </button>
-              </h2>
-              <div class="d-flex flex-column gap-3">
-                <!-- 這邊是今年度的動態消息 -->
-                <div class="d-flex gap-3">
+              <h2 class="section-title h3 mb-3">News</h2>
+              <div class="news-fade">
+                <div class="news-scroll d-flex flex-column gap-3" id="newsScroll"
+                     tabindex="0" role="region" aria-label="News timeline">
+                  <div class="d-flex gap-3">
+                    <div class="news-date">2026-07</div>
+                    <div>
+                      I received my M.S. degree from the
+                      <strong><a href="https://gice.ntu.edu.tw/en/" target="_blank" rel="noopener" class="text-decoration-none">Graduate Institute of Communication Engineering</a></strong>,
+                      <a href="https://www.ntu.edu.tw/english/" target="_blank" rel="noopener" class="text-decoration-none">National Taiwan University</a>.
+                    </div>
+                  </div>
+
+                  <div class="d-flex gap-3">
                   <div class="news-date">2026-06</div>
                   <div>
-                    Our paper
-                    <strong><a href="https://ntuneillee.github.io/research/rl-awb/" target="_blank" rel="noopener" class="text-decoration-none">
-                      RL-AWB: Deep Reinforcement Learning for Auto White Balance Correction in Low-Light Night-time Scenes
-                    </a></strong>
-                    is accepted by
-                    <strong><a href="https://eccv.ecva.net/" target="_blank" rel="noopener" class="text-decoration-none">ECCV 2026</a></strong>.
+                  Our paper
+                  <strong><a href="https://ntuneillee.github.io/research/rl-awb/" target="_blank" rel="noopener" class="text-decoration-none">
+                  RL-AWB: Deep Reinforcement Learning for Auto White Balance Correction in Low-Light Night-time Scenes
+                  </a></strong>
+                  is accepted by
+                  <strong><a href="https://eccv.ecva.net/" target="_blank" rel="noopener" class="text-decoration-none">ECCV 2026</a></strong>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2026-05</div>
                   <div>
-                    Our paper
-                    <strong><a href="project/anchorsteer/" rel="noopener" class="text-decoration-none">
-                      AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing
-                    </a></strong>
-                    is accepted by
-                    <strong><a href="https://kdd2026.kdd.org/" target="_blank" rel="noopener" class="text-decoration-none">KDD 2026</a></strong>.
+                  Our paper
+                  <strong><a href="project/anchorsteer/" rel="noopener" class="text-decoration-none">
+                  AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing
+                  </a></strong>
+                  is accepted by
+                  <strong><a href="https://kdd2026.kdd.org/" target="_blank" rel="noopener" class="text-decoration-none">KDD 2026</a></strong>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2025-12 → 2026-03</div>
                   <div>
-                    I work as a <i>AI Intern</i> at <strong><a href="https://www.gigabyte.com/us" target="_blank" rel="noopener" class="text-decoration-none">Gigabyte AI Lab</a></strong>.
+                  I worked as an <i>AI Intern</i> at <strong><a href="https://www.gigabyte.com/us" target="_blank" rel="noopener" class="text-decoration-none">Gigabyte AI Lab</a></strong>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2025-11</div>
                   <div>
-                    My book
-                    <strong><a href="https://www.drmaster.com.tw/Bookinfo.asp?BookID=MP22521" target="_blank" rel="noopener" class="text-decoration-none">
-                      AI 最強調整術：使用最佳化演算法，打造頂級機器學習模型（iThome鐵人賽系列書）
-                    </a></strong>
-                    is published by
-                    <a href="https://www.drmaster.com.tw/index.asp" target="_blank" rel="noopener" class="text-decoration-none">博碩文化 (DrMaster Press)</a>.
+                  My book
+                  <strong><a href="https://www.drmaster.com.tw/Bookinfo.asp?BookID=MP22521" target="_blank" rel="noopener" class="text-decoration-none">
+                  AI 最強調整術：使用最佳化演算法，打造頂級機器學習模型（iThome鐵人賽系列書）
+                  </a></strong>
+                  is published by
+                  <a href="https://www.drmaster.com.tw/index.asp" target="_blank" rel="noopener" class="text-decoration-none">博碩文化 (DrMaster Press)</a>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2025-10</div>
                   <div>
-                    Our paper
-                    <strong><a href="files/Guitar%20Tone%20Morphing%20by%20Diffusion-based%20Model.pdf" target="_blank" rel="noopener" class="text-decoration-none">
-                      Guitar Tone Morphing by Diffusion-based Model
-                    </a></strong>
-                    is accepted by
-                    <strong><a href="https://www.apsipa2025.org/wp/" target="_blank" rel="noopener" class="text-decoration-none">APSIPA ASC 2025</a></strong>.
+                  Our paper
+                  <strong><a href="files/Guitar%20Tone%20Morphing%20by%20Diffusion-based%20Model.pdf" target="_blank" rel="noopener" class="text-decoration-none">
+                  Guitar Tone Morphing by Diffusion-based Model
+                  </a></strong>
+                  is accepted by
+                  <strong><a href="https://www.apsipa2025.org/wp/" target="_blank" rel="noopener" class="text-decoration-none">APSIPA ASC 2025</a></strong>.
                   </div>
-                </div>
+                  </div>
 
-              </div>
-              <!-- 要隱藏的東東，News 只保留最近 5 筆，其餘收在這裡 -->
-              <div id="news-older" class="collapse">
-              <div class="mt-3 d-flex flex-column gap-3">
-                <!-- 這邊是更舊的動態消息 -->
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2025-10</div>
                   <div>
-                    Our paper
-                    <strong><a href="files/FRIEREN%20A%20Lightweight%20System%20for%20Face%20Resizing%20Image%20Detail%20Quality%20Evaluation%20via%20Robust%20Estimation%20of%20Image%20Naturalness.pdf" target="_blank" rel="noopener" class="text-decoration-none">
-                      FRIEREN: Face Resizing Image Quality Evaluation via Robust Estimation of Image Naturalness
-                    </a></strong>
-                    is accepted by
-                    <strong><a href="https://apccas2025.org/" target="_blank" rel="noopener" class="text-decoration-none">APCCAS 2025</a></strong>.
+                  Our paper
+                  <strong><a href="files/FRIEREN%20A%20Lightweight%20System%20for%20Face%20Resizing%20Image%20Detail%20Quality%20Evaluation%20via%20Robust%20Estimation%20of%20Image%20Naturalness.pdf" target="_blank" rel="noopener" class="text-decoration-none">
+                  FRIEREN: Face Resizing Image Quality Evaluation via Robust Estimation of Image Naturalness
+                  </a></strong>
+                  is accepted by
+                  <strong><a href="https://apccas2025.org/" target="_blank" rel="noopener" class="text-decoration-none">APCCAS 2025</a></strong>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2025-08</div>
                   <div>
-                    Our paper
-                    <strong><a href="https://doi.org/10.1016/j.engappai.2025.111862" target="_blank" rel="noopener" class="text-decoration-none">
-                      Deep reinforcement learning–based collision avoidance strategy for multiple UAVs
-                    </a></strong>
-                    is published in
-                    <strong><a href="https://www.sciencedirect.com/journal/engineering-applications-of-artificial-intelligence" target="_blank" rel="noopener" class="text-decoration-none">Engineering Applications of Artificial Intelligence</a></strong>.
+                  Our paper
+                  <strong><a href="https://doi.org/10.1016/j.engappai.2025.111862" target="_blank" rel="noopener" class="text-decoration-none">
+                  Deep reinforcement learning–based collision avoidance strategy for multiple UAVs
+                  </a></strong>
+                  is published in
+                  <strong><a href="https://www.sciencedirect.com/journal/engineering-applications-of-artificial-intelligence" target="_blank" rel="noopener" class="text-decoration-none">Engineering Applications of Artificial Intelligence</a></strong>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2025-07 → 2025-08</div>
                   <div>
-                    I work as a <i>Research Assistant</i> (Summer Internship) at <strong><a href="https://www.iis.sinica.edu.tw/en/index.html" target="_blank" rel="noopener" class="text-decoration-none">Academia Sinica Institute of Information Science</a></strong>.
+                  I worked as a <i>Research Assistant</i> (Summer Internship) at <strong><a href="https://www.iis.sinica.edu.tw/en/index.html" target="_blank" rel="noopener" class="text-decoration-none">Academia Sinica Institute of Information Science</a></strong>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2025-07</div>
                   <div>
-                    Our paper
-                    <strong><a href="files/Enhancement%20of%20Semantic%20Segmentation%20with%20Edge%20Networks%20Using%20Wavelets%20and%20Adaptive%20Canny%20Thresholding.pdf" target="_blank" rel="noopener" class="text-decoration-none">
-                      Enhancement of Semantic Segmentation with Edge Networks Using Wavelets and Adaptive Canny Thresholding
-                    </a></strong>
-                    is accepted by
-                    <strong><a href="https://www.icispc.org/index.html" target="_blank" rel="noopener" class="text-decoration-none">ICISPC 2025</a></strong>.
+                  Our paper
+                  <strong><a href="files/Enhancement%20of%20Semantic%20Segmentation%20with%20Edge%20Networks%20Using%20Wavelets%20and%20Adaptive%20Canny%20Thresholding.pdf" target="_blank" rel="noopener" class="text-decoration-none">
+                  Enhancement of Semantic Segmentation with Edge Networks Using Wavelets and Adaptive Canny Thresholding
+                  </a></strong>
+                  is accepted by
+                  <strong><a href="https://www.icispc.org/index.html" target="_blank" rel="noopener" class="text-decoration-none">ICISPC 2025</a></strong>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2025-02</div>
                   <div>
-                    Our paper
-                    <strong><a href="https://doi.org/10.1109/ICAIIC64266.2025.10920715" target="_blank" rel="noopener" class="text-decoration-none">
-                      Kolmogorov-Arnold Networks with Trainable Activation Functions for Data Regression and Classification
-                    </a></strong>
-                    is accepted by
-                    <strong><a href="http://2025.icaiic.org/" target="_blank" rel="noopener" class="text-decoration-none">ICAIIC 2025</a></strong>.
+                  Our paper
+                  <strong><a href="https://doi.org/10.1109/ICAIIC64266.2025.10920715" target="_blank" rel="noopener" class="text-decoration-none">
+                  Kolmogorov-Arnold Networks with Trainable Activation Functions for Data Regression and Classification
+                  </a></strong>
+                  is accepted by
+                  <strong><a href="http://2025.icaiic.org/" target="_blank" rel="noopener" class="text-decoration-none">ICAIIC 2025</a></strong>.
                   </div>
-                </div>
-                <div class="d-flex gap-3">
+                  </div>
+
+                  <div class="d-flex gap-3">
                   <div class="news-date">2024-12</div>
                   <div>
-                    I’m honored to receive <a href="https://ithelp.ithome.com.tw/2024ironman/event" target="_blank" rel="noopener" class="text-decoration-none">2024 iThome 鐵人賽</a>
-                    AI/ ML & Data組 <a href="https://ithelp.ithome.com.tw/2024ironman/reward" target="_blank" rel="noopener" class="text-decoration-none">冠軍 (Champion award)</a> for my work,
-                    <a href="https://ithelp.ithome.com.tw/users/20151029/ironman/7610" target="_blank" rel="noopener" class="text-decoration-none">「調整AI超參數好煩躁？來試試看最佳化演算法吧！」</a>.
+                  I’m honored to receive <a href="https://ithelp.ithome.com.tw/2024ironman/event" target="_blank" rel="noopener" class="text-decoration-none">2024 iThome 鐵人賽</a>
+                  AI/ ML & Data組 <a href="https://ithelp.ithome.com.tw/2024ironman/reward" target="_blank" rel="noopener" class="text-decoration-none">冠軍 (Champion award)</a> for my work,
+                  <a href="https://ithelp.ithome.com.tw/users/20151029/ironman/7610" target="_blank" rel="noopener" class="text-decoration-none">「調整AI超參數好煩躁？來試試看最佳化演算法吧！」</a>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2024-10</div>
                   <div>
-                    My book
-                    <strong><a href="https://www.drmaster.com.tw/Bookinfo.asp?BookID=MP22462" target="_blank" rel="noopener" class="text-decoration-none">
-                      《即學即用！精選 30 招辦公室超高效 AI 生產術：使用 ChatGPT × Copilot × Word × Excel × Gamma》(iThome 鐵人賽系列書)
-                    </a></strong>
-                    is published by
-                    <a href="https://www.drmaster.com.tw/index.asp" target="_blank" rel="noopener" class="text-decoration-none">博碩文化 (DrMaster Press)</a>.
+                  My book
+                  <strong><a href="https://www.drmaster.com.tw/Bookinfo.asp?BookID=MP22462" target="_blank" rel="noopener" class="text-decoration-none">
+                  《即學即用！精選 30 招辦公室超高效 AI 生產術：使用 ChatGPT × Copilot × Word × Excel × Gamma》(iThome 鐵人賽系列書)
+                  </a></strong>
+                  is published by
+                  <a href="https://www.drmaster.com.tw/index.asp" target="_blank" rel="noopener" class="text-decoration-none">博碩文化 (DrMaster Press)</a>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2024-09 → Present</div>
                   <div>
-                    I am now a master’s student in the
-                    <strong><a href="https://gice.ntu.edu.tw/en/" target="_blank" rel="noopener" class="text-decoration-none">
-                      Graduate Institute of Communication Engineering
-                    </a></strong>
-                    at <a href="https://www.ntu.edu.tw/english/" target="_blank" rel="noopener" class="text-decoration-none">National Taiwan University</a> (NTU GICE).
+                  I am now a master’s student in the
+                  <strong><a href="https://gice.ntu.edu.tw/en/" target="_blank" rel="noopener" class="text-decoration-none">
+                  Graduate Institute of Communication Engineering
+                  </a></strong>
+                  at <a href="https://www.ntu.edu.tw/english/" target="_blank" rel="noopener" class="text-decoration-none">National Taiwan University</a> (NTU GICE).
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2024-07</div>
                   <div>
-                    I receive the Presidential Award in 112-1.
+                  I receive the Presidential Award in 112-1.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2024-03</div>
                   <div>
-                    Our paper
-                    <strong><a href="https://doi.org/10.1109/JBHI.2024.3372649" target="_blank" rel="noopener" class="text-decoration-none">
-                      Developmental prediction of poststroke patients in activities of daily living by using tree-structured parzen estimator–optimized stacking ensemble approaches
-                    </a></strong>
-                    is published in
-                    <strong><a href="https://ieeexplore.ieee.org/xpl/RecentIssue.jsp?punumber=6221020" target="_blank" rel="noopener" class="text-decoration-none">
-                      IEEE Journal of Biomedical and Health Informatics
-                    </a></strong>.
+                  Our paper
+                  <strong><a href="https://doi.org/10.1109/JBHI.2024.3372649" target="_blank" rel="noopener" class="text-decoration-none">
+                  Developmental prediction of poststroke patients in activities of daily living by using tree-structured parzen estimator–optimized stacking ensemble approaches
+                  </a></strong>
+                  is published in
+                  <strong><a href="https://ieeexplore.ieee.org/xpl/RecentIssue.jsp?punumber=6221020" target="_blank" rel="noopener" class="text-decoration-none">
+                  IEEE Journal of Biomedical and Health Informatics
+                  </a></strong>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2023-12</div>
                   <div>
-                    Our paper
-                    <strong><a href="https://doi.org/10.32604/csse.2023.042078" target="_blank" rel="noopener" class="text-decoration-none">
-                      Optical Based Gradient-Weighted Class Activation Mapping and Transfer Learning Integrated Pneumonia Prediction Model
-                    </a></strong>
-                    is published in
-                    <strong><a href="https://www.techscience.com/journal/csse" target="_blank" rel="noopener" class="text-decoration-none">
-                      Computer Systems Science & Engineering
-                    </a></strong>.
+                  Our paper
+                  <strong><a href="https://doi.org/10.32604/csse.2023.042078" target="_blank" rel="noopener" class="text-decoration-none">
+                  Optical Based Gradient-Weighted Class Activation Mapping and Transfer Learning Integrated Pneumonia Prediction Model
+                  </a></strong>
+                  is published in
+                  <strong><a href="https://www.techscience.com/journal/csse" target="_blank" rel="noopener" class="text-decoration-none">
+                  Computer Systems Science & Engineering
+                  </a></strong>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2023-11</div>
                   <div>
-                    I’m honored to receive <a href="https://ithelp.ithome.com.tw/2023ironman/event" target="_blank" rel="noopener" class="text-decoration-none">2023 iThome 鐵人賽</a>
-                    AI & Data組 <a href="https://ithelp.ithome.com.tw/2023ironman/reward" target="_blank" rel="noopener" class="text-decoration-none">優選獎 (Merit award)</a> for my work,
-                    <a href="https://ithelp.ithome.com.tw/users/20151029/ironman/6421" target="_blank" rel="noopener" class="text-decoration-none">「生成式AI到底何方神聖？一窺生程式AI的真面目」</a>.
+                  I’m honored to receive <a href="https://ithelp.ithome.com.tw/2023ironman/event" target="_blank" rel="noopener" class="text-decoration-none">2023 iThome 鐵人賽</a>
+                  AI & Data組 <a href="https://ithelp.ithome.com.tw/2023ironman/reward" target="_blank" rel="noopener" class="text-decoration-none">優選獎 (Merit award)</a> for my work,
+                  <a href="https://ithelp.ithome.com.tw/users/20151029/ironman/6421" target="_blank" rel="noopener" class="text-decoration-none">「生成式AI到底何方神聖？一窺生程式AI的真面目」</a>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2023-10</div>
                   <div>
-                    Our paper
-                    <strong><a href="https://doi.org/10.1016/j.engappai.2023.106694" target="_blank" rel="noopener" class="text-decoration-none">
-                      Two-stage fuzzy object grasping controller for a humanoid robot with proximal policy optimization
-                    </a></strong>
-                    is published in
-                    <strong><a href="https://www.sciencedirect.com/journal/engineering-applications-of-artificial-intelligence" target="_blank" rel="noopener" class="text-decoration-none">
-                      Engineering Applications of Artificial Intelligence
-                    </a></strong>.
+                  Our paper
+                  <strong><a href="https://doi.org/10.1016/j.engappai.2023.106694" target="_blank" rel="noopener" class="text-decoration-none">
+                  Two-stage fuzzy object grasping controller for a humanoid robot with proximal policy optimization
+                  </a></strong>
+                  is published in
+                  <strong><a href="https://www.sciencedirect.com/journal/engineering-applications-of-artificial-intelligence" target="_blank" rel="noopener" class="text-decoration-none">
+                  Engineering Applications of Artificial Intelligence
+                  </a></strong>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2023-08</div>
                   <div>
-                    Our paper
-                    <strong><a href="https://doi.org/10.1016/j.aei.2023.102067" target="_blank" rel="noopener" class="text-decoration-none">
-                      Sequential sensor fusion-based W-DDPG gait controller of bipedal robots for adaptive slope walking
-                    </a></strong>
-                    is published in
-                    <strong><a href="https://www.sciencedirect.com/journal/advanced-engineering-informatics" target="_blank" rel="noopener" class="text-decoration-none">
-                      Advanced Engineering Informatics
-                    </a></strong>.
+                  Our paper
+                  <strong><a href="https://doi.org/10.1016/j.aei.2023.102067" target="_blank" rel="noopener" class="text-decoration-none">
+                  Sequential sensor fusion-based W-DDPG gait controller of bipedal robots for adaptive slope walking
+                  </a></strong>
+                  is published in
+                  <strong><a href="https://www.sciencedirect.com/journal/advanced-engineering-informatics" target="_blank" rel="noopener" class="text-decoration-none">
+                  Advanced Engineering Informatics
+                  </a></strong>.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2023-07</div>
                   <div>
-                    I’m honored to receive 2023 中國工程師學會(<a href="https://www.cie.org.tw/app/index.php?Lang=en" target="_blank" rel="noopener" class="text-decoration-none">Chinese Institute of Engineers, CIE</a>)學生分會工程論文競賽 資訊組 佳作獎.
+                  I’m honored to receive 2023 中國工程師學會(<a href="https://www.cie.org.tw/app/index.php?Lang=en" target="_blank" rel="noopener" class="text-decoration-none">Chinese Institute of Engineers, CIE</a>)學生分會工程論文競賽 資訊組 佳作獎.
                   </div>
-                </div>
+                  </div>
 
-                <div class="d-flex gap-3">
+                  <div class="d-flex gap-3">
                   <div class="news-date">2023-04</div>
                   <div>
-                    Our paper
-                    <strong><a href="https://doi.org/10.1016/j.aei.2023.102009" target="_blank" rel="noopener" class="text-decoration-none">
-                      Intelligent proximal-policy-optimization-based decision-making system for humanoid robots
-                    </a></strong>
-                    is published in
-                    <strong><a href="https://www.sciencedirect.com/journal/advanced-engineering-informatics" target="_blank" rel="noopener" class="text-decoration-none">
-                      Advanced Engineering Informatics
-                    </a></strong>.
+                  Our paper
+                  <strong><a href="https://doi.org/10.1016/j.aei.2023.102009" target="_blank" rel="noopener" class="text-decoration-none">
+                  Intelligent proximal-policy-optimization-based decision-making system for humanoid robots
+                  </a></strong>
+                  is published in
+                  <strong><a href="https://www.sciencedirect.com/journal/advanced-engineering-informatics" target="_blank" rel="noopener" class="text-decoration-none">
+                  Advanced Engineering Informatics
+                  </a></strong>.
                   </div>
-              </div>
-              </div>
-
-                <!-- 提供複製用的 -->
-<!--                <div class="d-flex gap-3">-->
-<!--                  <div class="news-date">2024-03</div>-->
-<!--                  <div>-->
-<!--                    Our paper-->
-<!--                    <strong><a href="#" target="_blank" rel="noopener" class="text-decoration-none">-->
-<!--                      Paper Title-->
-<!--                    </a></strong>-->
-<!--                    is published in-->
-<!--                    <strong><a href="#" target="_blank" rel="noopener" class="text-decoration-none">-->
-<!--                      Journal or Conference Name-->
-<!--                    </a></strong>.-->
-<!--                  </div>-->
-<!--                </div>-->
-
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -666,12 +674,18 @@
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="me-3">
                   <h2 class="section-title h3 mb-1">Research</h2>
-                  <div class="text-muted small mb-0">H-index: 5 &nbsp;|&nbsp; i10-index: 3</div>
+                  <div class="text-muted small mb-0 d-flex flex-wrap align-items-center gap-2">
+                    <span>H-index: 5 &nbsp;|&nbsp; i10-index: 3</span>
+                    <a class="link-chip" href="https://scholar.google.com/citations?user=56m2uDUAAAAJ"
+                       target="_blank" rel="noopener">
+                      <i class="bi bi-mortarboard me-1"></i>Google Scholar
+                    </a>
+                  </div>
                 </div>
               </div>
 
               <style>
-                section[id]{ scroll-margin-top: 50px; } /* 視你的手機 navbar 高度微調 */
+                section[id]{ scroll-margin-top: 76px; } /* 視你的手機 navbar 高度微調 */
                 .icon-btn{
                   background: transparent;
                   border: 0;
@@ -1160,8 +1174,7 @@
               <div>Last updated: <span id="updated"></span></div>
             </div>
           </footer>
-        </main>
-      </div>
+      </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -1234,25 +1247,114 @@
       (function(){
         const navs = document.querySelectorAll('.glass-nav');
         if (!navs.length) return;
+        const names = document.querySelectorAll('.topbar-name');
+        const hero = document.querySelector('#about .hero-name');
         const onScroll = () => {
-          const s = window.scrollY > 8;
-          navs.forEach(n => n.classList.toggle('scrolled', s));
+          const scrolled = window.scrollY > 8;
+          navs.forEach(n => n.classList.toggle('scrolled', scrolled));
+          // 名字捲出視野後才在導覽列淡入，避免同一個名字同時出現兩次
+          const show = hero ? hero.getBoundingClientRect().bottom < 56 : scrolled;
+          names.forEach(n => n.classList.toggle('show', show));
         };
         document.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll);
         onScroll();
       })();
 
-      // ---------- News: toggle older items button label ----------
+      // ---------- 錨點捲動 ----------
+      // .reveal 未顯形時帶有 translateY(32px)，若交給瀏覽器處理錨點，它會用「視覺位置」
+      // 計算落點，動畫結束後區塊上移 32px，標題就被固定導覽列蓋住。
+      // 因此改用 offsetTop（版面位置，不受 transform 影響）自行計算。
       (function () {
-        const btn = document.getElementById('toggleOlder');
-        const older = document.getElementById('news-older');
-        if (!btn || !older) return;
-        older.addEventListener('shown.bs.collapse', function () {
-          btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i> Hide earlier';
+        function layoutTop(el) {
+          let y = 0;
+          for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
+          return y;
+        }
+        function goTo(target, smooth) {
+          if (target.classList.contains('reveal')) {
+            target.classList.add('visible');
+            target.classList.remove('above');
+          }
+          const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+          window.scrollTo({
+            top: Math.max(0, layoutTop(target) - margin),
+            behavior: smooth ? 'smooth' : 'auto'
+          });
+        }
+        document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+          a.addEventListener('click', function (e) {
+            const id = a.getAttribute('href');
+            if (!id || id.length < 2) return;
+            const target = document.querySelector(id);
+            if (!target) return;
+            e.preventDefault();
+            goTo(target, true);
+            history.pushState(null, '', id);
+          });
         });
-        older.addEventListener('hidden.bs.collapse', function () {
-          btn.innerHTML = '<i class="bi bi-chevron-down me-1"></i> Show earlier';
-        });
+        // 以 #hash 直接開啟：資源載入會改變版面高度，載入完成後再校正一次
+        if (location.hash.length > 1) {
+          const t = document.querySelector(location.hash);
+          if (t) {
+            const settle = function () { goTo(t, false); };
+            requestAnimationFrame(settle);
+            window.addEventListener('load', function () {
+              settle();
+              setTimeout(settle, 200);
+            });
+          }
+        }
+      })();
+
+      // ---------- Hero tagline 打字機（僅在可見且分頁在前景時執行） ----------
+      (function () {
+        const el = document.getElementById('typeText');
+        if (!el) return;
+        const PHRASES = ['Computer Vision', 'Image Processing',
+                         'Image Signal Processing', 'Computational Photography'];
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          el.textContent = PHRASES[0];
+          return;
+        }
+        let pi = 0, ci = 0, deleting = false, timer = 0, onScreen = true;
+
+        function stop() { clearTimeout(timer); timer = 0; }
+        function tick() {
+          const word = PHRASES[pi];
+          ci += deleting ? -1 : 1;
+          el.textContent = word.slice(0, ci);
+          let delay = deleting ? 34 : 62;
+          if (!deleting && ci >= word.length) { deleting = true; delay = 1500; }
+          else if (deleting && ci <= 0) { deleting = false; pi = (pi + 1) % PHRASES.length; delay = 320; }
+          timer = setTimeout(tick, delay);
+        }
+        function run() {
+          const active = onScreen && !document.hidden;
+          if (active && !timer) timer = setTimeout(tick, 400);
+          else if (!active) stop();
+        }
+
+        new IntersectionObserver(function (entries) {
+          onScreen = entries[0].isIntersecting;
+          run();
+        }).observe(el);
+        document.addEventListener('visibilitychange', run);
+        run();
+      })();
+
+      // ---------- News: 捲到底時隱藏底部漸層 ----------
+      (function () {
+        const box = document.getElementById('newsScroll');
+        if (!box) return;
+        const fade = box.closest('.news-fade');
+        const sync = () => {
+          const atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 4;
+          fade.classList.toggle('at-end', atEnd || box.scrollHeight <= box.clientHeight);
+        };
+        box.addEventListener('scroll', sync, { passive: true });
+        window.addEventListener('resize', sync);
+        sync();
       })();
     </script>
 
