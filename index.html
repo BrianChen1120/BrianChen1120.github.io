@@ -182,6 +182,17 @@
         .type-caret{ animation:none; opacity:.55; }
       }
 
+      /* === 社群按鈕：寬螢幕放頂端列，窄螢幕收到大頭照下方（3+2） === */
+      .topbar-social .btn{ --bs-btn-padding-y:.2rem; --bs-btn-padding-x:.5rem; }
+      .hero-social{
+        display:grid; grid-template-columns:repeat(3, 1fr); gap:.5rem;
+        max-width:170px; margin-top:.9rem;
+      }
+      @media (min-width:1200px){ .hero-social{ display:none; } }
+      @media (max-width:767.98px){
+        .hero-social{ max-width:132px; margin-inline:auto; }
+      }
+
       /* === 上方欄位的名字：捲過 Hero 後才淡入（保留寬度，避免版面位移） === */
       .topbar-name{
         display:inline-block; white-space:nowrap; overflow:hidden;
@@ -222,8 +233,6 @@
         .news-scroll{ max-height:60vh; }
       }
 
-      /* 上方欄位的社群按鈕 */
-      .topbar-social .btn{ --bs-btn-padding-y:.2rem; --bs-btn-padding-x:.5rem; }
 
       .tooltip-photo .tooltip-inner{
         max-width: 260px;
@@ -234,7 +243,7 @@
   </head>
   <body>
     <!-- Mobile top nav (only on small screens) -->
-    <nav class="navbar navbar-expand-md glass-nav sticky-top d-lg-none">
+    <nav class="navbar navbar-expand-lg glass-nav sticky-top d-lg-none">
       <div class="container">
         <a class="navbar-brand fw-bold d-flex align-items-center gap-2 m-0 text-decoration-none" href="#top" aria-label="Go to top">
           <img src="assets/favicon.png" alt="" width="22" height="22" class="rounded-2">
@@ -254,36 +263,6 @@
             <li class="nav-item"><a class="nav-link" href="#works">Research</a></li>
             <li class="nav-item"><a class="nav-link" href="#misc">Miscellanea</a></li>
             <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-            <li class="w-100 my-2 border-top"></li>
-            <li class="nav-item w-100 px-2 py-1">
-              <div class="d-flex flex-wrap gap-2 topbar-social">
-                <a class="btn btn-sm btn-outline-primary" href="mailto:klchen901120@gmail.com"
-                   target="_blank" rel="noopener" aria-label="Email"
-                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="Email">
-                  <i class="bi bi-envelope"></i>
-                </a>
-                <a class="btn btn-sm btn-outline-primary" href="files/Kuan-Lin (Brian) Chen Resume.pdf"
-                   target="_blank" rel="noopener" aria-label="Resume"
-                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="Resume">
-                  <i class="bi bi-file-earmark-text"></i>
-                </a>
-                <a class="btn btn-sm btn-outline-primary" href="https://scholar.google.com/citations?user=56m2uDUAAAAJ"
-                   target="_blank" rel="noopener" aria-label="Google Scholar"
-                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="Google Scholar">
-                  <i class="bi bi-mortarboard"></i>
-                </a>
-                <a class="btn btn-sm btn-outline-primary" href="https://github.com/BrianChen1120"
-                   target="_blank" rel="noopener" aria-label="GitHub"
-                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="GitHub">
-                  <i class="bi bi-github"></i>
-                </a>
-                <a class="btn btn-sm btn-outline-primary" href="https://www.linkedin.com/in/kuanlinchen1"
-                   target="_blank" rel="noopener" aria-label="LinkedIn"
-                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="LinkedIn">
-                  <i class="bi bi-linkedin"></i>
-                </a>
-              </div>
-            </li>
             <li class="w-100 my-2 border-top"></li>
             <li class="nav-item">
               <a class="nav-link d-flex align-items-center gap-1" href="gallery.html" rel="noopener" aria-label="Gallery">
@@ -318,7 +297,7 @@
         </div>
 
         <div class="d-flex align-items-center gap-4">
-          <div class="d-flex align-items-center gap-3 topbar-social">
+          <div class="topbar-social d-none d-xl-flex align-items-center gap-3">
             <a class="btn btn-sm btn-outline-primary" href="mailto:klchen901120@gmail.com"
                target="_blank" rel="noopener" aria-label="Email"
                data-bs-toggle="tooltip" data-bs-placement="bottom" title="Email">
@@ -407,6 +386,33 @@
                                  Lens: Tamron 17–70mm f/2.8 Di III-A VC RXD (B070X)<br>
                                  Exposure: 105 mm · f/5 · 1/320 s · ISO 320<br>"
                 />
+                <div class="hero-social">
+                  <a class="btn btn-sm btn-outline-primary" href="mailto:klchen901120@gmail.com"
+                     target="_blank" rel="noopener" aria-label="Email"
+                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Email">
+                    <i class="bi bi-envelope"></i>
+                  </a>
+                  <a class="btn btn-sm btn-outline-primary" href="files/Kuan-Lin (Brian) Chen Resume.pdf"
+                     target="_blank" rel="noopener" aria-label="Resume"
+                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Resume">
+                    <i class="bi bi-file-earmark-text"></i>
+                  </a>
+                  <a class="btn btn-sm btn-outline-primary" href="https://scholar.google.com/citations?user=56m2uDUAAAAJ"
+                     target="_blank" rel="noopener" aria-label="Google Scholar"
+                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="Google Scholar">
+                    <i class="bi bi-mortarboard"></i>
+                  </a>
+                  <a class="btn btn-sm btn-outline-primary" href="https://github.com/BrianChen1120"
+                     target="_blank" rel="noopener" aria-label="GitHub"
+                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="GitHub">
+                    <i class="bi bi-github"></i>
+                  </a>
+                  <a class="btn btn-sm btn-outline-primary" href="https://www.linkedin.com/in/kuanlinchen1"
+                     target="_blank" rel="noopener" aria-label="LinkedIn"
+                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="LinkedIn">
+                    <i class="bi bi-linkedin"></i>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -1135,7 +1141,11 @@
           <!-- Contact -->
           <section id="contact" class="py-4 py-md-5 reveal">
             <div class="container px-0">
-              <h2 class="section-title h3 mb-3">Contact</h2>
+              <h2 class="section-title h3 mb-2">Contact</h2>
+              <p class="text-muted mb-4">
+                Interested in collaborating, or just want to say hi?
+                Feel free to <a href="mailto:klchen901120@gmail.com" class="text-decoration-none">drop me an email</a>.
+              </p>
               <div class="row g-4">
                 <!-- Left: Contact Me -->
                 <div class="col-12 col-md-6">
