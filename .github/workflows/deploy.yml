@@ -22,9 +22,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 需要完整歷史，才查得到 index.html 最後一次被改動的 commit
 
       - name: Strip comments
         run: python .github/scripts/strip_comments.py .
+
+      # 首頁頁尾的 Last updated = index.html 最後一次 commit 的日期（只改 gallery 等其他頁不會更新）
+      - name: Stamp homepage last-updated date
+        run: |
+          d=$(git log -1 --format=%cs -- index.html)
+          # 查不到日期就保留 HTML 內的靜態日期；找不到標記也不讓部署失敗
+          if [ -n "$d" ]; then
+            sed -i -E "s#(<span id=\"updated\">)[0-9-]*(</span>)#\1${d}\2#" dist/index.html
+          fi
+          grep -o '<span id="updated">[^<]*' dist/index.html || echo "updated marker not found"
 
       - uses: actions/configure-pages@v5
 

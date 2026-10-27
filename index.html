@@ -15,12 +15,26 @@
 
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+    <!-- Bootstrap Icons：非阻塞載入（icon 都在固定尺寸容器內，晚到不會造成位移） -->
+    <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+          onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" /></noscript>
     <link rel="icon" href="assets/favicon.png" sizes="any">
-    <!-- Bootstrap Icons (Flickr) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6/css/all.min.css">
+    <!-- FontAwesome 已移除：首頁沒有任何 fa-* icon（各頁 CSS 各自內嵌，其他頁不受影響） -->
 
+
+    <!-- 在首次繪製前套用主題，避免深色模式閃白（邏輯與底部 applyTheme 相同） -->
+    <script>
+      (function () {
+        var t = null;
+        try { t = localStorage.getItem('pref-theme'); } catch (e) {}
+        if (t !== 'light' && t !== 'dark') {
+          t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-bs-theme', t);
+        document.documentElement.classList.add('js');
+      })();
+    </script>
 
     <style>
       /* === Motion tokens（與 gallery.html 共用同一套） === */
@@ -29,43 +43,340 @@
         --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
         --dur-press: 160ms;
         --dur-reveal: 0.7s;
+        --dur-header: 340ms;
+        --header-h: 76px;
       }
+
+      /* === Nordic Calm palette：覆寫 Bootstrap 變數，不另立主題系統 === */
+      :root, [data-bs-theme="light"]{
+        --nc-bg: #F6F5F1;
+        --nc-surface: #FFFFFF;
+        --nc-surface-2: #FBFAF7;
+        --nc-text: #252A29;
+        --nc-text-2: #5B6762;
+        --nc-accent: #4E6C65;
+        --nc-accent-soft: rgba(87, 118, 111, .12);
+        --nc-line: #DEDFD8;
+        --nc-glass: rgba(251, 250, 247, .62);
+        --nc-glass-strong: rgba(251, 250, 247, .84);
+        --nc-glass-line: rgba(37, 42, 41, .08);
+        --nc-shadow-float: 0 10px 30px -12px rgba(37, 42, 41, .22), 0 2px 6px rgba(37, 42, 41, .05);
+
+        --bs-body-bg: var(--nc-bg);
+        --bs-body-bg-rgb: 246, 245, 241;
+        --bs-body-color: var(--nc-text);
+        --bs-body-color-rgb: 37, 42, 41;
+        --bs-emphasis-color: #161A19;
+        --bs-secondary-color: rgba(37, 42, 41, .72);
+        --bs-tertiary-bg: #EFEEE8;
+        --bs-tertiary-bg-rgb: 239, 238, 232;
+        --bs-border-color: var(--nc-line);
+        --bs-link-color: var(--nc-accent);
+        --bs-link-color-rgb: 78, 108, 101;
+        --bs-link-hover-color: #3A534D;
+        --bs-link-hover-color-rgb: 58, 83, 77;
+        --bs-primary: var(--nc-accent);
+        --bs-primary-rgb: 78, 108, 101;
+        --bs-focus-ring-color: rgba(78, 108, 101, .35);
+        --thumb-blue: #A9BFB7;
+        --thumb-blue-soft: rgba(87, 118, 111, .12);
+      }
+      [data-bs-theme="dark"]{
+        --nc-bg: #191D1C;
+        --nc-surface: #232927;
+        --nc-surface-2: #1F2422;
+        --nc-text: #F1F0EA;
+        --nc-text-2: #AFB8B1;
+        --nc-accent: #A5C4B4;
+        --nc-accent-soft: rgba(165, 196, 180, .12);
+        --nc-line: #3B4540;
+        --nc-glass: rgba(32, 38, 36, .58);
+        --nc-glass-strong: rgba(32, 38, 36, .84);
+        --nc-glass-line: rgba(241, 240, 234, .08);
+        --nc-shadow-float: 0 12px 32px -12px rgba(0, 0, 0, .6), 0 2px 6px rgba(0, 0, 0, .25);
+
+        --bs-body-bg: var(--nc-bg);
+        --bs-body-bg-rgb: 25, 29, 28;
+        --bs-body-color: var(--nc-text);
+        --bs-body-color-rgb: 241, 240, 234;
+        --bs-emphasis-color: #FFFFFF;
+        --bs-secondary-color: rgba(241, 240, 234, .7);
+        --bs-tertiary-bg: #1F2422;
+        --bs-tertiary-bg-rgb: 31, 36, 34;
+        --bs-border-color: var(--nc-line);
+        --bs-link-color: var(--nc-accent);
+        --bs-link-color-rgb: 165, 196, 180;
+        --bs-link-hover-color: #C4DCCF;
+        --bs-link-hover-color-rgb: 196, 220, 207;
+        --bs-primary: var(--nc-accent);
+        --bs-primary-rgb: 165, 196, 180;
+        --bs-focus-ring-color: rgba(165, 196, 180, .4);
+        --thumb-blue: #4F6A5F;
+        --thumb-blue-soft: rgba(165, 196, 180, .12);
+      }
+      .btn-outline-primary{
+        --bs-btn-color: var(--nc-accent);
+        --bs-btn-border-color: var(--nc-line);
+        --bs-btn-hover-color: var(--nc-accent);
+        --bs-btn-hover-bg: var(--nc-accent-soft);
+        --bs-btn-hover-border-color: var(--nc-accent);
+        --bs-btn-active-color: var(--nc-accent);
+        --bs-btn-active-bg: var(--nc-accent-soft);
+        --bs-btn-active-border-color: var(--nc-accent);
+        --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+      }
+      :focus-visible{ outline: 2px solid var(--nc-accent); outline-offset: 2px; }
 
       html { scroll-behavior: smooth; }
-      body { font-optical-sizing: auto; }
+      body {
+        font-optical-sizing: auto; line-height: 1.6;
+        /* 頂端一層靜態自然光（不動畫、不額外請求） */
+        /* Ambient Light：三層低透明度漸層，像日光斜照在牆上（靜態，只在頁首約 720px） */
+        background-image:
+          radial-gradient(1100px 520px at 12% -120px, var(--nc-glow-1), transparent 70%),
+          radial-gradient(900px 460px at 88% -160px, var(--nc-glow-2), transparent 70%),
+          radial-gradient(760px 360px at 58% 140px, var(--nc-glow-3), transparent 70%);
+        background-repeat: no-repeat;
+      }
+      :root, [data-bs-theme="light"]{
+        --nc-glow-1: rgba(87, 118, 111, .13); --nc-glow-2: rgba(226, 206, 176, .32);
+        --nc-glow-3: rgba(255, 252, 244, .55);
+      }
+      [data-bs-theme="dark"]{
+        --nc-glow-1: rgba(120, 160, 142, .10); --nc-glow-2: rgba(170, 140, 96, .07);
+        --nc-glow-3: rgba(214, 200, 168, .035);
+      }
+      .container-xxl{ --bs-gutter-x: 2rem; }    /* 手機兩側 16px，與 header 對齊 */
       .nav-link { font-weight: 600; }
       .hero-name {
-        font-size: clamp(2.2rem, 4vw, 3rem); font-weight: 800;
-        letter-spacing: -0.02em; line-height: 1.08;
+        font-size: clamp(2.1rem, 4.2vw, 3.1rem); font-weight: 700;
+        letter-spacing: -0.025em; line-height: 1.08;
+        color: var(--bs-emphasis-color);
       }
-      .hero-tagline { font-size: 1.1rem; opacity: .9; }
+      .hero-tagline { font-size: 1.1rem; color: var(--nc-accent); font-weight: 500; }
       .quick-links a { text-decoration: none; }
-      .section-title { font-weight: 800; letter-spacing: -0.01em; }
-      .news-date { width: 7.5rem; flex: 0 0 auto; opacity: .7; }
+      .section-title {
+        font-weight: 700; letter-spacing: -0.02em;
+        color: var(--bs-emphasis-color);
+      }
+      .news-date { width: 7.5rem; flex: 0 0 auto; color: var(--nc-text-2); font-variant-numeric: tabular-nums; }
       .card-title a { text-decoration: none; }
-      .footer { opacity: .7; }
+      .footer { color: var(--nc-text-2); }
 
-      /* === Glass chrome（半透明毛玻璃導覽列，內容從底下滑過） === */
+      /* 內文連結：細底線從左滑入（.text-decoration-none 帶 !important，故改用 background 畫線） */
+      main a.text-decoration-none, #contact a:not(.btn){
+        text-decoration: none;
+        background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+        transition: background-size .25s var(--ease-out), color .2s ease;
+      }
+      main a.text-decoration-none:hover, #contact a:not(.btn):hover{ background-size: 100% 1px; }
+
+      /* === Floating glass header ===
+         外層 .site-header 固定高度（sticky），只有內層膠囊變形 → 捲動時版面不位移。
+         頂端：寬、淡的玻璃；捲過 ~64px 後（.is-compact）收窄、浮起、玻璃變濃。 */
+      .skip-link{
+        position:fixed; left:1rem; top:.75rem; z-index:2000;   /* fixed：捲動中 focus 也不會把頁面拉回頂端 */
+        padding:.5rem .9rem; border-radius:.5rem;
+        background:var(--nc-surface); color:var(--nc-text); text-decoration:none;
+        transform:translateY(-300%);       /* 移出畫面但仍可 focus（不用 visibility:hidden） */
+      }
+      .skip-link:focus{ transform:none; box-shadow:var(--nc-shadow-float); }
+
+      /* main 自成堆疊層：裡面任何 z-index / 3D 卡片都不會蓋過 header（lightbox 掛在 body，z 3000 不受影響） */
+      main{ isolation: isolate; }
+      .site-header{
+        position: sticky; top: 0; z-index: 1030;
+        height: var(--header-h);
+        padding: 12px 16px 0;
+        pointer-events: none;          /* 膠囊以外的透明區域不擋點擊 */
+      }
+      /* 三種狀態，同一個元件：
+         頂端          → 寬、淡的玻璃（width: min(1296px, 100%)）
+         .is-compact   → 只有內容寬度的小 pill（--nav-w-c，由 JS 量測）
+         .is-open      → 從 pill 展開成完整導覽（--nav-w-o）
+         寬度只在這個小元素上過渡，外層高度固定，不影響文件排版。 */
       .glass-nav{
-        background: rgba(255, 255, 255, .65);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        box-shadow: 0 1px 0 rgba(0, 0, 0, .04);
-        transition: box-shadow .3s ease, background-color .3s ease;
+        pointer-events: auto;
+        position: relative;
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        width: min(1296px, 100%); height: 56px; margin-inline: auto;
+        padding: 0 .5rem 0 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--nc-glass-line);
+        background: var(--nc-glass);
+        backdrop-filter: blur(18px) saturate(160%);
+        -webkit-backdrop-filter: blur(18px) saturate(160%);
+        box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+        overflow: hidden;
+        transition: width var(--dur-header) var(--ease-out),
+                    height var(--dur-header) var(--ease-out),
+                    padding var(--dur-header) var(--ease-out),
+                    background-color var(--dur-header) ease,
+                    box-shadow var(--dur-header) ease;
       }
-      [data-bs-theme="dark"] .glass-nav{
-        background: rgba(18, 18, 20, .6);
-        box-shadow: 0 1px 0 rgba(255, 255, 255, .06);
+      .glass-nav :focus-visible{ outline-offset: -2px; }   /* overflow:hidden 下 focus ring 不被裁切 */
+      .site-header.is-compact .glass-nav{
+        width: min(var(--nav-w-c, 220px), 100%);
+        height: 48px;
+        padding: 0 .3rem 0 .75rem;
+        background: var(--nc-glass-strong);
+        box-shadow: var(--nc-shadow-float);
       }
-      /* scroll edge effect：捲動後才浮出陰影，取代硬分隔線 */
-      .glass-nav.scrolled{ box-shadow: 0 2px 16px rgba(0, 0, 0, .08); }
-      [data-bs-theme="dark"] .glass-nav.scrolled{ box-shadow: 0 2px 18px rgba(0, 0, 0, .45); }
+      .site-header.is-compact.is-open .glass-nav{
+        width: min(var(--nav-w-o, 1160px), 100%);
+        padding: 0 .5rem 0 1rem;
+      }
+      /* 不支援 backdrop-filter / 使用者要求降低透明度：改用實色表面 */
+      @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+        .glass-nav, .site-header.is-compact .glass-nav, .nav-panel{ background: var(--nc-surface-2); }
+      }
       @media (prefers-reduced-transparency: reduce){
-        .glass-nav{
-          background: var(--bs-body-bg);
+        .glass-nav, .site-header.is-compact .glass-nav, .nav-panel{
+          background: var(--nc-surface-2);
           backdrop-filter: none; -webkit-backdrop-filter: none;
-          border-bottom: 1px solid var(--bs-border-color);
         }
+      }
+
+      /* 三欄：左（品牌 + 展開鈕）與右側動作各佔 1fr，連結真正置中 */
+      .nav-left{
+        flex: 1 1 0; min-width: 0;
+        display:flex; align-items:center; gap:.35rem;
+      }
+      .nav-brand{
+        flex: 0 1 auto; min-width: 0; overflow: hidden;
+        display:flex; align-items:center; gap:.55rem; min-height:44px;
+        color: var(--nc-text); font-weight: 700; text-decoration: none;
+        border-radius: 999px;
+      }
+      .nav-brand img{ border-radius:.4rem; flex:0 0 auto; }
+      .nav-links{
+        list-style:none; margin:0; padding:0;
+        display:flex; flex: 0 0 auto; align-items:center; gap:.15rem;
+      }
+      .nav-links > li{ flex: 0 0 auto; }
+      .glass-nav .nav-link{
+        display:inline-flex; align-items:center; gap:.4rem;
+        min-height:40px; padding:0 .85rem; border-radius:999px;
+        color: var(--nc-text-2); font-weight:600; font-size:.95rem; white-space:nowrap;
+        transition: color .2s ease, background-color .2s ease;
+      }
+      .glass-nav .nav-link:hover{ color: var(--nc-text); background: var(--nc-accent-soft); }
+      .glass-nav .nav-link[aria-current]{ color: var(--nc-accent); background: var(--nc-accent-soft); }
+      .nav-actions{ flex: 1 1 0; display:flex; align-items:center; justify-content:flex-end; gap:.35rem; }
+      .nav-actions > *, .topbar-social > *{ flex-shrink: 0; }   /* 讓 JS 量到的是自然寬度 */
+      .topbar-social{ gap:.4rem; margin-right:.35rem; }
+      .nav-icon{
+        width:44px; height:44px; border-radius:999px;
+        display:inline-flex; align-items:center; justify-content:center;
+        color: var(--nc-text); font-size:1.05rem;
+      }
+      .nav-icon:hover{ background: var(--nc-accent-soft); opacity:1; }
+
+      /* === Section rail：收合 pill 內的區塊導覽 ===
+         同一組 #navLinks 連結，只是換樣式（焦點不會因切換狀態而遺失）：
+         目前區塊 = 完整名稱 + 強調；前後各一 = 完整名稱、次要色；其餘 = 只剩首字母。
+         換區塊時，字尾用 max-width 從首字母滑開成完整單字。 */
+      .nl-i, .nl-r{ display:inline-block; white-space:nowrap; }
+      .nav-links .nav-link{ gap: 0; }   /* 首字母與字尾之間不能有 flex gap */
+      .nl-r{
+        overflow:hidden; vertical-align:bottom;
+        transition: max-width var(--dur-header) var(--ease-out), opacity .2s ease;
+      }
+      .rail-mode .nl-r{ max-width: var(--rw, 8rem); }   /* 上限只在 rail 用；完整導覽字級較大，不能被截 */
+      .rail-mode .nav-links{ gap: 0; }
+      .rail-mode .nav-links .nav-link{
+        min-height:36px; padding: 0 .4rem; font-size:.88rem;
+        color: var(--nc-text-2); background: transparent;
+        transition: color .2s ease, background-color .2s ease, padding var(--dur-header) var(--ease-out);
+      }
+      .rail-mode .nav-links .nav-link.is-cur{
+        padding: 0 .7rem; color: var(--nc-accent); background: var(--nc-accent-soft); font-weight:700;
+      }
+      .rail-mode .nav-links .nav-link.is-far .nl-r{ max-width:0; opacity:0; }
+      .rail-mode .nav-links .nav-link:hover{ color: var(--nc-text); }
+
+      /* 桌機收合時的展開鈕：只有 chevron（觸控筆電沒有 hover，也能點開取得主題 / 社群連結） */
+      .nav-expand{
+        position:absolute; visibility:hidden; pointer-events:none;
+        display:inline-flex; align-items:center; justify-content:center;
+        width:32px; height:32px; padding:0; border:0; border-radius:999px;
+        background: transparent; color: var(--nc-text-2);
+        transition: background-color .2s ease, color .2s ease;
+      }
+      .nav-expand:hover{ background: var(--nc-accent-soft); color: var(--nc-text); }
+      .nav-expand svg{ flex:0 0 auto; transition: transform var(--dur-header) var(--ease-out); }
+
+      @media (min-width:992px){
+        .site-header.is-compact .glass-nav{ gap: .25rem; }
+        .site-header.is-compact .nav-expand{ position:static; visibility:visible; pointer-events:auto; }
+        /* 收合：favicon + section rail + chevron；右側動作淡出且不可聚焦（visibility） */
+        .site-header.is-compact:not(.is-open) .nav-left{ flex: 0 0 auto; }
+        .site-header.is-compact:not(.is-open) .nav-actions{
+          flex: 0 1 0; min-width:0; overflow:hidden;
+          opacity:0; visibility:hidden;
+          transition: opacity .12s ease, visibility 0s linear .12s;
+        }
+        .site-header.is-compact.is-open .nav-actions{
+          transition: opacity .22s ease .12s, visibility 0s;
+        }
+        .site-header.is-compact.is-open .glass-nav{ gap: 1rem; }
+        .site-header.is-compact:not(.is-open) .topbar-name{ max-width:0; opacity:0; }
+        .site-header.is-open .topbar-name{ max-width:18rem; opacity:1; }
+        .site-header.is-open .nav-expand svg{ transform: rotate(180deg); }
+      }
+      @media (max-width:991.98px){
+        .glass-nav{ height: 52px; padding: 0 .25rem 0 .9rem; gap: .25rem; }
+        .site-header.is-compact .glass-nav{ height: 48px; padding: 0 .2rem 0 .75rem; }
+        .rail-mode .nav-links .nav-link{ min-height:40px; }
+        /* 手機：前後區塊也只顯示首字母 */
+        .rail-mode .nav-links .nav-link.is-near .nl-r{ max-width:0; opacity:0; }
+      }
+      @media (max-width:374.98px){
+        /* 320 級小螢幕：只留目前與前後各一，避免 pill 塞不下 */
+        .rail-mode .nav-links .nav-link.is-far{ display:none; }
+      }
+
+      /* 漢堡 → X（純 CSS） */
+      .nav-menu-bars, .nav-menu-bars::before, .nav-menu-bars::after{
+        display:block; width:18px; height:1.5px; border-radius:2px;
+        background: currentColor; position:relative;
+        transition: transform .28s var(--ease-out), background-color .2s ease;
+      }
+      .nav-menu-bars::before, .nav-menu-bars::after{ content:''; position:absolute; left:0; }
+      .nav-menu-bars::before{ transform: translateY(-6px); }
+      .nav-menu-bars::after{ transform: translateY(6px); }
+      .nav-menu-btn[aria-expanded="true"] .nav-menu-bars{ background: transparent; }
+      .nav-menu-btn[aria-expanded="true"] .nav-menu-bars::before{ transform: rotate(45deg); }
+      .nav-menu-btn[aria-expanded="true"] .nav-menu-bars::after{ transform: rotate(-45deg); }
+
+      /* 手機選單面板 */
+      .nav-panel{
+        pointer-events: auto;
+        position: absolute; left: 16px; right: 16px; top: calc(var(--header-h) - 4px);
+        padding: .5rem;
+        border-radius: 1.25rem;
+        border: 1px solid var(--nc-glass-line);
+        background: var(--nc-glass-strong);
+        backdrop-filter: blur(22px) saturate(160%);
+        -webkit-backdrop-filter: blur(22px) saturate(160%);
+        box-shadow: var(--nc-shadow-float);
+        opacity: 0; transform: translateY(-6px) scale(.98); transform-origin: top center;
+        transition: opacity .22s ease, transform .28s var(--ease-out);
+      }
+      .nav-panel.open{ opacity: 1; transform: none; }
+      .nav-panel ul{ list-style:none; margin:0; padding:0; }
+      .nav-panel .nav-link{
+        display:flex; align-items:center; gap:.6rem;
+        min-height:48px; padding:0 1rem; border-radius:.85rem;
+        color: var(--nc-text); font-weight:600;
+      }
+      .nav-panel .nav-link:hover{ background: var(--nc-accent-soft); }
+      .nav-panel .nav-link[aria-current]{ color: var(--nc-accent); background: var(--nc-accent-soft); }
+      .nav-panel-sep{ height:1px; margin:.35rem .75rem; background: var(--nc-line); }
+
+      @media (prefers-reduced-motion: reduce){
+        .glass-nav, .nav-panel, .nav-menu-bars, .nav-menu-bars::before, .nav-menu-bars::after,
+        .nav-links, .nav-actions, .nav-expand svg, .topbar-name, .nl-r, .rail-mode .nav-links .nav-link{ transition: none !important; }
       }
 
       /* === Press feedback：按下瞬間回饋（pointer-down，不等 release） === */
@@ -76,21 +387,15 @@
       }
       .btn:active, .link-chip:active, .icon-btn:active{ transform: scale(.96); }
 
-      /* === Scroll-reveal (bidirectional) === */
-      .reveal {
+      /* === Scroll-reveal（只在進場時播一次；只有 JS 可用時才先隱藏，JS 失敗內容仍可讀） === */
+      .js .reveal {
         opacity: 0;
-        transform: translateY(32px);
-        transition: opacity var(--dur-reveal) var(--ease-out),
-                    transform var(--dur-reveal) var(--ease-out);
+        transform: translateY(16px);
+        transition: opacity .55s var(--ease-out), transform .55s var(--ease-out);
       }
-      .reveal.visible { opacity: 1; transform: translateY(0); }
-      .reveal.above   { opacity: 0; transform: translateY(-24px); }
-      .reveal-card {
-        opacity: 0; transform: translateY(16px);
-        transition: opacity 0.45s var(--ease-out), transform 0.45s var(--ease-out);
-      }
-      .reveal-card.visible { opacity: 1; transform: translateY(0); }
-      .reveal-card.above   { opacity: 0; transform: translateY(-12px); }
+      .js .reveal.visible { opacity: 1; transform: none; }
+      .js .reveal-card { opacity: 0; transform: translateY(12px); }
+      .js .reveal-card.visible { opacity: 1; transform: none; }
 
       /* === Theme cross-fade（切換主題時短暫柔化，避免瞬間跳變） === */
       html.theme-transition, html.theme-transition *{
@@ -141,11 +446,10 @@
       /* === Reduced motion：改用溫和的淡入，去掉位移/縮放 === */
       @media (prefers-reduced-motion: reduce){
         html{ scroll-behavior: auto; }
-        .reveal, .reveal-card{
+        .js .reveal, .js .reveal-card{
           transform: none !important;
           transition: opacity .25s ease !important;
         }
-        .reveal.above, .reveal-card.above{ opacity: 1; }
         .btn:active, .link-chip:active, .icon-btn:active{ transform: none; }
         html.theme-transition, html.theme-transition *{ transition: none !important; }
       }
@@ -156,22 +460,223 @@
       main > section#works > .container.px-0 { max-width: 1120px; }
 
       /* === Hero + About（照片在文字旁） === */
+      .hero{ padding: 2.25rem 0 2.5rem; }
+      @media (min-width:768px){ .hero{ padding: 4rem 0 2.5rem; } }
       .hero-grid{ display:grid; grid-template-columns:1fr; gap:1.5rem; align-items:start; }
       .hero-photo{ order:-1; }                 /* 照片在左（手機則在上方） */
       @media (min-width:768px){
-        .hero-grid{ grid-template-columns:170px minmax(0,1fr); gap:2rem; }
+        .hero-grid{ grid-template-columns:180px minmax(0,1fr); gap:2.75rem; }
       }
       .hero-photo img{
-        width:100%; max-width:170px; height:auto;
-        border-radius:1rem; display:block;
+        width:100%; max-width:180px; height:auto;
+        border-radius:1.25rem; display:block;
+        box-shadow: 0 1px 2px rgba(37, 42, 41, .06), 0 18px 40px -20px rgba(37, 42, 41, .35);
+      }
+      [data-bs-theme="dark"] .hero-photo img{
+        box-shadow: 0 0 0 1px rgba(241, 240, 234, .06), 0 18px 40px -18px rgba(0, 0, 0, .7);
       }
       @media (max-width:767.98px){
-        .hero-photo img{ max-width:132px; margin-inline:auto; }
+        .hero-photo img{ max-width:140px; margin-inline:auto; }
+      }
+      .hero-tagline{ margin-top: .35rem; }
+
+      /* === Atmosphere Shift：同一主題內的靜態色調分段（不隨捲動插值） ===
+         帶狀底色畫在 ::before，橫向延伸到整個視窗；上下端淡出，與相鄰區塊無硬邊。
+         寬度用 --page-w（JS 量 clientWidth，扣掉捲軸）避免水平捲動；html 另設 overflow-x:clip 保險。 */
+      html{ overflow-x: clip; }
+      :root, [data-bs-theme="light"]{
+        --atmo-stone: #EFEDE6;
+        --atmo-sage: #E7EDE9;
+        --sheen-core: rgba(255, 255, 255, .95);
+        --sheen-tint: rgba(170, 196, 186, .55);
+        --handoff-line: rgba(37, 42, 41, .10);
+      }
+      [data-bs-theme="dark"]{
+        --atmo-stone: #1F2321;
+        --atmo-sage: #1B2421;
+        --sheen-core: rgba(236, 230, 214, .38);
+        --sheen-tint: rgba(150, 184, 168, .22);
+        --handoff-line: rgba(241, 240, 234, .09);
+      }
+      .atmo{ position: relative; isolation: isolate; }
+      .atmo-stone{ --atmo-c: var(--atmo-stone); }
+      .atmo-sage{ --atmo-c: var(--atmo-sage); }
+      .atmo::before{
+        content:''; position:absolute; z-index:-1; pointer-events:none;
+        top:0; bottom:0; left:50%;
+        width: var(--page-w, 100vw); transform: translateX(-50%);
+        background: linear-gradient(to bottom,
+          transparent 0, var(--atmo-c) 72px, var(--atmo-c) calc(100% - 72px), transparent 100%);
+      }
+
+      /* === Liquid Reflection：主要區塊交界的一道柔光，滑過分隔線後把焦點交給下一節標題 ===
+         靜態：一條兩端淡出的細線（即使不播動畫，交界也是刻意設計過的樣子）
+         動態：進入視窗時播一次——::after 的光帶用 transform 從左滑到右，標題同時淡入 10px。 */
+      .handoff{ position: relative; }
+      .handoff > .container{ position: relative; }
+      .handoff > .container::before{
+        content:''; position:absolute; left:0; right:0; top:calc(-1 * var(--handoff-gap, 1.5rem)); height:1px;
+        background: linear-gradient(90deg, transparent, var(--handoff-line) 18%, var(--handoff-line) 82%, transparent);
+        pointer-events:none;
+      }
+      @media (min-width:768px){ .handoff{ --handoff-gap: 3rem; } }
+      .handoff > .container::after{
+        content:''; position:absolute; left:0; width:38%; height:18px;
+        top:calc(-1 * var(--handoff-gap, 1.5rem) - 9px);
+        background:
+          radial-gradient(50% 50% at 50% 50%, var(--sheen-core), transparent 70%),
+          radial-gradient(50% 50% at 50% 50%, var(--sheen-tint), transparent 100%);
+        background-size: 60% 30%, 100% 100%;
+        background-position: center, center;
+        background-repeat: no-repeat;
+        opacity:0; transform: translateX(-100%);
+        pointer-events:none; z-index:0;
+      }
+      .handoff-strong > .container::after{ height:24px; top:calc(-1 * var(--handoff-gap, 1.5rem) - 12px); }
+      .js .handoff .section-title{
+        opacity:.55; transform: translateY(10px);
+        transition: opacity .5s var(--ease-out) .28s, transform .5s var(--ease-out) .28s;
+      }
+      .js .handoff.handoff-on .section-title{ opacity:1; transform:none; }
+      .handoff.handoff-on > .container::after{ animation: sheen var(--sheen-dur, .78s) cubic-bezier(.4, 0, .2, 1); }   /* 不 fill：播完回到隱藏起點，不殘留在右側造成溢出 */
+      .handoff:not(.handoff-strong){ --sheen-peak: .6; }
+      @keyframes sheen{
+        0%   { opacity:0; transform: translateX(-100%); }
+        25%  { opacity: var(--sheen-peak, 1); }
+        75%  { opacity: var(--sheen-peak, 1); }
+        100% { opacity:0; transform: translateX(163%); }   /* 38% 寬：右緣剛好停在容器邊界，不溢出 */
+      }
+      @media (max-width:767.98px){
+        .handoff{ --sheen-dur: .55s; }
+        .handoff > .container::after{ width:50%; height:12px; }
+        @keyframes sheen{
+          0%   { opacity:0; transform: translateX(-100%); }
+          30%  { opacity: var(--sheen-peak, 1); }
+          70%  { opacity: var(--sheen-peak, 1); }
+          100% { opacity:0; transform: translateX(100%); }
+        }
+      }
+      @media (prefers-reduced-motion: reduce){
+        .handoff > .container::after{ display:none; }
+        .js .handoff .section-title{ opacity:1; transform:none; transition:none; }
+      }
+
+      /* === Featured：eyebrow / Selected Research 共用文字樣式 === */
+      .eyebrow{
+        font-size:.78rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+        color: var(--nc-text-2); margin: 0 0 1.25rem;
+      }
+      .featured{ margin: 1.75rem 0 2.5rem; padding: 2.5rem 0 2.75rem; }
+      @media (min-width:768px){ .featured{ margin: 2.25rem 0 3.25rem; padding: 3.25rem 0 3.5rem; } }
+
+      .sel-venue{
+        font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+        color: var(--nc-accent); margin-bottom:.4rem;
+      }
+      .sel-title{ font-size:1.15rem; font-weight:600; line-height:1.32; letter-spacing:-.01em; margin:0 0 .5rem; }
+      .sel-title a{ color: var(--bs-emphasis-color); text-decoration:none; }
+      .sel-title a:hover{ color: var(--nc-accent); }
+      .sel-desc{ color: var(--nc-text-2); font-size:.93rem; line-height:1.6; margin:0 0 1rem; }
+      .sel-links{ display:flex; flex-wrap:wrap; gap:.5rem; }
+      .sel-details{ border-style: dashed; }
+
+      /* === Selected Research：3D 旋轉卡片（coverflow） ===
+         底層是原生橫向捲動 + scroll-snap → 觸控滑動、觸控板、鍵盤捲動都是瀏覽器原生行為。
+         JS 只依每張卡離中心的距離寫入 --p（-2…2）與 --ap（絕對值），CSS 用它算 3D 角度。
+         進場（原 cinematic reveal 合併至此）：卡片從中心疊在一起、往下 36px，進入視窗時展開成扇形，只播一次。 */
+      .deck-head{ display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:.5rem; }
+      .deck-nav{ display:none; gap:.5rem; }
+      .js .deck-nav{ display:flex; }   /* 無 JS 時按鈕不會動，乾脆不顯示（仍可原生橫向捲動） */
+      .deck-btn{
+        width:44px; height:44px; border-radius:999px;
+        display:inline-flex; align-items:center; justify-content:center;
+        border:1px solid var(--bs-border-color); background: var(--nc-surface); color: var(--nc-text);
+        transition: background-color .2s ease, border-color .2s ease, opacity .2s ease;
+      }
+      .deck-btn:hover:not(:disabled){ background: var(--nc-accent-soft); border-color: var(--nc-accent); }
+      .deck-btn:disabled{ opacity:.35; cursor:default; }
+      .deck{ position:relative; container-type: inline-size; }
+      .deck-track{
+        --card-w: min(560px, 80vw);
+        --card-w: min(560px, 84cqw);
+        position:relative; display:flex; align-items:stretch; gap:1.5rem;
+        overflow-x:auto; overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory; scroll-behavior: smooth;
+        scrollbar-width: none;
+        padding: 1.75rem calc((100% - var(--card-w)) / 2) 2.25rem;
+      }
+      .deck-track::-webkit-scrollbar{ display:none; }
+      /* 外層 .deck-card 只負責 scroll-snap 對齊（不能有 transform：snap 會依變形後的位置計算，和 3D 位移互相追逐）；
+         3D 角度、外觀都放在內層 .deck-face。 */
+      .deck-card{
+        --in: 1;
+        position:relative; flex: 0 0 var(--card-w); min-width:0;
+        display:flex; scroll-snap-align: center;
+      }
+      .deck-face{
+        flex:1; min-width:0;
+        display:flex; flex-direction:column;
+        border:1px solid var(--bs-border-color); border-radius:1.1rem; overflow:hidden;
+        background: var(--nc-surface);
+        transform:
+          perspective(1400px)
+          translateY(calc((1 - var(--in)) * 36px))
+          translateX(calc(var(--p, 0) * -12% - var(--p, 0) * (1 - var(--in)) * 60%))
+          translateZ(calc(var(--ap, 0) * -170px))
+          rotateY(calc(var(--p, 0) * -30deg));
+        opacity: calc((1 - var(--ap, 0) * .4) * var(--in));
+        transition: box-shadow .3s ease, border-color .3s ease;
+        will-change: transform;
+      }
+      .deck-card.is-active .deck-face{
+        border-color: var(--thumb-blue);
+        box-shadow: 0 1px 2px rgba(37,42,41,.06), 0 26px 50px -30px rgba(37,42,41,.45);
+      }
+      [data-bs-theme="dark"] .deck-card.is-active .deck-face{ box-shadow: 0 0 0 1px rgba(241,240,234,.05), 0 26px 50px -26px rgba(0,0,0,.75); }
+      .deck-card:not(.is-active){ cursor:pointer; }
+      .js .deck:not(.deck-in) .deck-card{ --in: 0; }
+      .deck.deck-entering .deck-face{ transition: transform 1.1s var(--ease-out), opacity .8s ease-in-out, box-shadow .3s ease; }
+      .deck-media{ aspect-ratio: 16 / 10; overflow:hidden; background: var(--nc-surface-2); border-bottom:1px solid var(--bs-border-color); }
+      .deck-media img{ width:100%; height:100%; object-fit:cover; display:block; }
+      .deck-media-figure{ background:#fff; }
+      .deck-media-figure img{ object-fit:contain; padding:.75rem; }
+      .deck-body{ display:flex; flex-direction:column; flex:1; padding: 1.15rem 1.25rem 1.25rem; }
+      .deck-body .sel-links{ margin-top:auto; }
+      .deck-dots{ display:flex; justify-content:center; gap:.25rem; margin-top:-.75rem; }
+      .deck-dot{
+        width:32px; height:32px; padding:0; border:0; background:transparent;
+        display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+      }
+      .deck-dot::before{
+        content:''; width:8px; height:8px; border-radius:999px;
+        background: var(--nc-text-2); opacity:.35;
+        transition: width .3s var(--ease-out), opacity .2s ease, background-color .2s ease;
+      }
+      .deck-dot[aria-current="true"]::before{ width:22px; opacity:1; background: var(--nc-accent); }
+      @media (max-width:767.98px){
+        .deck-track{ --card-w: 76vw; --card-w: 76cqw; gap:1rem; padding-top:1.25rem; padding-bottom:1.75rem; }   /* 兩側多露一點，暗示可滑動 */
+        .deck-face{ transform:
+          perspective(1100px)
+          translateY(calc((1 - var(--in)) * 28px))
+          translateX(calc(var(--p, 0) * -8% - var(--p, 0) * (1 - var(--in)) * 50%))
+          translateZ(calc(var(--ap, 0) * -110px))
+          rotateY(calc(var(--p, 0) * -24deg)); }
+      }
+
+      /* === All publications === */
+      .pub-card[id]{ scroll-margin-top: calc(var(--header-h) + 12px); }   /* Details 連結落點不被 header 蓋住 */
+      .pub-head{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; margin-bottom:1rem; }
+      @media (prefers-reduced-motion: reduce){
+        .deck-track{ scroll-behavior:auto; }
+        .deck-face{ transform:none !important; transition:none !important; }
+        .js .deck:not(.deck-in) .deck-card{ --in: 1; }
+        .deck-card:not(.is-active) .deck-face{ opacity:.6; }
+        .deck-dot::before{ transition:none; }
       }
 
       /* === Hero tagline 打字效果 === */
       .hero-tagline{ min-height:1.7em; }
-      .type-hash{ opacity:.55; margin-right:.15em; }
+      .type-hash{ opacity:.6; margin-right:.2em; }
       .type-caret{
         display:inline-block; width:.09em; height:1.05em;
         background:currentColor; vertical-align:-.15em; margin-left:.1em;
@@ -184,13 +689,18 @@
 
       /* === 社群按鈕：寬螢幕放頂端列，窄螢幕收到大頭照下方（3+2） === */
       .topbar-social .btn{ --bs-btn-padding-y:.2rem; --bs-btn-padding-x:.5rem; }
+      /* icon 字型非阻塞載入：按鈕只有 <i> 時，字型到之前會塌成只剩 padding → 先固定尺寸，避免 CLS */
+      .hero-social .btn, .topbar-social .btn{
+        display:inline-flex; align-items:center; justify-content:center;
+        min-height:31px; min-width:31px;
+      }
       .hero-social{
         display:grid; grid-template-columns:repeat(3, 1fr); gap:.5rem;
-        max-width:170px; margin-top:.9rem;
+        max-width:180px; margin-top:1rem;
       }
       @media (min-width:1200px){ .hero-social{ display:none; } }
       @media (max-width:767.98px){
-        .hero-social{ max-width:132px; margin-inline:auto; }
+        .hero-social{ max-width:140px; margin-inline:auto; }
       }
 
       /* === 上方欄位的名字：捲過 Hero 後才淡入（保留寬度，避免版面位移） === */
@@ -208,7 +718,7 @@
       .news-fade{ position:relative; }
       .news-fade::after{
         content:''; position:absolute; left:0; right:0; bottom:0; height:3rem;
-        background:linear-gradient(to top, var(--bs-tertiary-bg), transparent);
+        background:linear-gradient(to top, var(--atmo-c, var(--bs-body-bg)), transparent);
         pointer-events:none; opacity:1; transition:opacity .25s ease;
       }
       .news-fade.at-end::after{ opacity:0; }
@@ -220,16 +730,38 @@
         overscroll-behavior:contain;
         -webkit-overflow-scrolling:touch;
       }
-      .news-scroll:focus-visible{ outline:2px solid var(--thumb-blue,#A6D3FF); outline-offset:4px; border-radius:.4rem; }
+      .news-scroll:focus-visible{ outline:2px solid var(--nc-accent); outline-offset:4px; border-radius:.4rem; }
+      /* 安靜的時間軸：日期欄 | 細線 + 圓點 | 內容 */
+      .news-scroll > .d-flex > .news-date{ padding-top:.05rem; font-size:.92rem; }
+      .news-scroll > .d-flex > div:last-child{ position:relative; padding-left:1.35rem; }
+      .news-scroll > .d-flex > div:last-child::before{
+        content:''; position:absolute; left:0; top:0; bottom:-1rem; width:1px;
+        background: var(--nc-line);
+      }
+      .news-scroll > .d-flex:last-child > div:last-child::before{ bottom:0; }
+      .news-scroll > .d-flex > div:last-child::after{
+        content:''; position:absolute; left:-3.5px; top:.6em; width:8px; height:8px; border-radius:50%;
+        background: var(--atmo-c, var(--bs-body-bg)); box-shadow: inset 0 0 0 1.5px var(--nc-accent);
+      }
+      .news-scroll > .d-flex:first-child > div:last-child::after{ background: var(--nc-accent); }
       .news-scroll::-webkit-scrollbar{ width:6px; }
       .news-scroll::-webkit-scrollbar-track{ background:transparent; }
-      .news-scroll::-webkit-scrollbar-thumb{ background:rgba(0,0,0,.18); border-radius:3px; }
+      .news-scroll::-webkit-scrollbar-thumb{ background:rgba(37,42,41,.16); border-radius:3px; }
       .news-scroll::-webkit-scrollbar-thumb:hover{ background:rgba(0,0,0,.4); }
       [data-bs-theme="dark"] .news-scroll::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.2); }
       [data-bs-theme="dark"] .news-scroll::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,.4); }
       /* 手機：日期欄收窄以減少換行，捲動框不吃掉整個螢幕 */
       @media (max-width:575.98px){
-        .news-date{ width:5.5rem; font-size:.85rem; }
+        /* 窄螢幕：日期疊在內容上方，時間軸線改畫在整列左側，內文才有足夠寬度 */
+        .news-scroll{ padding-left:4px; }   /* 圓點超出 4px，避免被 overflow 裁掉 */
+        .news-scroll > .d-flex{
+          flex-direction:column; gap:.1rem !important;
+          position:relative; padding-left:1.1rem;
+        }
+        .news-scroll > .d-flex > .news-date{ width:auto; font-size:.8rem; padding-top:0; }
+        .news-scroll > .d-flex > div:last-child{ position:static; padding-left:0; }
+        .news-scroll > .d-flex > div:last-child::before{ top:.15rem; }
+        .news-scroll > .d-flex > div:last-child::after{ top:.35rem; }
         .news-scroll{ max-height:60vh; }
       }
 
@@ -242,62 +774,35 @@
     </style>
   </head>
   <body>
-    <!-- Mobile top nav (only on small screens) -->
-    <nav class="navbar navbar-expand-lg glass-nav sticky-top d-lg-none">
-      <div class="container">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-2 m-0 text-decoration-none" href="#top" aria-label="Go to top">
-          <img src="assets/favicon.png" alt="" width="22" height="22" class="rounded-2">
-          <span class="topbar-name">Kuan-Lin (Brian) Chen</span>
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-label="Menu">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navMain">
-          <ul class="navbar-nav ms-auto align-items-md-center gap-2 w-100">
-            <li class="w-100 my-2 border-top"></li>
-            <li class="nav-item w-100 mt-1">
-              <span class="nav-section text-muted small text-uppercase px-2">Quick Links</span>
-            </li>
-            <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-            <li class="nav-item"><a class="nav-link" href="#news">News</a></li>
-            <li class="nav-item"><a class="nav-link" href="#works">Research</a></li>
-            <li class="nav-item"><a class="nav-link" href="#misc">Miscellanea</a></li>
-            <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-            <li class="w-100 my-2 border-top"></li>
-            <li class="nav-item">
-              <a class="nav-link d-flex align-items-center gap-1" href="gallery.html" rel="noopener" aria-label="Gallery">
-                <i class="bi bi-camera"></i><span>Gallery</span>
-              </a>
-            </li>
-            <li class="nav-item ms-md-2">
-              <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle theme">
-                <i class="bi bi-moon-stars"></i>
-              </button>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
+    <a class="skip-link" href="#about">Skip to content</a>
 
-    <!-- Desktop top utility bar (shows on lg+ only) -->
-    <nav class="navbar glass-nav sticky-top d-none d-lg-block" id="topbar">
-      <div class="container-xxl d-flex align-items-center justify-content-between gap-3" style="min-height:52px;">
-        <div class="d-flex align-items-center gap-2">
-          <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-decoration-none m-0" href="#top" aria-label="Go to top">
-            <img src="assets/favicon.png" alt="" width="22" height="22" class="rounded-2">
+    <!-- Floating glass header（單一元件：桌機為膠囊導覽，手機為品牌 + 主題 + 選單） -->
+    <header class="site-header" id="siteHeader">
+      <nav class="glass-nav" id="topbar" aria-label="Primary">
+        <div class="nav-left">
+          <a class="nav-brand" href="#top" aria-label="Go to top">
+            <img src="assets/favicon.png" alt="" width="22" height="22">
             <span class="topbar-name">Kuan-Lin (Brian) Chen</span>
           </a>
-          <ul class="navbar-nav flex-row align-items-center gap-3">
-            <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-            <li class="nav-item"><a class="nav-link" href="#news">News</a></li>
-            <li class="nav-item"><a class="nav-link" href="#works">Research</a></li>
-            <li class="nav-item"><a class="nav-link" href="#misc">Miscellanea</a></li>
-            <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-          </ul>
         </div>
 
-        <div class="d-flex align-items-center gap-4">
-          <div class="topbar-social d-none d-xl-flex align-items-center gap-3">
+        <ul class="nav-links" id="navLinks">
+          <li><a class="nav-link" href="#about">About</a></li>
+          <li><a class="nav-link" href="#news">News</a></li>
+          <li><a class="nav-link" href="#works">Research</a></li>
+          <li><a class="nav-link" href="#misc">Miscellanea</a></li>
+          <li><a class="nav-link" href="#contact">Contact</a></li>
+        </ul>
+        <!-- 桌機收合時的展開鈕（點擊 / Enter 展開；hover 與 focus 也會展開） -->
+        <button class="nav-expand" id="navExpand" type="button"
+                aria-expanded="false" aria-controls="navLinks" aria-label="Show all navigation">
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+            <path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <div class="nav-actions">
+          <div class="topbar-social d-none d-xl-flex align-items-center">
             <a class="btn btn-sm btn-outline-primary" href="mailto:klchen901120@gmail.com"
                target="_blank" rel="noopener" aria-label="Email"
                data-bs-toggle="tooltip" data-bs-placement="bottom" title="Email">
@@ -324,30 +829,50 @@
               <i class="bi bi-linkedin"></i>
             </a>
           </div>
-          <a class="nav-link d-flex align-items-center gap-1" href="gallery.html" rel="noopener" aria-label="Gallery">
+          <a class="nav-link nav-gallery d-none d-lg-inline-flex" href="gallery.html" rel="noopener" aria-label="Gallery">
             <i class="bi bi-camera"></i><span class="d-none d-xxl-inline">Gallery</span>
           </a>
-          <button id="themeToggleDesktop" class="icon-btn" type="button"
-                  aria-label="Toggle theme" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toggle theme">
+          <button id="themeToggle" class="icon-btn nav-icon" type="button" aria-label="Toggle theme">
             <i class="bi bi-moon-stars"></i>
           </button>
+          <button class="icon-btn nav-icon nav-menu-btn d-lg-none" id="navMenuBtn" type="button"
+                  aria-expanded="false" aria-controls="navPanel" aria-label="Open menu">
+            <span class="nav-menu-bars" aria-hidden="true"></span>
+          </button>
         </div>
+      </nav>
+
+      <!-- 手機選單面板 -->
+      <div class="nav-panel d-lg-none" id="navPanel" hidden>
+        <ul>
+          <li><a class="nav-link" href="#about">About</a></li>
+          <li><a class="nav-link" href="#news">News</a></li>
+          <li><a class="nav-link" href="#works">Research</a></li>
+          <li><a class="nav-link" href="#misc">Miscellanea</a></li>
+          <li><a class="nav-link" href="#contact">Contact</a></li>
+          <li class="nav-panel-sep" role="separator"></li>
+          <li>
+            <a class="nav-link" href="gallery.html" rel="noopener" aria-label="Gallery">
+              <i class="bi bi-camera"></i><span>Gallery</span>
+            </a>
+          </li>
+        </ul>
       </div>
-    </nav>
+    </header>
 
     <div class="container-xxl">
       <main id="top">
         <!-- Hero + About -->
-        <section id="about" class="py-4 py-md-5 bg-body-tertiary border-bottom reveal">
+        <section id="about" class="hero">
           <div class="container px-0">
             <div class="hero-grid">
               <div class="hero-text">
                 <h1 class="hero-name mb-1">Kuan&#8209;Lin (Brian) Chen (陳冠霖)</h1>
-                <p class="hero-tagline mb-3" aria-label="Research interests: Computer Vision, Image Processing, Image Signal Processing, Computational Photography"><span class="type-hash" aria-hidden="true">#</span><span id="typeText" aria-hidden="true"></span><span class="type-caret" aria-hidden="true"></span></p>
+                <p class="hero-tagline mb-3"><span class="visually-hidden">Research interests: Computer Vision, Image Processing, Image Signal Processing, Computational Photography</span><span class="type-hash" aria-hidden="true">#</span><span id="typeText" aria-hidden="true">Computer Vision</span><span class="type-caret" aria-hidden="true"></span></p>
                 <p>
-                  I will join the
+                  I joined the
                   <a href="https://www.itri.org.tw/english/" target="_blank" rel="noopener" class="text-decoration-none">Industrial Technology Research Institute (ITRI)</a>
-                  in October 2026. I received my M.S. degree from the
+                  as an Associate Engineer in October 2026. I received my M.S. degree from the
                   <a href="https://gice.ntu.edu.tw/en/" target="_blank" rel="noopener" class="text-decoration-none">Graduate Institute of Communication Engineering</a>,
                   <a href="https://www.ntu.edu.tw/english/" target="_blank" rel="noopener" class="text-decoration-none">National Taiwan University</a>,
                   advised by Professor
@@ -371,10 +896,12 @@
               <div class="hero-photo text-center text-md-start">
                 <img
                   src="assets/myprofile.jpg"
+                  srcset="assets/myprofile-360.webp 360w, assets/myprofile-540.webp 540w, assets/myprofile.jpg 1044w"
+                  sizes="(max-width: 767.98px) 140px, 180px"
                   alt="Portrait of Kuan-Lin (Brian) Chen"
-                  class="rounded-4 img-fluid shadow"
-                  loading="lazy"
-                  width="170" height="170"
+                  class="img-fluid"
+                  fetchpriority="high"
+                  width="1044" height="1567"
                   data-bs-toggle="tooltip"
                   data-bs-placement="left"
                   data-bs-custom-class="tooltip-photo"
@@ -419,7 +946,7 @@
         </section>
 
           <!-- News -->
-          <section id="news" class="py-4 py-md-5 bg-body-tertiary border-top border-bottom reveal">
+          <section id="news" class="py-4 py-md-5 reveal atmo atmo-stone handoff">
             <div class="container px-0">
               <h2 class="section-title h3 mb-3">News</h2>
               <div class="news-fade">
@@ -493,7 +1020,7 @@
                   <div class="news-date">2025-10</div>
                   <div>
                   Our paper
-                  <strong><a href="files/Guitar%20Tone%20Morphing%20by%20Diffusion-based%20Model.pdf" target="_blank" rel="noopener" class="text-decoration-none">
+                  <strong><a href="https://doi.org/10.1109/APSIPAASC65261.2025.11249227" target="_blank" rel="noopener" class="text-decoration-none">
                   Guitar Tone Morphing by Diffusion-based Model
                   </a></strong>
                   is accepted by
@@ -505,7 +1032,7 @@
                   <div class="news-date">2025-10</div>
                   <div>
                   Our paper
-                  <strong><a href="files/FRIEREN%20A%20Lightweight%20System%20for%20Face%20Resizing%20Image%20Detail%20Quality%20Evaluation%20via%20Robust%20Estimation%20of%20Image%20Naturalness.pdf" target="_blank" rel="noopener" class="text-decoration-none">
+                  <strong><a href="https://doi.org/10.1109/APCCAS67402.2025.11377160" target="_blank" rel="noopener" class="text-decoration-none">
                   FRIEREN: Face Resizing Image Quality Evaluation via Robust Estimation of Image Naturalness
                   </a></strong>
                   is accepted by
@@ -578,9 +1105,9 @@
                   </div>
 
                   <div class="d-flex gap-3">
-                  <div class="news-date">2024-09 → Present</div>
+                  <div class="news-date">2024-09 → 2026-07</div>
                   <div>
-                  I am now a master’s student in the
+                  I was a master’s student in the
                   <strong><a href="https://gice.ntu.edu.tw/en/" target="_blank" rel="noopener" class="text-decoration-none">
                   Graduate Institute of Communication Engineering
                   </a></strong>
@@ -686,7 +1213,7 @@
           </section>
 
           <!-- Research (publication-style cards) -->
-          <section id="works" class="py-4 py-md-5 reveal">
+          <section id="works" class="py-4 py-md-5 reveal handoff handoff-strong">
             <div class="container px-0">
               <!-- 標題列：左邊標題+指標，右邊圖示按鈕 -->
               <div class="d-flex justify-content-between align-items-center mb-3">
@@ -703,15 +1230,14 @@
               </div>
 
               <style>
-                section[id]{ scroll-margin-top: 76px; } /* 視你的手機 navbar 高度微調 */
+                section[id]{ scroll-margin-top: calc(var(--header-h) + 12px); } /* 固定 header 高度 + 呼吸空間 */
                 .icon-btn{
                   background: transparent;
                   border: 0;
                   padding: .375rem;
                   line-height: 1;
                 }
-                .icon-btn:focus,
-                .icon-btn:focus-visible{
+                .icon-btn:focus:not(:focus-visible){
                   outline: none;
                   box-shadow: none;
                 }
@@ -720,40 +1246,56 @@
                 .navbar .vr{ opacity: .25; }
 
                 .pub-card{
-                  border-radius:.75rem; padding:1rem;
-                  border:1px solid var(--bs-border-color); background:var(--bs-body-bg);
+                  border-radius:1rem; padding:1.15rem;
+                  border:1px solid var(--bs-border-color); background:var(--nc-surface);
                   position:relative; z-index:1; overflow:visible;
-                  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1),
-                              box-shadow 0.3s cubic-bezier(0.22,1,0.36,1),
-                              border-color 0.3s ease;
+                  /* opacity/transform 給進場；hover 時 JS 已清掉 stagger delay */
+                  transition: opacity .45s var(--ease-out),
+                              transform .22s var(--ease-out),
+                              box-shadow .22s var(--ease-out),
+                              border-color .22s ease;
+                }
+                .js .pub-card.reveal-card:not(.visible){
+                  transition: opacity .45s var(--ease-out), transform .45s var(--ease-out);
+                }
+                .pub-card h3{
+                  font-weight:600; letter-spacing:-.01em; line-height:1.3;
+                  color: var(--bs-emphasis-color);
+                }
+                .pub-card .small{ line-height:1.55; }
+                .pub-card .small.mb-2 > em{
+                  font-style:normal; font-weight:600; color: var(--nc-accent);
                 }
 
                 .link-chip{
-                  display:inline-block; padding:.25rem .6rem;
+                  display:inline-flex; align-items:center; min-height:32px; padding:.2rem .75rem;
                   border:1px solid var(--bs-border-color);
-                  border-radius:999px; text-decoration:none; font-size:.85rem;
-                  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+                  border-radius:999px; text-decoration:none; font-size:.85rem; font-weight:500;
+                  color: var(--nc-accent); background: transparent;
+                  transition: background-color .2s ease, border-color .2s ease, transform .15s ease;
                 }
                 .link-chip.disabled{ opacity:.5; pointer-events:none; }
                 @media (hover:hover){
                   .link-chip:hover{
-                    background: var(--thumb-blue-soft, rgba(166,211,255,.25));
-                    border-color: var(--thumb-blue, #A6D3FF);
-                    transform: translateY(-1px);
+                    background: var(--nc-accent-soft);
+                    border-color: var(--nc-accent);
+                    color: var(--nc-accent);
                   }
                 }
 
-                :root{ --thumb-blue:#A6D3FF; --thumb-blue-soft:rgba(166,211,255,.25); }
-                [data-bs-theme="dark"]{ --thumb-blue:#72B9FF; --thumb-blue-soft:rgba(114,185,255,.25); }
+                /* --thumb-blue / --thumb-blue-soft 已移到 <head> 的 Nordic palette（改為 sage 色） */
 
                 .thumb-wrap{
                   position:relative; display:block;
-                  border:2px solid var(--thumb-blue); border-radius:.75rem;
-                  box-shadow:0 0 0 4px var(--thumb-blue-soft);
-                  background:transparent; aspect-ratio:16/10;
-                  width:100%; max-width:220px;
+                  border:1px solid var(--bs-border-color); border-radius:.7rem;
+                  background: var(--nc-surface-2); aspect-ratio:16/10;
+                  width:100%; max-width:240px;
                   flex:0 0 auto; margin-inline:auto;
-                  overflow:visible; z-index:2;
+                  overflow:hidden; z-index:2;
+                }
+                .thumb-img, .thumb-video{ transition: transform .24s var(--ease-out); }
+                @media (hover:hover){
+                  .pub-card:hover .thumb-img, .pub-card:hover .thumb-video{ transform: scale(1.02); }
                 }
                 .pub-card > .thumb-wrap + *{ flex:1 1 0; min-width:0; }
                 @media (min-width:768px){
@@ -794,13 +1336,13 @@
                 }
                 @media (hover:hover){
                   .pub-card:hover{
-                    z-index: 9998;
-                    transform: translateY(-6px);
-                    box-shadow: 0 12px 32px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06);
-                    border-color: var(--thumb-blue, #A6D3FF);
+                    z-index: 3;       /* 只需高過相鄰卡片；原本 9998 會蓋過固定的 header */
+                    transform: translateY(-3px);
+                    box-shadow: 0 14px 30px -16px rgba(37,42,41,.28), 0 2px 6px rgba(37,42,41,.05);
+                    border-color: var(--thumb-blue);
                   }
                   [data-bs-theme="dark"] .pub-card:hover{
-                    box-shadow: 0 12px 32px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.2);
+                    box-shadow: 0 14px 30px -14px rgba(0,0,0,.65), 0 2px 6px rgba(0,0,0,.25);
                   }
                 }
                 @media (min-width:768px){
@@ -811,8 +1353,107 @@
 
               </style>
 
+              <!-- Selected Research：3D 旋轉卡片（coverflow）
+                   底層是原生橫向捲動 + scroll-snap（手機可直接滑）；JS 依位置加上 3D 角度。
+                   文字與連結照抄下方正式條目；「Details」連到對應的完整條目。 -->
+              <!-- 暫時隱藏（研究累積多一點再開）：拿掉下一行的 hidden 即可恢復，CSS / JS 都還在。
+                   隱藏期間圖片不會下載（lazy + display:none），卡片 JS 不會進場。 -->
+              <div class="featured atmo atmo-sage" hidden>
+                <div class="deck-head">
+                  <h3 class="eyebrow mb-0">Selected Research</h3>
+                  <div class="deck-nav">
+                    <button class="deck-btn" type="button" data-dir="-1" aria-label="Previous paper" aria-controls="deckTrack">
+                      <svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M7.5 2.5 4 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button class="deck-btn" type="button" data-dir="1" aria-label="Next paper" aria-controls="deckTrack">
+                      <svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M4.5 2.5 8 6 4.5 9.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="deck" id="deck" role="region" aria-roledescription="carousel" aria-label="Selected research">
+                  <div class="deck-track" id="deckTrack">
+                    <article class="deck-card" aria-roledescription="slide" aria-label="1 of 3">
+                      <div class="deck-face">
+                      <div class="deck-media">
+                        <img src="assets/works/BOCCHI-poster-640.webp"
+                             srcset="assets/works/BOCCHI-poster-640.webp 640w, assets/works/BOCCHI-poster.webp 1080w"
+                             sizes="(max-width: 767.98px) 84vw, 560px"
+                             width="1080" height="720" loading="lazy" decoding="async"
+                             alt="Frame from the BOCCHI teaser video: a motion-blurred car with its blurred region highlighted in red">
+                      </div>
+                      <div class="deck-body">
+                        <div class="sel-venue">ACCV 2026</div>
+                        <h4 class="sel-title"><a href="#pub-bocchi">BOCCHI: A More Realistic and Challenging Benchmark for Local Motion Blur Detection with MSDCT-UNet</a></h4>
+                        <p class="sel-desc">We present BOCCHI, a real-captured local motion blur detection benchmark of 633 pixel-annotated images featuring textured blurred regions that defeat gradient-based shortcuts.</p>
+                        <div class="sel-links">
+                          <a class="link-chip" href="project/bocchi/" rel="noopener">Project Page</a>
+                          <a class="link-chip" href="https://arxiv.org/abs/2607.10427" target="_blank" rel="noopener">arXiv</a>
+                          <a class="link-chip" href="https://huggingface.co/datasets/BrianChen54923/BOCCHI" target="_blank" rel="noopener">Dataset</a>
+                          <a class="link-chip sel-details" href="#pub-bocchi">Details</a>
+                        </div>
+                      </div>
+                      </div>
+                    </article>
+
+                    <article class="deck-card" aria-roledescription="slide" aria-label="2 of 3">
+                      <div class="deck-face">
+                      <div class="deck-media">
+                        <img src="assets/works/RL_AWB-poster-640.webp"
+                             srcset="assets/works/RL_AWB-poster-640.webp 640w, assets/works/RL_AWB-poster.webp 1280w"
+                             sizes="(max-width: 767.98px) 84vw, 560px"
+                             width="1280" height="856" loading="lazy" decoding="async"
+                             alt="Frame from the RL-AWB teaser video comparing a gamma-corrected night-time input with the RL-AWB result">
+                      </div>
+                      <div class="deck-body">
+                        <div class="sel-venue">ECCV 2026</div>
+                        <h4 class="sel-title"><a href="#pub-rl-awb">RL-AWB: Deep Reinforcement Learning for Auto White Balance Correction in Low-Light Night-time Scenes</a></h4>
+                        <p class="sel-desc">We present RL-AWB, a novel framework combining statistical methods with deep reinforcement learning for nighttime white balance.</p>
+                        <div class="sel-links">
+                          <a class="link-chip" href="https://ntuneillee.github.io/research/rl-awb/" rel="noopener">Project Page</a>
+                          <a class="link-chip" href="https://arxiv.org/abs/2601.05249" target="_blank" rel="noopener">arXiv</a>
+                          <a class="link-chip" href="https://github.com/BrianChen1120/RL-AWB" target="_blank" rel="noopener">Code</a>
+                          <a class="link-chip" href="https://drive.google.com/drive/folders/1VeqcIhkr83gL_ZF5DMnvFsmXyC4QhSro" target="_blank" rel="noopener">Dataset</a>
+                          <a class="link-chip sel-details" href="#pub-rl-awb">Details</a>
+                        </div>
+                      </div>
+                      </div>
+                    </article>
+
+                    <article class="deck-card" aria-roledescription="slide" aria-label="3 of 3">
+                      <div class="deck-face">
+                      <div class="deck-media deck-media-figure">
+                        <img src="assets/works/AnchorSteer-800.webp"
+                             width="800" height="541" loading="lazy" decoding="async"
+                             alt="AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing">
+                      </div>
+                      <div class="deck-body">
+                        <div class="sel-venue">KDD 2026</div>
+                        <h4 class="sel-title"><a href="#pub-anchorsteer">AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing</a></h4>
+                        <p class="sel-desc">We propose AnchorSteer, a music-editing framework that disentangles the semantic-structural trade-off by coupling explicit structural anchoring with self-discovered, label-free concept vectors extracted from diffusion hidden states via a self-supervised reconstruction objective.</p>
+                        <div class="sel-links">
+                          <a class="link-chip" href="project/anchorsteer/" rel="noopener">Project Page</a>
+                          <a class="link-chip" href="https://arxiv.org/abs/2605.31053" target="_blank" rel="noopener">arXiv</a>
+                          <a class="link-chip" href="https://github.com/hengtsune1024/AnchorSteer" target="_blank" rel="noopener">Code</a>
+                          <a class="link-chip sel-details" href="#pub-anchorsteer">Details</a>
+                        </div>
+                      </div>
+                      </div>
+                    </article>
+                  </div>
+                </div>
+
+                <div class="deck-dots" id="deckDots"></div>
+                <p class="visually-hidden" id="deckStatus" aria-live="polite"></p>
+              </div>
+
+              <!-- All publications：完整清單（唯一的正式來源） -->
+              <div class="pub-head">
+                <h3 class="eyebrow mb-0">All Publications</h3>
+              </div>
+
               <!-- Item -->
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-bocchi" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap is-video mb-2 mb-md-0">
                   <video class="thumb-video" data-src="assets/works/BOCCHI.mp4"
                          muted loop playsinline preload="none" aria-label="BOCCHI: A More Realistic and Challenging Benchmark for Local Motion Blur Detection with MSDCT-UNet"></video>
@@ -833,7 +1474,7 @@
               </article>
 
               <!-- Item -->
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-rl-awb" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap is-video mb-2 mb-md-0">
                   <video class="thumb-video" data-src="assets/works/RL_AWB.mp4"
                          muted loop playsinline preload="none" aria-label="RL-AWB: Deep Reinforcement Learning for Auto White Balance Correction in Low-Light Night-time Scenes"></video>
@@ -855,9 +1496,9 @@
               </article>
 
               <!-- Item -->
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-anchorsteer" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/AnchorSteer.png" alt="AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing">
+                  <img class="thumb-img" loading="lazy" decoding="async" src="assets/works/AnchorSteer.png" alt="AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing">
                 </div>
                 <div>
                   <h3 class="h5 mb-1">AnchorSteer: Self-Discovered Concept Injection for Structure-Preserving Music Editing</h3>
@@ -873,9 +1514,9 @@
                 </div>
               </article>
 
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-guitar-tone-morphing" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/Guitar Tone Morphing.png" alt="Guitar Tone Morphing by Diffusion-based Model" >
+                  <img class="thumb-img" loading="lazy" decoding="async" src="assets/works/Guitar Tone Morphing.png" alt="Guitar Tone Morphing by Diffusion-based Model" >
                 </div>
                 <div>
                   <h3 class="h5 mb-1">Guitar Tone Morphing by Diffusion-based Model</h3>
@@ -893,9 +1534,9 @@
               </article>
 
               <!-- Item -->
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-frieren" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/Frieren.png" alt="FRIEREN: Face Resizing Image Quality Evaluation via Robust Estimation of Image Naturalness">
+                  <img class="thumb-img" loading="lazy" decoding="async" src="assets/works/Frieren.png" alt="FRIEREN: Face Resizing Image Quality Evaluation via Robust Estimation of Image Naturalness">
                 </div>
                 <div>
                   <h3 class="h5 mb-1"> FRIEREN: Face Resizing Image Quality Evaluation via Robust Estimation of Image Naturalness</h3>
@@ -913,9 +1554,9 @@
               </article>
 
               <!-- Item -->
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-uav-collision-avoidance" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/RL-UAV.jpg" alt="Deep reinforcement learning–based collision avoidance strategy for multiple unmanned aerial vehicles">
+                  <img class="thumb-img" loading="lazy" decoding="async" src="assets/works/RL-UAV.jpg" alt="Deep reinforcement learning–based collision avoidance strategy for multiple unmanned aerial vehicles">
                 </div>
                 <div>
                   <h3 class="h5 mb-1">Deep reinforcement learning–based collision avoidance strategy for multiple unmanned aerial vehicles</h3>
@@ -931,9 +1572,9 @@
               </article>
 
               <!-- Item -->
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-wavelet-segmentation" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/Segmentation.png" alt="Enhancement of Semantic Segmentation with Edge Networks Using Wavelets and Adaptive Canny Thresholding">
+                  <img class="thumb-img" loading="lazy" decoding="async" src="assets/works/Segmentation.png" alt="Enhancement of Semantic Segmentation with Edge Networks Using Wavelets and Adaptive Canny Thresholding">
                 </div>
                 <div>
                   <h3 class="h5 mb-1">Enhancement of Semantic Segmentation with Edge Networks Using Wavelets and Adaptive Canny Thresholding</h3>
@@ -947,9 +1588,9 @@
                 </div>
               </article>
 
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-kan" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/KAN.png" alt="Kolmogorov-Arnold Networks with Trainable Activation Functions for Data Regression and Classification">
+                  <img class="thumb-img" loading="lazy" decoding="async" src="assets/works/KAN.png" alt="Kolmogorov-Arnold Networks with Trainable Activation Functions for Data Regression and Classification">
                 </div>
                 <div>
                   <h3 class="h5 mb-1">Kolmogorov-Arnold Networks with Trainable Activation Functions for Data Regression and Classification</h3>
@@ -963,9 +1604,9 @@
                 </div>
               </article>
 
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-poststroke-prediction" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/TPE Poststroke.jpg" alt="Developmental Prediction of Poststroke Patients in Activities of Daily Living by Using Tree-Structured Parzen Estimator–Optimized Stacking Ensemble Approaches">
+                  <img class="thumb-img" loading="lazy" decoding="async" src="assets/works/TPE Poststroke.jpg" alt="Developmental Prediction of Poststroke Patients in Activities of Daily Living by Using Tree-Structured Parzen Estimator–Optimized Stacking Ensemble Approaches">
                 </div>
                 <div>
                   <h3 class="h5 mb-1">Developmental Prediction of Poststroke Patients in Activities of Daily Living by Using Tree-Structured Parzen Estimator–Optimized Stacking Ensemble Approaches</h3>
@@ -979,9 +1620,9 @@
                 </div>
               </article>
 
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-pneumonia-gradcam" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap mb-2 mb-md-0">
-                  <img class="thumb-img" src="assets/works/Pneumonia Prediction.png" alt="Optical Based Gradient-Weighted Class Activation Mapping and Transfer Learning Integrated Pneumonia Prediction Model">
+                  <img class="thumb-img" loading="lazy" decoding="async" src="assets/works/Pneumonia Prediction.png" alt="Optical Based Gradient-Weighted Class Activation Mapping and Transfer Learning Integrated Pneumonia Prediction Model">
                 </div>
                 <div>
                   <h3 class="h5 mb-1">Optical Based Gradient-Weighted Class Activation Mapping and Transfer Learning Integrated Pneumonia Prediction Model</h3>
@@ -995,7 +1636,7 @@
                 </div>
               </article>
 
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-fuzzy-grasping" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap is-video mb-2 mb-md-0">
                   <video class="thumb-video" data-src="assets/works/2stage_PPO.mp4"
                          muted loop playsinline preload="none" aria-label="Two-stage fuzzy object grasping controller for a humanoid robot with proximal policy optimization"></video>
@@ -1014,7 +1655,7 @@
                 </div>
               </article>
 
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-wddpg-gait" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap is-video mb-2 mb-md-0">
                   <video class="thumb-video" data-src="assets/works/DDPG_walk.mp4"
                          muted loop playsinline preload="none" aria-label="Sequential sensor fusion-based W-DDPG gait controller of bipedal robots for adaptive slope walking"></video>
@@ -1034,7 +1675,7 @@
                 </div>
               </article>
 
-              <article class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
+              <article id="pub-ppo-decision-making" class="pub-card reveal-card d-flex flex-column flex-md-row align-items-center align-items-md-start gap-3 mb-3">
                 <div class="thumb-wrap is-video mb-2 mb-md-0">
                   <video class="thumb-video" data-src="assets/works/PPO_decision-making.mp4"
                          muted loop playsinline preload="none" aria-label="Intelligent proximal-policy-optimization-based decision-making system for humanoid robots"></video>
@@ -1073,7 +1714,7 @@
           </section>
 
           <!-- Miscellanea (publication-style cards) -->
-          <section id="misc" class="py-4 py-md-5 reveal">
+          <section id="misc" class="py-4 py-md-5 reveal handoff">
             <div class="container px-0">
               <h2 class="section-title h3 mb-3">Miscellanea</h2>
               <style>
@@ -1081,21 +1722,23 @@
                   align-items:center;
                   padding: 0.75rem;
                   border-radius: .75rem;
-                  transition: background 0.3s ease;
+                  border: 1px solid var(--bs-border-color);
+                  background: var(--nc-surface);
+                  transition: background-color .22s ease, border-color .22s ease;
                 }
                 @media (hover:hover){
                   .misc-item:hover{
-                    background: var(--thumb-blue-soft, rgba(166,211,255,.12));
+                    border-color: var(--thumb-blue);
                   }
                 }
                 .misc-cover{
                   display:block;
                   width:110px;
                   height:auto;
+                  aspect-ratio: 3 / 4;
                   object-fit:contain;
-                  border:2px solid var(--thumb-blue, #A6D3FF);
+                  border:1px solid var(--bs-border-color);
                   border-radius:.5rem;
-                  box-shadow:0 0 0 4px var(--thumb-blue-soft, rgba(166,211,255,.25));
                   flex:0 0 auto;
                 }
                 @media (min-width:768px){
@@ -1122,8 +1765,7 @@
                   border-radius:.75rem;
                   overflow:hidden;
                   border:1px solid var(--bs-border-color);
-                  box-shadow:0 2px 10px rgba(0,0,0,.06);
-                  background:var(--bs-body-bg);
+                  background:var(--nc-surface);
                 }
                 .map-frame iframe, .map-frame > div{ width:100%; height:auto; border:0; display:block; }
               </style>
@@ -1152,7 +1794,7 @@
 
 
           <!-- Contact -->
-          <section id="contact" class="py-4 py-md-5 reveal">
+          <section id="contact" class="py-4 py-md-5 reveal atmo atmo-stone">
             <div class="container px-0">
               <h2 class="section-title h3 mb-2">Contact</h2>
               <p class="text-muted mb-4">
@@ -1164,7 +1806,7 @@
                 <div class="col-12 col-md-6">
                   <h3 class="h6 text-uppercase text-muted mb-2">Contact Me</h3>
                   <ul class="list-unstyled mb-0">
-                    <li class="mb-1"><i class="bi bi-geo"></i> Taipei, Taiwan</li>
+                    <li class="mb-1"><i class="bi bi-geo"></i> Hsinchu, Taiwan</li>
                     <li class="mb-1"><i class="bi bi-envelope"></i>
                       <a href="mailto:klchen901120@gmail.com">klchen901120@gmail.com</a>
                     </li>
@@ -1194,7 +1836,7 @@
           <footer class="footer py-4 border-top">
             <div class="container px-0 small d-flex justify-content-between">
               <div>© <span id="year"></span> Kuan‑Lin (Brian) Chen</div>
-              <div>Last updated: <span id="updated"></span></div>
+              <div>Last updated: <span id="updated">2026-10-25</span></div>
             </div>
           </footer>
       </main>
@@ -1202,28 +1844,22 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-      document.addEventListener('DOMContentLoaded', function () {
-        [...document.querySelectorAll('[data-bs-toggle="tooltip"]')]
-          .forEach(el => new bootstrap.Tooltip(el));
-      });
       document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
         new bootstrap.Tooltip(el);
       });
       // ---------- Footer info ----------
       const elYear = document.getElementById('year');
-      const elUpdated = document.getElementById('updated');
+      // Last updated 不再由 JS 填當天日期：部署時 CI 會換成 index.html 最後一次 commit 的日期（見 deploy.yml）
       if (elYear)   elYear.textContent   = new Date().getFullYear();
-      if (elUpdated)elUpdated.textContent= new Date().toISOString().slice(0,10);
 
       // ---------- Theme toggle with icon sync ----------
       const root = document.documentElement;
       const STORAGE_KEY = 'pref-theme';
-      const btnMobile  = document.getElementById('themeToggle');
-      const btnDesktop = document.getElementById('themeToggleDesktop');
+      const btnTheme = document.getElementById('themeToggle');
 
       function syncIcons(theme){
         const icon = (theme === 'dark') ? 'bi-moon-stars' : 'bi-sun';
-        [btnMobile, btnDesktop].forEach(btn=>{
+        [btnTheme].forEach(btn=>{
           if (!btn) return;
           const i = btn.querySelector('i');
           if (!i) return;
@@ -1263,25 +1899,258 @@
         const curr = root.getAttribute('data-bs-theme') || 'light';
         applyTheme(curr === 'dark' ? 'light' : 'dark');
       }
-      btnMobile?.addEventListener('click', toggleTheme);
-      btnDesktop?.addEventListener('click', toggleTheme);
+      btnTheme?.addEventListener('click', toggleTheme);
 
-      // ---------- Glass nav: scroll edge effect ----------
+      // ---------- Floating glass header ----------
+      // 頂端：寬膠囊；捲過 80px：收成內容寬度的 pill；桌機 hover / focus / 點擊展開，離開後延遲收合。
+      // pill 寬度由內容量測後寫進 CSS 變數，捲動時只切 class，不逐幀改樣式。
       (function(){
-        const navs = document.querySelectorAll('.glass-nav');
-        if (!navs.length) return;
-        const names = document.querySelectorAll('.topbar-name');
-        const hero = document.querySelector('#about .hero-name');
-        const onScroll = () => {
-          const scrolled = window.scrollY > 8;
-          navs.forEach(n => n.classList.toggle('scrolled', scrolled));
-          // 名字捲出視野後才在導覽列淡入，避免同一個名字同時出現兩次
-          const show = hero ? hero.getBoundingClientRect().bottom < 56 : scrolled;
-          names.forEach(n => n.classList.toggle('show', show));
-        };
-        document.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onScroll);
-        onScroll();
+        const header = document.getElementById('siteHeader');
+        const nav = document.getElementById('topbar');
+        const expand = document.getElementById('navExpand');
+        if (!header || !nav || !expand) return;
+        const left = nav.querySelector('.nav-left');
+        const brand = nav.querySelector('.nav-brand');
+        const name = nav.querySelector('.topbar-name');
+        const links = document.getElementById('navLinks');
+        const railLinks = [...links.querySelectorAll('a.nav-link')];
+        const actions = nav.querySelector('.nav-actions');
+        const desktop = window.matchMedia('(min-width: 992px)');
+        const tiny = window.matchMedia('(max-width: 374.98px)');
+        const COMPACT_AT = 80, GRACE = 380;
+        // 與 CSS 對應的尺寸（px）：各狀態左右 padding、rail 連結 padding、展開鈕寬度
+        const PAD = { deskC: 12 + 4.8, deskO: 16 + 8, mobC: 12 + 3.2 };
+        const LINK_PAD = { rail: 6.4, cur: 11.2, full: 13.6 }, EXPAND_W = 32, GAP_C = 4, GAP_O = 16;
+        let compact = false, open = false, pinned = false, hovering = false, suppressHover = false;
+        let closeTimer = 0, ticking = false, measuring = false, quietFocus = false, curIdx = 0;
+        let sizes = [];   // 每個連結的 [首字母寬, 字尾寬]
+
+        // 把連結文字拆成「首字母 + 字尾」，textContent 不變（螢幕閱讀器仍讀完整名稱）
+        railLinks.forEach(a => {
+          const t = a.textContent.trim();
+          a.innerHTML = '<span class="nl-i">' + t.charAt(0) + '</span><span class="nl-r">' + t.slice(1) + '</span>';
+        });
+
+        const px = v => parseFloat(v) || 0;
+        const gapOf = el => px(getComputedStyle(el).columnGap);
+        function rowWidth(el){
+          const kids = [...el.children].filter(c => getComputedStyle(c).display !== 'none');
+          return kids.reduce((s, c) => s + c.offsetWidth, 0) + gapOf(el) * Math.max(0, kids.length - 1);
+        }
+
+        // rail 模式：手機一律；桌機在收合且未展開時
+        function applyRail(){
+          header.classList.toggle('rail-mode', !desktop.matches || (compact && !open));
+          railLinks.forEach((a, i) => {
+            const d = Math.abs(i - curIdx);
+            a.classList.toggle('is-cur', d === 0);
+            a.classList.toggle('is-near', d === 1);
+            a.classList.toggle('is-far', d > 1);
+          });
+        }
+        // 用 canvas 量字寬：被 display:none 隱藏的連結也量得到（之後輪到它當目前區塊時才展得開）
+        // 以 rail 字級（.88rem）與粗體量測，取上限；完整導覽（.95rem）用比例換算
+        const ctx2d = document.createElement('canvas').getContext('2d');
+        const RAIL_FS = 0.88 * 16, FULL_SCALE = 0.95 / 0.88;
+        function cacheSizes(){
+          ctx2d.font = '700 ' + RAIL_FS + 'px ' + getComputedStyle(links).fontFamily;
+          sizes = railLinks.map(a => {
+            const t = a.textContent.trim();
+            const iw = ctx2d.measureText(t.charAt(0)).width;
+            const rw = Math.ceil(ctx2d.measureText(t.slice(1)).width) + 1;
+            a.style.setProperty('--rw', rw + 'px');
+            return [iw, rw];
+          });
+        }
+        // 依目前 class 推算寬度（不讀版面，換區塊時可同步算出目標寬度，讓 width 與字尾一起過渡）
+        function railWidth(){
+          return sizes.reduce((sum, [iw, rw], i) => {
+            const d = Math.abs(i - curIdx);
+            if (!desktop.matches && tiny.matches && d > 1) return sum;
+            const showRest = d === 0 || (desktop.matches && d === 1);
+            return sum + (d === 0 ? LINK_PAD.cur : LINK_PAD.rail) * 2 + iw + (showRest ? rw : 0);
+          }, 0);
+        }
+        function measure(){
+          measuring = false;
+          const border = 2, slack = 4;
+          const leftW = brand.querySelector('img').offsetWidth + gapOf(brand);
+          let cW, oW = 0;
+          if (desktop.matches){
+            cW = PAD.deskC + leftW + GAP_C + railWidth() + GAP_C + EXPAND_W + border + slack;
+            const linksFull = sizes.reduce((s, [iw, rw]) => s + LINK_PAD.full * 2 + (iw + rw) * FULL_SCALE, 0) + 2.4 * (sizes.length - 1);
+            const side = Math.max(leftW + name.scrollWidth, rowWidth(actions));
+            oW = PAD.deskO + linksFull + EXPAND_W + GAP_O * 3 + side * 2 + border + slack;
+          } else {
+            cW = PAD.mobC + leftW + GAP_C + railWidth() + GAP_C + rowWidth(actions) + border + slack;
+          }
+          header.style.setProperty('--nav-w-c', Math.ceil(cW) + 'px');
+          if (oW) header.style.setProperty('--nav-w-o', Math.ceil(oW) + 'px');
+        }
+        const requestMeasure = () => { if (!measuring){ measuring = true; requestAnimationFrame(() => { cacheSizes(); measure(); }); } };
+
+        function setOpen(v){
+          if (v === open) return;
+          open = v;
+          header.classList.toggle('is-open', v);
+          expand.setAttribute('aria-expanded', String(v));
+          applyRail();
+        }
+        function scheduleClose(){
+          clearTimeout(closeTimer);
+          closeTimer = setTimeout(() => {
+            if (pinned || (hovering && !suppressHover) || nav.contains(document.activeElement)) return;
+            setOpen(false);
+          }, GRACE);
+        }
+        const canExpand = () => compact && desktop.matches;
+
+        function update(){
+          ticking = false;
+          const c = window.scrollY > COMPACT_AT;
+          if (c === compact) return;
+          compact = c;
+          header.classList.toggle('is-compact', c);
+          if (!c){ pinned = false; setOpen(false); }
+          applyRail();
+        }
+        document.addEventListener('scroll', () => {
+          if (!ticking){ ticking = true; requestAnimationFrame(update); }
+        }, { passive: true });
+
+        // 滑鼠：進入即展開，離開後 grace period 收合（在 pill 與連結間移動不會閃爍）
+        nav.addEventListener('pointerenter', e => {
+          if (e.pointerType !== 'mouse') return;
+          hovering = true;
+          if (!canExpand() || suppressHover) return;
+          clearTimeout(closeTimer);
+          setOpen(true);
+        });
+        nav.addEventListener('pointerleave', e => {
+          if (e.pointerType !== 'mouse') return;
+          hovering = false; suppressHover = false;
+          if (open) scheduleClose();
+        });
+        // 鍵盤：焦點進入即展開，焦點離開整個 nav 才收合
+        nav.addEventListener('focusin', () => {
+          if (!canExpand() || quietFocus) return;
+          clearTimeout(closeTimer);
+          setOpen(true);
+        });
+        nav.addEventListener('focusout', e => {
+          if (open && !nav.contains(e.relatedTarget)){ pinned = false; scheduleClose(); }
+        });
+        // 點擊觸發鈕：觸控 / 不想 hover 的人也能展開；再點一次收合
+        expand.addEventListener('click', e => {
+          if (open && (pinned || e.detail === 0)){
+            pinned = false; setOpen(false); suppressHover = hovering;
+          } else {
+            pinned = true; setOpen(true);
+          }
+        });
+        // 滑鼠點了連結就收合；鍵盤啟用則保持展開，避免焦點掉到看不見的元素上
+        nav.querySelectorAll('a').forEach(a => a.addEventListener('click', e => {
+          if (!compact || e.detail === 0) return;
+          pinned = false; suppressHover = true; setOpen(false);
+          a.blur();
+        }));
+        document.addEventListener('keydown', e => {
+          if (e.key !== 'Escape' || !open) return;
+          const hadFocus = nav.contains(document.activeElement);
+          pinned = false; suppressHover = hovering; setOpen(false);
+          if (hadFocus){ quietFocus = true; expand.focus({ preventScroll: true }); quietFocus = false; }
+          clearTimeout(closeTimer);
+        });
+        document.addEventListener('pointerdown', e => {
+          if (open && !header.contains(e.target)){ pinned = false; setOpen(false); }
+        });
+
+        // 目前區塊變動 → 更新 rail 的 class，同步算出新寬度（字尾滑開與 pill 寬度一起過渡）
+        document.addEventListener('sectionchange', e => {
+          const i = railLinks.findIndex(a => a.getAttribute('href') === '#' + e.detail.id);
+          curIdx = i < 0 ? 0 : i;
+          applyRail();
+          measure();
+        });
+        desktop.addEventListener?.('change', () => { pinned = false; setOpen(false); applyRail(); requestMeasure(); });
+        tiny.addEventListener?.('change', requestMeasure);
+        window.addEventListener('resize', requestMeasure);
+        document.fonts?.addEventListener?.('loadingdone', requestMeasure);
+        applyRail();
+        cacheSizes();
+        measure();
+        update();
+      })();
+
+      // ---------- 手機選單：點連結 / Escape / 點外面 關閉 ----------
+      (function(){
+        const btn = document.getElementById('navMenuBtn');
+        const panel = document.getElementById('navPanel');
+        const header = document.getElementById('siteHeader');
+        if (!btn || !panel) return;
+        let hideTimer = 0;
+
+        function open(){
+          clearTimeout(hideTimer);
+          panel.hidden = false;
+          requestAnimationFrame(() => panel.classList.add('open'));
+          btn.setAttribute('aria-expanded', 'true');
+          btn.setAttribute('aria-label', 'Close menu');
+          document.addEventListener('keydown', onKey);
+          document.addEventListener('pointerdown', onOutside);
+        }
+        function close(returnFocus){
+          if (btn.getAttribute('aria-expanded') !== 'true') return;
+          panel.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+          btn.setAttribute('aria-label', 'Open menu');
+          hideTimer = setTimeout(() => { panel.hidden = true; }, 280);
+          document.removeEventListener('keydown', onKey);
+          document.removeEventListener('pointerdown', onOutside);
+          if (returnFocus) btn.focus();
+        }
+        function onKey(e){ if (e.key === 'Escape') close(true); }
+        function onOutside(e){ if (!header.contains(e.target)) close(false); }
+
+        btn.addEventListener('click', () => {
+          btn.getAttribute('aria-expanded') === 'true' ? close(false) : open();
+        });
+        panel.querySelectorAll('a').forEach(a => a.addEventListener('click', () => close(false)));
+        // 轉成桌機寬度時收起，避免面板殘留
+        window.matchMedia('(min-width: 992px)').addEventListener?.('change', e => { if (e.matches) close(false); });
+      })();
+
+      // ---------- 目前所在區塊高亮（IntersectionObserver，取視窗中段的區塊） ----------
+      (function(){
+        const links = Array.from(document.querySelectorAll('#siteHeader a.nav-link[href^="#"]'));
+        const ids = [...new Set(links.map(a => a.getAttribute('href').slice(1)))];
+        const sections = ids.map(id => document.getElementById(id)).filter(Boolean);
+        if (!sections.length || !('IntersectionObserver' in window)) return;
+        const visible = new Set();
+        let current = null;
+        function setActive(id){
+          if (id === current) return;
+          current = id;
+          let text = 'Menu';
+          links.forEach(a => {
+            if (a.getAttribute('href') === '#' + id){ a.setAttribute('aria-current', 'location'); text = a.textContent.trim(); }
+            else a.removeAttribute('aria-current');
+          });
+          document.dispatchEvent(new CustomEvent('sectionchange', { detail: { id: id, label: text } }));
+        }
+        const io = new IntersectionObserver(entries => {
+          entries.forEach(e => e.isIntersecting ? visible.add(e.target) : visible.delete(e.target));
+          // 多個同時在判定帶內時，取文件順序最後一個（較貼近閱讀位置）
+          const hit = sections.filter(s => visible.has(s)).pop();
+          if (hit) setActive(hit.id);
+          else if (window.scrollY < 40) setActive(null);
+        }, { rootMargin: '-40% 0px -55% 0px' });
+        sections.forEach(s => io.observe(s));
+        // 捲到頁底時，最後一個區塊可能到不了判定帶 → 直接標記最後一個
+        const last = sections[sections.length - 1];
+        document.addEventListener('scroll', () => {
+          if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) setActive(last.id);
+        }, { passive: true });
       })();
 
       // ---------- 錨點捲動 ----------
@@ -1340,7 +2209,8 @@
           el.textContent = PHRASES[0];
           return;
         }
-        let pi = 0, ci = 0, deleting = false, timer = 0, onScreen = true;
+        // HTML 內已預放第一個詞（無 JS 時的靜態 fallback），從「打完第一個詞」的狀態接續
+        let pi = 0, ci = PHRASES[0].length, deleting = true, timer = 0, onScreen = true, started = false;
 
         function stop() { clearTimeout(timer); timer = 0; }
         function tick() {
@@ -1354,7 +2224,7 @@
         }
         function run() {
           const active = onScreen && !document.hidden;
-          if (active && !timer) timer = setTimeout(tick, 400);
+          if (active && !timer){ timer = setTimeout(tick, started ? 400 : 1500); started = true; }
           else if (!active) stop();
         }
 
@@ -1381,44 +2251,165 @@
       })();
     </script>
 
-    <!-- === Scroll-reveal observer (bidirectional) === -->
+    <!-- === Scroll-reveal observer（進場一次後就停止觀察） === -->
     <script>
       (function () {
+        var sections = document.querySelectorAll('.reveal');
+        var cards = document.querySelectorAll('.reveal-card');
+        function showAll(list) { list.forEach(function (el) { el.classList.add('visible'); }); }
+        if (!('IntersectionObserver' in window)) {
+          showAll(sections); showAll(cards);
+          document.querySelectorAll('.handoff').forEach(function (el) { el.classList.add('handoff-on'); });
+          return;
+        }
+
         var sectionObs = new IntersectionObserver(function (entries) {
           entries.forEach(function (entry) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('visible');
-              entry.target.classList.remove('above');
-            } else if (entry.boundingClientRect.top < 0) {
-              entry.target.classList.remove('visible');
-              entry.target.classList.add('above');
-            } else {
-              entry.target.classList.remove('visible', 'above');
-            }
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('visible');
+            sectionObs.unobserve(entry.target);
           });
-        }, { threshold: 0.08 });
-        document.querySelectorAll('.reveal').forEach(function (el) { sectionObs.observe(el); });
+        }, { threshold: 0.06 });
+        sections.forEach(function (el) { sectionObs.observe(el); });
 
         var cardObs = new IntersectionObserver(function (entries) {
-          // 同一批進入視窗的卡片做 stagger（每張 +70ms），離開時歸零
+          // 同一批進入視窗的卡片做 stagger（每張 +60ms）；播完清掉 delay，hover 才不會延遲
           var enterIdx = 0;
           entries.forEach(function (entry) {
-            if (entry.isIntersecting) {
-              entry.target.style.transitionDelay = (enterIdx * 70) + 'ms';
-              enterIdx++;
-              entry.target.classList.add('visible');
-              entry.target.classList.remove('above');
-            } else if (entry.boundingClientRect.top < 0) {
-              entry.target.style.transitionDelay = '0ms';
-              entry.target.classList.remove('visible');
-              entry.target.classList.add('above');
-            } else {
-              entry.target.style.transitionDelay = '0ms';
-              entry.target.classList.remove('visible', 'above');
-            }
+            if (!entry.isIntersecting) return;
+            var el = entry.target, delay = enterIdx * 60;
+            enterIdx++;
+            el.style.transitionDelay = delay + 'ms';
+            el.classList.add('visible');
+            cardObs.unobserve(el);
+            setTimeout(function () { el.style.transitionDelay = ''; }, delay + 500);
           });
         }, { threshold: 0.1 });
-        document.querySelectorAll('.reveal-card').forEach(function (el) { cardObs.observe(el); });
+        cards.forEach(function (el) { cardObs.observe(el); });
+
+        // Liquid Reflection：區塊交界進到視窗下 1/3 時播一次光帶 + 標題交接
+        var handoffs = document.querySelectorAll('.handoff');
+        var handoffObs = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('handoff-on');
+            handoffObs.unobserve(entry.target);
+          });
+        }, { rootMargin: '0px 0px -30% 0px' });
+        handoffs.forEach(function (el) { handoffObs.observe(el); });
+      })();
+
+      // Atmosphere 帶狀底色寬度 = 視窗可用寬度（扣掉捲軸），避免 100vw 造成水平捲動
+      (function () {
+        var root = document.documentElement, raf = 0;
+        function setW() { raf = 0; root.style.setProperty('--page-w', root.clientWidth + 'px'); }
+        setW();
+        window.addEventListener('resize', function () { if (!raf) raf = requestAnimationFrame(setW); });
+      })();
+    </script>
+
+    <!-- === Research：3D 旋轉卡片 + 可展開摘要（漸進增強：無 JS 時卡片是一般橫向列表、摘要全部展開） === -->
+    <script>
+      (function () {
+        var deck = document.getElementById('deck');
+        var track = document.getElementById('deckTrack');
+        if (!deck || !track) return;
+        var cards = Array.prototype.slice.call(track.querySelectorAll('.deck-card'));
+        var btns = document.querySelectorAll('.deck-btn');
+        var dotsBox = document.getElementById('deckDots');
+        var status = document.getElementById('deckStatus');
+        var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var active = -1, raf = 0, settleTimer = 0;
+
+        var dots = cards.map(function (card, i) {
+          var t = card.querySelector('.sel-title').textContent.split(':')[0].trim();
+          card.dataset.short = t;
+          var d = document.createElement('button');
+          d.type = 'button'; d.className = 'deck-dot';
+          d.setAttribute('aria-label', 'Show paper ' + (i + 1) + ': ' + t);
+          d.setAttribute('aria-controls', 'deckTrack');
+          d.addEventListener('click', function () { go(i); });
+          dotsBox.appendChild(d);
+          return d;
+        });
+
+        // 依每張卡離捲動中心的距離寫入 --p / --ap，CSS 負責換算成 3D 角度
+        function render() {
+          raf = 0;
+          var center = track.scrollLeft + track.clientWidth / 2;
+          var best = 0, bestD = Infinity;
+          cards.forEach(function (card, i) {
+            var step = card.offsetWidth + (parseFloat(getComputedStyle(track).columnGap) || 0);
+            var p = (card.offsetLeft + card.offsetWidth / 2 - center) / step;
+            p = Math.max(-2, Math.min(2, p));
+            card.style.setProperty('--p', p.toFixed(3));
+            card.style.setProperty('--ap', Math.abs(p).toFixed(3));
+            card.style.zIndex = String(10 - Math.round(Math.abs(p) * 3));
+            if (Math.abs(p) < bestD) { bestD = Math.abs(p); best = i; }
+          });
+          setActive(best);
+        }
+        function setActive(i) {
+          if (i === active) return;
+          active = i;
+          cards.forEach(function (card, k) {
+            var on = k === i;
+            card.classList.toggle('is-active', on);
+            // 只有正面那張的連結可 Tab；側邊卡片點一下會轉到正面
+            card.querySelectorAll('a').forEach(function (a) { a.tabIndex = on ? 0 : -1; });
+            card.setAttribute('aria-hidden', on ? 'false' : 'true');
+          });
+          dots.forEach(function (d, k) { d.setAttribute('aria-current', String(k === i)); });
+          btns[0].disabled = i === 0;
+          btns[1].disabled = i === cards.length - 1;
+          clearTimeout(settleTimer);
+          settleTimer = setTimeout(function () {
+            status.textContent = 'Paper ' + (i + 1) + ' of ' + cards.length + ': ' + cards[i].dataset.short;
+          }, 300);
+        }
+        function go(i) {
+          i = Math.max(0, Math.min(cards.length - 1, i));
+          var c = cards[i];
+          track.scrollTo({ left: c.offsetLeft - (track.clientWidth - c.offsetWidth) / 2, behavior: reduceMotion ? 'auto' : 'smooth' });
+        }
+        track.addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(render); }, { passive: true });
+        window.addEventListener('resize', function () { if (!raf) raf = requestAnimationFrame(render); });
+        btns.forEach(function (b) {
+          b.addEventListener('click', function () { go(active + Number(b.dataset.dir)); });
+        });
+        cards.forEach(function (card, i) {
+          // 點側邊卡片：轉到正面（攔下點擊，避免直接開了側邊卡的連結）
+          card.addEventListener('click', function (e) {
+            if (i === active) return;
+            e.preventDefault(); e.stopPropagation();
+            go(i);
+          }, true);
+        });
+        // 監聽整個 Selected 區塊（上一張 / 下一張按鈕在 #deck 外的標題列）
+        (deck.closest('.featured') || deck).addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowLeft') { e.preventDefault(); go(active - 1); }
+          else if (e.key === 'ArrowRight') { e.preventDefault(); go(active + 1); }
+        });
+        // 預設停在第一張（scroll-snap 起點），並畫出初始角度
+        render();
+
+        // 進場：卡片從中心疊在一起、往下，進入視窗時展開成扇形（取代原 cinematic reveal，只播一次）
+        if ('IntersectionObserver' in window && !reduceMotion) {
+          var io = new IntersectionObserver(function (entries) {
+            if (!entries[0].isIntersecting) return;
+            io.disconnect();
+            deck.classList.add('deck-entering');
+            cards.forEach(function (c) { c.querySelector('.deck-face').style.transitionDelay = Math.round(Math.abs(parseFloat(c.style.getPropertyValue('--p')) || 0) * 110) + 'ms'; });
+            requestAnimationFrame(function () { deck.classList.add('deck-in'); });
+            setTimeout(function () {
+              deck.classList.remove('deck-entering');
+              cards.forEach(function (c) { c.querySelector('.deck-face').style.transitionDelay = ''; });
+            }, 1500);
+          }, { threshold: 0.4 });
+          io.observe(deck);
+        } else {
+          deck.classList.add('deck-in');
+        }
       })();
     </script>
 

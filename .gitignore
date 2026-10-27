@@ -14,3 +14,10 @@ dist/
 # claude code local settings
 .claude/
 project/.claude/
+
+# python cache
+__pycache__/
+
+# local-only docs and build scripts (not used by the site)
+SOP.md
+tools/
